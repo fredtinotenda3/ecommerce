@@ -6378,7 +6378,7 @@ export default Categories
 import React from 'react'
 import Link from 'next/link'
 
-import { Category } from '../../../../payload/payload-types'
+import { Category, Media } from '../../../../payload/payload-types'
 import { useFilter } from '../../../_providers/Filter'
 
 import classes from './index.module.scss'
@@ -6391,11 +6391,14 @@ const CategoryCard = ({ category }: CategoryCardProps) => {
   const media = category.media as Media
   const { setCategoryFilters } = useFilter()
 
+  // Check if media exists and has a url
+  const backgroundImage = media?.url ? `url(${media.url})` : 'none'
+
   return (
     <Link
       href="/products"
       className={classes.card}
-      style={{ backgroundImage: `url(${media.url})` }}
+      style={{ backgroundImage }}
       onClick={() => setCategoryFilters([category.id])}
     >
       <p className={classes.title}>{category.title}</p>
@@ -8317,28 +8320,31 @@ export const Price: React.FC<{
 ==== FILE: C:\Users\user\Desktop\ecommerce\src\app\_components\Promotion\index.tsx ====
 
 'use client'
+
 import React, { useEffect, useState } from 'react'
 
 import classes from './index.module.scss'
 
 const Promotion = () => {
   const [time, setTime] = useState({
-    days: 0,
+    days: 6,
     hours: 0,
     minutes: 0,
     seconds: 0,
   })
 
-  const targetDate = new Date()
-  targetDate.setDate(targetDate.getDate() + 3)
-
   useEffect(() => {
+    const targetDate = new Date()
+    targetDate.setDate(targetDate.getDate() + 6)
+
     const timerInterval = setInterval(() => {
       const currentTime = new Date()
       const timeDifference = Math.max(Number(targetDate) - Number(currentTime), 0)
 
       const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24))
-      const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+      const hours = Math.floor(
+        (timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+      )
       const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60))
       const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000)
 
@@ -8346,12 +8352,11 @@ const Promotion = () => {
 
       if (timeDifference === 0) {
         clearInterval(timerInterval)
-        // You can add code here to handle what happens when the target date is reached.
       }
     }, 1000)
 
     return () => {
-      clearInterval(timerInterval) // Cleanup the interval when the component unmounts.
+      clearInterval(timerInterval)
     }
   }, [])
 
@@ -8360,9 +8365,10 @@ const Promotion = () => {
       <div className={classes.textBox}>
         <h3 className={classes.title}>Deals of the Month</h3>
         <p>
-          Get ready for a shopping experience like never before with our Deals of the Month! Every
-          purchase comes with exclusive perks and offers, making this month a celebration of savvy
-          choices and amazing deals. Don't miss out! ðŸŽðŸ›’
+          Get ready for a shopping experience like never before with our Deals of
+          the Month! Every purchase comes with exclusive perks and offers, making
+          this month a celebration of savvy choices and amazing deals. Don't miss
+          out! ðŸŽðŸ›’
         </p>
 
         <ul className={classes.stats}>
@@ -11386,33 +11392,41 @@ module.exports = {
 type Query {
   Page(id: String!, draft: Boolean): Page
   Pages(draft: Boolean, where: Page_where, limit: Int, page: Int, sort: String): Pages
+  countPages(draft: Boolean, where: Page_where): countPages
   docAccessPage(id: String!): pagesDocAccess
   versionPage(id: String): PageVersion
   versionsPages(where: versionsPage_where, limit: Int, page: Int, sort: String): versionsPages
   Product(id: String!, draft: Boolean): Product
   Products(draft: Boolean, where: Product_where, limit: Int, page: Int, sort: String): Products
+  countProducts(draft: Boolean, where: Product_where): countProducts
   docAccessProduct(id: String!): productsDocAccess
   versionProduct(id: String): ProductVersion
   versionsProducts(where: versionsProduct_where, limit: Int, page: Int, sort: String): versionsProducts
-  Order(id: String!, draft: Boolean): Order
-  Orders(draft: Boolean, where: Order_where, limit: Int, page: Int, sort: String): Orders
+  Order(id: String!): Order
+  Orders(where: Order_where, limit: Int, page: Int, sort: String): Orders
+  countOrders(where: Order_where): countOrders
   docAccessOrder(id: String!): ordersDocAccess
-  Media(id: String!, draft: Boolean): Media
-  allMedia(draft: Boolean, where: Media_where, limit: Int, page: Int, sort: String): allMedia
+  Media(id: String!): Media
+  allMedia(where: Media_where, limit: Int, page: Int, sort: String): allMedia
+  countallMedia(where: Media_where): countallMedia
   docAccessMedia(id: String!): mediaDocAccess
-  Category(id: String!, draft: Boolean): Category
-  Categories(draft: Boolean, where: Category_where, limit: Int, page: Int, sort: String): Categories
+  Category(id: String!): Category
+  Categories(where: Category_where, limit: Int, page: Int, sort: String): Categories
+  countCategories(where: Category_where): countCategories
   docAccessCategory(id: String!): categoriesDocAccess
-  User(id: String!, draft: Boolean): User
-  Users(draft: Boolean, where: User_where, limit: Int, page: Int, sort: String): Users
+  User(id: String!): User
+  Users(where: User_where, limit: Int, page: Int, sort: String): Users
+  countUsers(where: User_where): countUsers
   docAccessUser(id: String!): usersDocAccess
   meUser: usersMe
   initializedUser: Boolean
-  Redirect(id: String!, draft: Boolean): Redirect
-  Redirects(draft: Boolean, where: Redirect_where, limit: Int, page: Int, sort: String): Redirects
+  Redirect(id: String!): Redirect
+  Redirects(where: Redirect_where, limit: Int, page: Int, sort: String): Redirects
+  countRedirects(where: Redirect_where): countRedirects
   docAccessRedirect(id: String!): redirectsDocAccess
-  PayloadPreference(id: String!, draft: Boolean): PayloadPreference
-  PayloadPreferences(draft: Boolean, where: PayloadPreference_where, limit: Int, page: Int, sort: String): PayloadPreferences
+  PayloadPreference(id: String!): PayloadPreference
+  PayloadPreferences(where: PayloadPreference_where, limit: Int, page: Int, sort: String): PayloadPreferences
+  countPayloadPreferences(where: PayloadPreference_where): countPayloadPreferences
   docAccessPayloadPreference(id: String!): payload_preferencesDocAccess
   Settings(draft: Boolean): Settings
   docAccessSettings: settingsDocAccess
@@ -11469,7 +11483,7 @@ type Page_Hero_Links {
 type Page_Hero_Links_Link {
   type: Page_Hero_Links_Link_type
   newTab: Boolean
-  reference: Page_Hero_Links_Link_Reference_Relationship
+  reference(draft: Boolean): Page_Hero_Links_Link_Reference_Relationship
   url: String
   label: String
   icon(where: Page_Hero_Links_Link_Icon_where): Media
@@ -11504,6 +11518,8 @@ type Media {
   filesize: Float
   width: Float
   height: Float
+  focalX: Float
+  focalY: Float
 }
 
 input Page_Hero_Links_Link_Icon_where {
@@ -11517,6 +11533,8 @@ input Page_Hero_Links_Link_Icon_where {
   filesize: Page_Hero_Links_Link_Icon_filesize_operator
   width: Page_Hero_Links_Link_Icon_width_operator
   height: Page_Hero_Links_Link_Icon_height_operator
+  focalX: Page_Hero_Links_Link_Icon_focalX_operator
+  focalY: Page_Hero_Links_Link_Icon_focalY_operator
   id: Page_Hero_Links_Link_Icon_id_operator
   AND: [Page_Hero_Links_Link_Icon_where_and]
   OR: [Page_Hero_Links_Link_Icon_where_or]
@@ -11625,6 +11643,26 @@ input Page_Hero_Links_Link_Icon_height_operator {
   exists: Boolean
 }
 
+input Page_Hero_Links_Link_Icon_focalX_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
+input Page_Hero_Links_Link_Icon_focalY_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
 input Page_Hero_Links_Link_Icon_id_operator {
   equals: String
   not_equals: String
@@ -11647,7 +11685,11 @@ input Page_Hero_Links_Link_Icon_where_and {
   filesize: Page_Hero_Links_Link_Icon_filesize_operator
   width: Page_Hero_Links_Link_Icon_width_operator
   height: Page_Hero_Links_Link_Icon_height_operator
+  focalX: Page_Hero_Links_Link_Icon_focalX_operator
+  focalY: Page_Hero_Links_Link_Icon_focalY_operator
   id: Page_Hero_Links_Link_Icon_id_operator
+  AND: [Page_Hero_Links_Link_Icon_where_and]
+  OR: [Page_Hero_Links_Link_Icon_where_or]
 }
 
 input Page_Hero_Links_Link_Icon_where_or {
@@ -11661,7 +11703,11 @@ input Page_Hero_Links_Link_Icon_where_or {
   filesize: Page_Hero_Links_Link_Icon_filesize_operator
   width: Page_Hero_Links_Link_Icon_width_operator
   height: Page_Hero_Links_Link_Icon_height_operator
+  focalX: Page_Hero_Links_Link_Icon_focalX_operator
+  focalY: Page_Hero_Links_Link_Icon_focalY_operator
   id: Page_Hero_Links_Link_Icon_id_operator
+  AND: [Page_Hero_Links_Link_Icon_where_and]
+  OR: [Page_Hero_Links_Link_Icon_where_or]
 }
 
 enum Page_Hero_Links_Link_appearance {
@@ -11681,6 +11727,8 @@ input Page_Hero_Media_where {
   filesize: Page_Hero_Media_filesize_operator
   width: Page_Hero_Media_width_operator
   height: Page_Hero_Media_height_operator
+  focalX: Page_Hero_Media_focalX_operator
+  focalY: Page_Hero_Media_focalY_operator
   id: Page_Hero_Media_id_operator
   AND: [Page_Hero_Media_where_and]
   OR: [Page_Hero_Media_where_or]
@@ -11789,6 +11837,26 @@ input Page_Hero_Media_height_operator {
   exists: Boolean
 }
 
+input Page_Hero_Media_focalX_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
+input Page_Hero_Media_focalY_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
 input Page_Hero_Media_id_operator {
   equals: String
   not_equals: String
@@ -11811,7 +11879,11 @@ input Page_Hero_Media_where_and {
   filesize: Page_Hero_Media_filesize_operator
   width: Page_Hero_Media_width_operator
   height: Page_Hero_Media_height_operator
+  focalX: Page_Hero_Media_focalX_operator
+  focalY: Page_Hero_Media_focalY_operator
   id: Page_Hero_Media_id_operator
+  AND: [Page_Hero_Media_where_and]
+  OR: [Page_Hero_Media_where_or]
 }
 
 input Page_Hero_Media_where_or {
@@ -11825,7 +11897,11 @@ input Page_Hero_Media_where_or {
   filesize: Page_Hero_Media_filesize_operator
   width: Page_Hero_Media_width_operator
   height: Page_Hero_Media_height_operator
+  focalX: Page_Hero_Media_focalX_operator
+  focalY: Page_Hero_Media_focalY_operator
   id: Page_Hero_Media_id_operator
+  AND: [Page_Hero_Media_where_and]
+  OR: [Page_Hero_Media_where_or]
 }
 
 union Page_Layout = Cta | Content | MediaBlock | Archive
@@ -11847,7 +11923,7 @@ type Cta_Links {
 type Cta_Links_Link {
   type: Cta_Links_Link_type
   newTab: Boolean
-  reference: Cta_Links_Link_Reference_Relationship
+  reference(draft: Boolean): Cta_Links_Link_Reference_Relationship
   url: String
   label: String
   icon(where: Cta_Links_Link_Icon_where): Media
@@ -11881,6 +11957,8 @@ input Cta_Links_Link_Icon_where {
   filesize: Cta_Links_Link_Icon_filesize_operator
   width: Cta_Links_Link_Icon_width_operator
   height: Cta_Links_Link_Icon_height_operator
+  focalX: Cta_Links_Link_Icon_focalX_operator
+  focalY: Cta_Links_Link_Icon_focalY_operator
   id: Cta_Links_Link_Icon_id_operator
   AND: [Cta_Links_Link_Icon_where_and]
   OR: [Cta_Links_Link_Icon_where_or]
@@ -11989,6 +12067,26 @@ input Cta_Links_Link_Icon_height_operator {
   exists: Boolean
 }
 
+input Cta_Links_Link_Icon_focalX_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
+input Cta_Links_Link_Icon_focalY_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
 input Cta_Links_Link_Icon_id_operator {
   equals: String
   not_equals: String
@@ -12011,7 +12109,11 @@ input Cta_Links_Link_Icon_where_and {
   filesize: Cta_Links_Link_Icon_filesize_operator
   width: Cta_Links_Link_Icon_width_operator
   height: Cta_Links_Link_Icon_height_operator
+  focalX: Cta_Links_Link_Icon_focalX_operator
+  focalY: Cta_Links_Link_Icon_focalY_operator
   id: Cta_Links_Link_Icon_id_operator
+  AND: [Cta_Links_Link_Icon_where_and]
+  OR: [Cta_Links_Link_Icon_where_or]
 }
 
 input Cta_Links_Link_Icon_where_or {
@@ -12025,7 +12127,11 @@ input Cta_Links_Link_Icon_where_or {
   filesize: Cta_Links_Link_Icon_filesize_operator
   width: Cta_Links_Link_Icon_width_operator
   height: Cta_Links_Link_Icon_height_operator
+  focalX: Cta_Links_Link_Icon_focalX_operator
+  focalY: Cta_Links_Link_Icon_focalY_operator
   id: Cta_Links_Link_Icon_id_operator
+  AND: [Cta_Links_Link_Icon_where_and]
+  OR: [Cta_Links_Link_Icon_where_or]
 }
 
 enum Cta_Links_Link_appearance {
@@ -12059,7 +12165,7 @@ enum Content_Columns_size {
 type Content_Columns_Link {
   type: Content_Columns_Link_type
   newTab: Boolean
-  reference: Content_Columns_Link_Reference_Relationship
+  reference(draft: Boolean): Content_Columns_Link_Reference_Relationship
   url: String
   label: String
   icon(where: Content_Columns_Link_Icon_where): Media
@@ -12093,6 +12199,8 @@ input Content_Columns_Link_Icon_where {
   filesize: Content_Columns_Link_Icon_filesize_operator
   width: Content_Columns_Link_Icon_width_operator
   height: Content_Columns_Link_Icon_height_operator
+  focalX: Content_Columns_Link_Icon_focalX_operator
+  focalY: Content_Columns_Link_Icon_focalY_operator
   id: Content_Columns_Link_Icon_id_operator
   AND: [Content_Columns_Link_Icon_where_and]
   OR: [Content_Columns_Link_Icon_where_or]
@@ -12201,6 +12309,26 @@ input Content_Columns_Link_Icon_height_operator {
   exists: Boolean
 }
 
+input Content_Columns_Link_Icon_focalX_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
+input Content_Columns_Link_Icon_focalY_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
 input Content_Columns_Link_Icon_id_operator {
   equals: String
   not_equals: String
@@ -12223,7 +12351,11 @@ input Content_Columns_Link_Icon_where_and {
   filesize: Content_Columns_Link_Icon_filesize_operator
   width: Content_Columns_Link_Icon_width_operator
   height: Content_Columns_Link_Icon_height_operator
+  focalX: Content_Columns_Link_Icon_focalX_operator
+  focalY: Content_Columns_Link_Icon_focalY_operator
   id: Content_Columns_Link_Icon_id_operator
+  AND: [Content_Columns_Link_Icon_where_and]
+  OR: [Content_Columns_Link_Icon_where_or]
 }
 
 input Content_Columns_Link_Icon_where_or {
@@ -12237,7 +12369,11 @@ input Content_Columns_Link_Icon_where_or {
   filesize: Content_Columns_Link_Icon_filesize_operator
   width: Content_Columns_Link_Icon_width_operator
   height: Content_Columns_Link_Icon_height_operator
+  focalX: Content_Columns_Link_Icon_focalX_operator
+  focalY: Content_Columns_Link_Icon_focalY_operator
   id: Content_Columns_Link_Icon_id_operator
+  AND: [Content_Columns_Link_Icon_where_and]
+  OR: [Content_Columns_Link_Icon_where_or]
 }
 
 enum Content_Columns_Link_appearance {
@@ -12271,6 +12407,8 @@ input MediaBlock_Media_where {
   filesize: MediaBlock_Media_filesize_operator
   width: MediaBlock_Media_width_operator
   height: MediaBlock_Media_height_operator
+  focalX: MediaBlock_Media_focalX_operator
+  focalY: MediaBlock_Media_focalY_operator
   id: MediaBlock_Media_id_operator
   AND: [MediaBlock_Media_where_and]
   OR: [MediaBlock_Media_where_or]
@@ -12379,6 +12517,26 @@ input MediaBlock_Media_height_operator {
   exists: Boolean
 }
 
+input MediaBlock_Media_focalX_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
+input MediaBlock_Media_focalY_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
 input MediaBlock_Media_id_operator {
   equals: String
   not_equals: String
@@ -12401,7 +12559,11 @@ input MediaBlock_Media_where_and {
   filesize: MediaBlock_Media_filesize_operator
   width: MediaBlock_Media_width_operator
   height: MediaBlock_Media_height_operator
+  focalX: MediaBlock_Media_focalX_operator
+  focalY: MediaBlock_Media_focalY_operator
   id: MediaBlock_Media_id_operator
+  AND: [MediaBlock_Media_where_and]
+  OR: [MediaBlock_Media_where_or]
 }
 
 input MediaBlock_Media_where_or {
@@ -12415,7 +12577,11 @@ input MediaBlock_Media_where_or {
   filesize: MediaBlock_Media_filesize_operator
   width: MediaBlock_Media_width_operator
   height: MediaBlock_Media_height_operator
+  focalX: MediaBlock_Media_focalX_operator
+  focalY: MediaBlock_Media_focalY_operator
   id: MediaBlock_Media_id_operator
+  AND: [MediaBlock_Media_where_and]
+  OR: [MediaBlock_Media_where_or]
 }
 
 type Archive {
@@ -12424,8 +12590,8 @@ type Archive {
   relationTo: Archive_relationTo
   categories: [Category!]
   limit: Float
-  selectedDocs: [Archive_SelectedDocs_Relationship!]
-  populatedDocs: [Archive_PopulatedDocs_Relationship!]
+  selectedDocs(draft: Boolean): [Archive_SelectedDocs_Relationship!]
+  populatedDocs(draft: Boolean): [Archive_PopulatedDocs_Relationship!]
   populatedDocsTotal: Float
   id: String
   blockName: String
@@ -12462,6 +12628,8 @@ input Category_Media_where {
   filesize: Category_Media_filesize_operator
   width: Category_Media_width_operator
   height: Category_Media_height_operator
+  focalX: Category_Media_focalX_operator
+  focalY: Category_Media_focalY_operator
   id: Category_Media_id_operator
   AND: [Category_Media_where_and]
   OR: [Category_Media_where_or]
@@ -12570,6 +12738,26 @@ input Category_Media_height_operator {
   exists: Boolean
 }
 
+input Category_Media_focalX_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
+input Category_Media_focalY_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
 input Category_Media_id_operator {
   equals: String
   not_equals: String
@@ -12592,7 +12780,11 @@ input Category_Media_where_and {
   filesize: Category_Media_filesize_operator
   width: Category_Media_width_operator
   height: Category_Media_height_operator
+  focalX: Category_Media_focalX_operator
+  focalY: Category_Media_focalY_operator
   id: Category_Media_id_operator
+  AND: [Category_Media_where_and]
+  OR: [Category_Media_where_or]
 }
 
 input Category_Media_where_or {
@@ -12606,7 +12798,11 @@ input Category_Media_where_or {
   filesize: Category_Media_filesize_operator
   width: Category_Media_width_operator
   height: Category_Media_height_operator
+  focalX: Category_Media_focalX_operator
+  focalY: Category_Media_focalY_operator
   id: Category_Media_id_operator
+  AND: [Category_Media_where_and]
+  OR: [Category_Media_where_or]
 }
 
 type Category_Breadcrumbs {
@@ -12637,7 +12833,7 @@ type Product {
   enablePaywall: Boolean
   paywall: [Product_Paywall!]
   categories: [Category!]
-  relatedProducts: [Product!]
+  relatedProducts(draft: Boolean): [Product!]
   slug: String
   skipSync: Boolean
   meta: Product_Meta
@@ -12667,6 +12863,8 @@ input Product_Meta_Image_where {
   filesize: Product_Meta_Image_filesize_operator
   width: Product_Meta_Image_width_operator
   height: Product_Meta_Image_height_operator
+  focalX: Product_Meta_Image_focalX_operator
+  focalY: Product_Meta_Image_focalY_operator
   id: Product_Meta_Image_id_operator
   AND: [Product_Meta_Image_where_and]
   OR: [Product_Meta_Image_where_or]
@@ -12775,6 +12973,26 @@ input Product_Meta_Image_height_operator {
   exists: Boolean
 }
 
+input Product_Meta_Image_focalX_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
+input Product_Meta_Image_focalY_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
 input Product_Meta_Image_id_operator {
   equals: String
   not_equals: String
@@ -12797,7 +13015,11 @@ input Product_Meta_Image_where_and {
   filesize: Product_Meta_Image_filesize_operator
   width: Product_Meta_Image_width_operator
   height: Product_Meta_Image_height_operator
+  focalX: Product_Meta_Image_focalX_operator
+  focalY: Product_Meta_Image_focalY_operator
   id: Product_Meta_Image_id_operator
+  AND: [Product_Meta_Image_where_and]
+  OR: [Product_Meta_Image_where_or]
 }
 
 input Product_Meta_Image_where_or {
@@ -12811,7 +13033,11 @@ input Product_Meta_Image_where_or {
   filesize: Product_Meta_Image_filesize_operator
   width: Product_Meta_Image_width_operator
   height: Product_Meta_Image_height_operator
+  focalX: Product_Meta_Image_focalX_operator
+  focalY: Product_Meta_Image_focalY_operator
   id: Product_Meta_Image_id_operator
+  AND: [Product_Meta_Image_where_and]
+  OR: [Product_Meta_Image_where_or]
 }
 
 enum Product__status {
@@ -12847,6 +13073,8 @@ input Page_Meta_Image_where {
   filesize: Page_Meta_Image_filesize_operator
   width: Page_Meta_Image_width_operator
   height: Page_Meta_Image_height_operator
+  focalX: Page_Meta_Image_focalX_operator
+  focalY: Page_Meta_Image_focalY_operator
   id: Page_Meta_Image_id_operator
   AND: [Page_Meta_Image_where_and]
   OR: [Page_Meta_Image_where_or]
@@ -12955,6 +13183,26 @@ input Page_Meta_Image_height_operator {
   exists: Boolean
 }
 
+input Page_Meta_Image_focalX_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
+input Page_Meta_Image_focalY_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
 input Page_Meta_Image_id_operator {
   equals: String
   not_equals: String
@@ -12977,7 +13225,11 @@ input Page_Meta_Image_where_and {
   filesize: Page_Meta_Image_filesize_operator
   width: Page_Meta_Image_width_operator
   height: Page_Meta_Image_height_operator
+  focalX: Page_Meta_Image_focalX_operator
+  focalY: Page_Meta_Image_focalY_operator
   id: Page_Meta_Image_id_operator
+  AND: [Page_Meta_Image_where_and]
+  OR: [Page_Meta_Image_where_or]
 }
 
 input Page_Meta_Image_where_or {
@@ -12991,7 +13243,11 @@ input Page_Meta_Image_where_or {
   filesize: Page_Meta_Image_filesize_operator
   width: Page_Meta_Image_width_operator
   height: Page_Meta_Image_height_operator
+  focalX: Page_Meta_Image_focalX_operator
+  focalY: Page_Meta_Image_focalY_operator
   id: Page_Meta_Image_id_operator
+  AND: [Page_Meta_Image_where_and]
+  OR: [Page_Meta_Image_where_or]
 }
 
 enum Page__status {
@@ -13273,6 +13529,8 @@ input Page_where_and {
   createdAt: Page_createdAt_operator
   _status: Page__status_operator
   id: Page_id_operator
+  AND: [Page_where_and]
+  OR: [Page_where_or]
 }
 
 input Page_where_or {
@@ -13297,6 +13555,12 @@ input Page_where_or {
   createdAt: Page_createdAt_operator
   _status: Page__status_operator
   id: Page_id_operator
+  AND: [Page_where_and]
+  OR: [Page_where_or]
+}
+
+type countPages {
+  totalDocs: Int
 }
 
 type pagesDocAccess {
@@ -13784,34 +14048,9 @@ type PagesDocAccessFields_meta_Delete {
 }
 
 type PagesDocAccessFields_meta_Fields {
-  overview: PagesDocAccessFields_meta_overview
   title: PagesDocAccessFields_meta_title
   description: PagesDocAccessFields_meta_description
   image: PagesDocAccessFields_meta_image
-  preview: PagesDocAccessFields_meta_preview
-}
-
-type PagesDocAccessFields_meta_overview {
-  create: PagesDocAccessFields_meta_overview_Create
-  read: PagesDocAccessFields_meta_overview_Read
-  update: PagesDocAccessFields_meta_overview_Update
-  delete: PagesDocAccessFields_meta_overview_Delete
-}
-
-type PagesDocAccessFields_meta_overview_Create {
-  permission: Boolean!
-}
-
-type PagesDocAccessFields_meta_overview_Read {
-  permission: Boolean!
-}
-
-type PagesDocAccessFields_meta_overview_Update {
-  permission: Boolean!
-}
-
-type PagesDocAccessFields_meta_overview_Delete {
-  permission: Boolean!
 }
 
 type PagesDocAccessFields_meta_title {
@@ -13880,29 +14119,6 @@ type PagesDocAccessFields_meta_image_Update {
 }
 
 type PagesDocAccessFields_meta_image_Delete {
-  permission: Boolean!
-}
-
-type PagesDocAccessFields_meta_preview {
-  create: PagesDocAccessFields_meta_preview_Create
-  read: PagesDocAccessFields_meta_preview_Read
-  update: PagesDocAccessFields_meta_preview_Update
-  delete: PagesDocAccessFields_meta_preview_Delete
-}
-
-type PagesDocAccessFields_meta_preview_Create {
-  permission: Boolean!
-}
-
-type PagesDocAccessFields_meta_preview_Read {
-  permission: Boolean!
-}
-
-type PagesDocAccessFields_meta_preview_Update {
-  permission: Boolean!
-}
-
-type PagesDocAccessFields_meta_preview_Delete {
   permission: Boolean!
 }
 
@@ -14006,7 +14222,7 @@ type PagesReadVersionsDocAccess {
 }
 
 type PageVersion {
-  parent: Page
+  parent(draft: Boolean): Page
   version: PageVersion_Version
   createdAt: DateTime
   updatedAt: DateTime
@@ -14049,7 +14265,7 @@ type PageVersion_Version_Hero_Links {
 type PageVersion_Version_Hero_Links_Link {
   type: PageVersion_Version_Hero_Links_Link_type
   newTab: Boolean
-  reference: PageVersion_Version_Hero_Links_Link_Reference_Relationship
+  reference(draft: Boolean): PageVersion_Version_Hero_Links_Link_Reference_Relationship
   url: String
   label: String
   icon(where: PageVersion_Version_Hero_Links_Link_Icon_where): Media
@@ -14083,6 +14299,8 @@ input PageVersion_Version_Hero_Links_Link_Icon_where {
   filesize: PageVersion_Version_Hero_Links_Link_Icon_filesize_operator
   width: PageVersion_Version_Hero_Links_Link_Icon_width_operator
   height: PageVersion_Version_Hero_Links_Link_Icon_height_operator
+  focalX: PageVersion_Version_Hero_Links_Link_Icon_focalX_operator
+  focalY: PageVersion_Version_Hero_Links_Link_Icon_focalY_operator
   id: PageVersion_Version_Hero_Links_Link_Icon_id_operator
   AND: [PageVersion_Version_Hero_Links_Link_Icon_where_and]
   OR: [PageVersion_Version_Hero_Links_Link_Icon_where_or]
@@ -14191,6 +14409,26 @@ input PageVersion_Version_Hero_Links_Link_Icon_height_operator {
   exists: Boolean
 }
 
+input PageVersion_Version_Hero_Links_Link_Icon_focalX_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
+input PageVersion_Version_Hero_Links_Link_Icon_focalY_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
 input PageVersion_Version_Hero_Links_Link_Icon_id_operator {
   equals: String
   not_equals: String
@@ -14213,7 +14451,11 @@ input PageVersion_Version_Hero_Links_Link_Icon_where_and {
   filesize: PageVersion_Version_Hero_Links_Link_Icon_filesize_operator
   width: PageVersion_Version_Hero_Links_Link_Icon_width_operator
   height: PageVersion_Version_Hero_Links_Link_Icon_height_operator
+  focalX: PageVersion_Version_Hero_Links_Link_Icon_focalX_operator
+  focalY: PageVersion_Version_Hero_Links_Link_Icon_focalY_operator
   id: PageVersion_Version_Hero_Links_Link_Icon_id_operator
+  AND: [PageVersion_Version_Hero_Links_Link_Icon_where_and]
+  OR: [PageVersion_Version_Hero_Links_Link_Icon_where_or]
 }
 
 input PageVersion_Version_Hero_Links_Link_Icon_where_or {
@@ -14227,7 +14469,11 @@ input PageVersion_Version_Hero_Links_Link_Icon_where_or {
   filesize: PageVersion_Version_Hero_Links_Link_Icon_filesize_operator
   width: PageVersion_Version_Hero_Links_Link_Icon_width_operator
   height: PageVersion_Version_Hero_Links_Link_Icon_height_operator
+  focalX: PageVersion_Version_Hero_Links_Link_Icon_focalX_operator
+  focalY: PageVersion_Version_Hero_Links_Link_Icon_focalY_operator
   id: PageVersion_Version_Hero_Links_Link_Icon_id_operator
+  AND: [PageVersion_Version_Hero_Links_Link_Icon_where_and]
+  OR: [PageVersion_Version_Hero_Links_Link_Icon_where_or]
 }
 
 enum PageVersion_Version_Hero_Links_Link_appearance {
@@ -14247,6 +14493,8 @@ input PageVersion_Version_Hero_Media_where {
   filesize: PageVersion_Version_Hero_Media_filesize_operator
   width: PageVersion_Version_Hero_Media_width_operator
   height: PageVersion_Version_Hero_Media_height_operator
+  focalX: PageVersion_Version_Hero_Media_focalX_operator
+  focalY: PageVersion_Version_Hero_Media_focalY_operator
   id: PageVersion_Version_Hero_Media_id_operator
   AND: [PageVersion_Version_Hero_Media_where_and]
   OR: [PageVersion_Version_Hero_Media_where_or]
@@ -14355,6 +14603,26 @@ input PageVersion_Version_Hero_Media_height_operator {
   exists: Boolean
 }
 
+input PageVersion_Version_Hero_Media_focalX_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
+input PageVersion_Version_Hero_Media_focalY_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
 input PageVersion_Version_Hero_Media_id_operator {
   equals: String
   not_equals: String
@@ -14377,7 +14645,11 @@ input PageVersion_Version_Hero_Media_where_and {
   filesize: PageVersion_Version_Hero_Media_filesize_operator
   width: PageVersion_Version_Hero_Media_width_operator
   height: PageVersion_Version_Hero_Media_height_operator
+  focalX: PageVersion_Version_Hero_Media_focalX_operator
+  focalY: PageVersion_Version_Hero_Media_focalY_operator
   id: PageVersion_Version_Hero_Media_id_operator
+  AND: [PageVersion_Version_Hero_Media_where_and]
+  OR: [PageVersion_Version_Hero_Media_where_or]
 }
 
 input PageVersion_Version_Hero_Media_where_or {
@@ -14391,7 +14663,11 @@ input PageVersion_Version_Hero_Media_where_or {
   filesize: PageVersion_Version_Hero_Media_filesize_operator
   width: PageVersion_Version_Hero_Media_width_operator
   height: PageVersion_Version_Hero_Media_height_operator
+  focalX: PageVersion_Version_Hero_Media_focalX_operator
+  focalY: PageVersion_Version_Hero_Media_focalY_operator
   id: PageVersion_Version_Hero_Media_id_operator
+  AND: [PageVersion_Version_Hero_Media_where_and]
+  OR: [PageVersion_Version_Hero_Media_where_or]
 }
 
 union PageVersion_Version_Layout = Cta | Content | MediaBlock | Archive
@@ -14413,6 +14689,8 @@ input PageVersion_Version_Meta_Image_where {
   filesize: PageVersion_Version_Meta_Image_filesize_operator
   width: PageVersion_Version_Meta_Image_width_operator
   height: PageVersion_Version_Meta_Image_height_operator
+  focalX: PageVersion_Version_Meta_Image_focalX_operator
+  focalY: PageVersion_Version_Meta_Image_focalY_operator
   id: PageVersion_Version_Meta_Image_id_operator
   AND: [PageVersion_Version_Meta_Image_where_and]
   OR: [PageVersion_Version_Meta_Image_where_or]
@@ -14521,6 +14799,26 @@ input PageVersion_Version_Meta_Image_height_operator {
   exists: Boolean
 }
 
+input PageVersion_Version_Meta_Image_focalX_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
+input PageVersion_Version_Meta_Image_focalY_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
 input PageVersion_Version_Meta_Image_id_operator {
   equals: String
   not_equals: String
@@ -14543,7 +14841,11 @@ input PageVersion_Version_Meta_Image_where_and {
   filesize: PageVersion_Version_Meta_Image_filesize_operator
   width: PageVersion_Version_Meta_Image_width_operator
   height: PageVersion_Version_Meta_Image_height_operator
+  focalX: PageVersion_Version_Meta_Image_focalX_operator
+  focalY: PageVersion_Version_Meta_Image_focalY_operator
   id: PageVersion_Version_Meta_Image_id_operator
+  AND: [PageVersion_Version_Meta_Image_where_and]
+  OR: [PageVersion_Version_Meta_Image_where_or]
 }
 
 input PageVersion_Version_Meta_Image_where_or {
@@ -14557,7 +14859,11 @@ input PageVersion_Version_Meta_Image_where_or {
   filesize: PageVersion_Version_Meta_Image_filesize_operator
   width: PageVersion_Version_Meta_Image_width_operator
   height: PageVersion_Version_Meta_Image_height_operator
+  focalX: PageVersion_Version_Meta_Image_focalX_operator
+  focalY: PageVersion_Version_Meta_Image_focalY_operator
   id: PageVersion_Version_Meta_Image_id_operator
+  AND: [PageVersion_Version_Meta_Image_where_and]
+  OR: [PageVersion_Version_Meta_Image_where_or]
 }
 
 enum PageVersion_Version__status {
@@ -14884,6 +15190,8 @@ input versionsPage_where_and {
   updatedAt: versionsPage_updatedAt_operator
   latest: versionsPage_latest_operator
   id: versionsPage_id_operator
+  AND: [versionsPage_where_and]
+  OR: [versionsPage_where_or]
 }
 
 input versionsPage_where_or {
@@ -14912,6 +15220,8 @@ input versionsPage_where_or {
   updatedAt: versionsPage_updatedAt_operator
   latest: versionsPage_latest_operator
   id: versionsPage_id_operator
+  AND: [versionsPage_where_and]
+  OR: [versionsPage_where_or]
 }
 
 type Products {
@@ -15119,6 +15429,8 @@ input Product_where_and {
   createdAt: Product_createdAt_operator
   _status: Product__status_operator
   id: Product_id_operator
+  AND: [Product_where_and]
+  OR: [Product_where_or]
 }
 
 input Product_where_or {
@@ -15138,6 +15450,12 @@ input Product_where_or {
   createdAt: Product_createdAt_operator
   _status: Product__status_operator
   id: Product_id_operator
+  AND: [Product_where_and]
+  OR: [Product_where_or]
+}
+
+type countProducts {
+  totalDocs: Int
 }
 
 type productsDocAccess {
@@ -15445,34 +15763,9 @@ type ProductsDocAccessFields_meta_Delete {
 }
 
 type ProductsDocAccessFields_meta_Fields {
-  overview: ProductsDocAccessFields_meta_overview
   title: ProductsDocAccessFields_meta_title
   description: ProductsDocAccessFields_meta_description
   image: ProductsDocAccessFields_meta_image
-  preview: ProductsDocAccessFields_meta_preview
-}
-
-type ProductsDocAccessFields_meta_overview {
-  create: ProductsDocAccessFields_meta_overview_Create
-  read: ProductsDocAccessFields_meta_overview_Read
-  update: ProductsDocAccessFields_meta_overview_Update
-  delete: ProductsDocAccessFields_meta_overview_Delete
-}
-
-type ProductsDocAccessFields_meta_overview_Create {
-  permission: Boolean!
-}
-
-type ProductsDocAccessFields_meta_overview_Read {
-  permission: Boolean!
-}
-
-type ProductsDocAccessFields_meta_overview_Update {
-  permission: Boolean!
-}
-
-type ProductsDocAccessFields_meta_overview_Delete {
-  permission: Boolean!
 }
 
 type ProductsDocAccessFields_meta_title {
@@ -15541,29 +15834,6 @@ type ProductsDocAccessFields_meta_image_Update {
 }
 
 type ProductsDocAccessFields_meta_image_Delete {
-  permission: Boolean!
-}
-
-type ProductsDocAccessFields_meta_preview {
-  create: ProductsDocAccessFields_meta_preview_Create
-  read: ProductsDocAccessFields_meta_preview_Read
-  update: ProductsDocAccessFields_meta_preview_Update
-  delete: ProductsDocAccessFields_meta_preview_Delete
-}
-
-type ProductsDocAccessFields_meta_preview_Create {
-  permission: Boolean!
-}
-
-type ProductsDocAccessFields_meta_preview_Read {
-  permission: Boolean!
-}
-
-type ProductsDocAccessFields_meta_preview_Update {
-  permission: Boolean!
-}
-
-type ProductsDocAccessFields_meta_preview_Delete {
   permission: Boolean!
 }
 
@@ -15662,7 +15932,7 @@ type ProductsReadVersionsDocAccess {
 }
 
 type ProductVersion {
-  parent: Product
+  parent(draft: Boolean): Product
   version: ProductVersion_Version
   createdAt: DateTime
   updatedAt: DateTime
@@ -15679,7 +15949,7 @@ type ProductVersion_Version {
   enablePaywall: Boolean
   paywall: [ProductVersion_Version_Paywall!]
   categories: [Category!]
-  relatedProducts: [Product!]
+  relatedProducts(draft: Boolean): [Product!]
   slug: String
   skipSync: Boolean
   meta: ProductVersion_Version_Meta
@@ -15709,6 +15979,8 @@ input ProductVersion_Version_Meta_Image_where {
   filesize: ProductVersion_Version_Meta_Image_filesize_operator
   width: ProductVersion_Version_Meta_Image_width_operator
   height: ProductVersion_Version_Meta_Image_height_operator
+  focalX: ProductVersion_Version_Meta_Image_focalX_operator
+  focalY: ProductVersion_Version_Meta_Image_focalY_operator
   id: ProductVersion_Version_Meta_Image_id_operator
   AND: [ProductVersion_Version_Meta_Image_where_and]
   OR: [ProductVersion_Version_Meta_Image_where_or]
@@ -15817,6 +16089,26 @@ input ProductVersion_Version_Meta_Image_height_operator {
   exists: Boolean
 }
 
+input ProductVersion_Version_Meta_Image_focalX_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
+input ProductVersion_Version_Meta_Image_focalY_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
 input ProductVersion_Version_Meta_Image_id_operator {
   equals: String
   not_equals: String
@@ -15839,7 +16131,11 @@ input ProductVersion_Version_Meta_Image_where_and {
   filesize: ProductVersion_Version_Meta_Image_filesize_operator
   width: ProductVersion_Version_Meta_Image_width_operator
   height: ProductVersion_Version_Meta_Image_height_operator
+  focalX: ProductVersion_Version_Meta_Image_focalX_operator
+  focalY: ProductVersion_Version_Meta_Image_focalY_operator
   id: ProductVersion_Version_Meta_Image_id_operator
+  AND: [ProductVersion_Version_Meta_Image_where_and]
+  OR: [ProductVersion_Version_Meta_Image_where_or]
 }
 
 input ProductVersion_Version_Meta_Image_where_or {
@@ -15853,7 +16149,11 @@ input ProductVersion_Version_Meta_Image_where_or {
   filesize: ProductVersion_Version_Meta_Image_filesize_operator
   width: ProductVersion_Version_Meta_Image_width_operator
   height: ProductVersion_Version_Meta_Image_height_operator
+  focalX: ProductVersion_Version_Meta_Image_focalX_operator
+  focalY: ProductVersion_Version_Meta_Image_focalY_operator
   id: ProductVersion_Version_Meta_Image_id_operator
+  AND: [ProductVersion_Version_Meta_Image_where_and]
+  OR: [ProductVersion_Version_Meta_Image_where_or]
 }
 
 enum ProductVersion_Version__status {
@@ -16111,6 +16411,8 @@ input versionsProduct_where_and {
   updatedAt: versionsProduct_updatedAt_operator
   latest: versionsProduct_latest_operator
   id: versionsProduct_id_operator
+  AND: [versionsProduct_where_and]
+  OR: [versionsProduct_where_or]
 }
 
 input versionsProduct_where_or {
@@ -16134,6 +16436,8 @@ input versionsProduct_where_or {
   updatedAt: versionsProduct_updatedAt_operator
   latest: versionsProduct_latest_operator
   id: versionsProduct_id_operator
+  AND: [versionsProduct_where_and]
+  OR: [versionsProduct_where_or]
 }
 
 type Order {
@@ -16150,7 +16454,7 @@ type User {
   id: String
   name: String
   roles: [User_roles!]
-  purchases: [Product!]
+  purchases(draft: Boolean): [Product!]
   stripeCustomerID: String
   cart: User_Cart
   skipSync: Boolean
@@ -16176,7 +16480,7 @@ type User_Cart {
 }
 
 type CartItems {
-  product: Product
+  product(draft: Boolean): Product
   quantity: Float
   id: String
 }
@@ -16187,7 +16491,7 @@ A field whose value conforms to the standard internet email address format as sp
 scalar EmailAddress @specifiedBy(url: "https://html.spec.whatwg.org/multipage/input.html#valid-e-mail-address")
 
 type Order_Items {
-  product: Product
+  product(draft: Boolean): Product
   price: Float
   quantity: Float
   id: String
@@ -16334,6 +16638,8 @@ input Order_where_and {
   updatedAt: Order_updatedAt_operator
   createdAt: Order_createdAt_operator
   id: Order_id_operator
+  AND: [Order_where_and]
+  OR: [Order_where_or]
 }
 
 input Order_where_or {
@@ -16347,6 +16653,12 @@ input Order_where_or {
   updatedAt: Order_updatedAt_operator
   createdAt: Order_createdAt_operator
   id: Order_id_operator
+  AND: [Order_where_and]
+  OR: [Order_where_or]
+}
+
+type countOrders {
+  totalDocs: Int
 }
 
 type ordersDocAccess {
@@ -16649,6 +16961,8 @@ input Media_where {
   filesize: Media_filesize_operator
   width: Media_width_operator
   height: Media_height_operator
+  focalX: Media_focalX_operator
+  focalY: Media_focalY_operator
   id: Media_id_operator
   AND: [Media_where_and]
   OR: [Media_where_or]
@@ -16757,6 +17071,26 @@ input Media_height_operator {
   exists: Boolean
 }
 
+input Media_focalX_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
+input Media_focalY_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
 input Media_id_operator {
   equals: String
   not_equals: String
@@ -16779,7 +17113,11 @@ input Media_where_and {
   filesize: Media_filesize_operator
   width: Media_width_operator
   height: Media_height_operator
+  focalX: Media_focalX_operator
+  focalY: Media_focalY_operator
   id: Media_id_operator
+  AND: [Media_where_and]
+  OR: [Media_where_or]
 }
 
 input Media_where_or {
@@ -16793,7 +17131,15 @@ input Media_where_or {
   filesize: Media_filesize_operator
   width: Media_width_operator
   height: Media_height_operator
+  focalX: Media_focalX_operator
+  focalY: Media_focalY_operator
   id: Media_id_operator
+  AND: [Media_where_and]
+  OR: [Media_where_or]
+}
+
+type countallMedia {
+  totalDocs: Int
 }
 
 type mediaDocAccess {
@@ -16815,6 +17161,8 @@ type MediaDocAccessFields {
   filesize: MediaDocAccessFields_filesize
   width: MediaDocAccessFields_width
   height: MediaDocAccessFields_height
+  focalX: MediaDocAccessFields_focalX
+  focalY: MediaDocAccessFields_focalY
 }
 
 type MediaDocAccessFields_alt {
@@ -17047,6 +17395,52 @@ type MediaDocAccessFields_height_Delete {
   permission: Boolean!
 }
 
+type MediaDocAccessFields_focalX {
+  create: MediaDocAccessFields_focalX_Create
+  read: MediaDocAccessFields_focalX_Read
+  update: MediaDocAccessFields_focalX_Update
+  delete: MediaDocAccessFields_focalX_Delete
+}
+
+type MediaDocAccessFields_focalX_Create {
+  permission: Boolean!
+}
+
+type MediaDocAccessFields_focalX_Read {
+  permission: Boolean!
+}
+
+type MediaDocAccessFields_focalX_Update {
+  permission: Boolean!
+}
+
+type MediaDocAccessFields_focalX_Delete {
+  permission: Boolean!
+}
+
+type MediaDocAccessFields_focalY {
+  create: MediaDocAccessFields_focalY_Create
+  read: MediaDocAccessFields_focalY_Read
+  update: MediaDocAccessFields_focalY_Update
+  delete: MediaDocAccessFields_focalY_Delete
+}
+
+type MediaDocAccessFields_focalY_Create {
+  permission: Boolean!
+}
+
+type MediaDocAccessFields_focalY_Read {
+  permission: Boolean!
+}
+
+type MediaDocAccessFields_focalY_Update {
+  permission: Boolean!
+}
+
+type MediaDocAccessFields_focalY_Delete {
+  permission: Boolean!
+}
+
 type MediaCreateDocAccess {
   permission: Boolean!
   where: JSONObject
@@ -17207,6 +17601,8 @@ input Category_where_and {
   updatedAt: Category_updatedAt_operator
   createdAt: Category_createdAt_operator
   id: Category_id_operator
+  AND: [Category_where_and]
+  OR: [Category_where_or]
 }
 
 input Category_where_or {
@@ -17220,6 +17616,12 @@ input Category_where_or {
   updatedAt: Category_updatedAt_operator
   createdAt: Category_createdAt_operator
   id: Category_id_operator
+  AND: [Category_where_and]
+  OR: [Category_where_or]
+}
+
+type countCategories {
+  totalDocs: Int
 }
 
 type categoriesDocAccess {
@@ -17665,6 +18067,8 @@ input User_where_and {
   createdAt: User_createdAt_operator
   email: User_email_operator
   id: User_id_operator
+  AND: [User_where_and]
+  OR: [User_where_or]
 }
 
 input User_where_or {
@@ -17680,6 +18084,12 @@ input User_where_or {
   createdAt: User_createdAt_operator
   email: User_email_operator
   id: User_id_operator
+  AND: [User_where_and]
+  OR: [User_where_or]
+}
+
+type countUsers {
+  totalDocs: Int
 }
 
 type usersDocAccess {
@@ -18066,6 +18476,7 @@ type UsersUnlockDocAccess {
 type usersMe {
   collection: String
   exp: Int
+  strategy: String
   token: String
   user: User
 }
@@ -18080,7 +18491,7 @@ type Redirect {
 
 type Redirect_To {
   type: Redirect_To_type
-  reference: Redirect_To_Reference_Relationship
+  reference(draft: Boolean): Redirect_To_Reference_Relationship
   url: String
 }
 
@@ -18211,6 +18622,8 @@ input Redirect_where_and {
   updatedAt: Redirect_updatedAt_operator
   createdAt: Redirect_createdAt_operator
   id: Redirect_id_operator
+  AND: [Redirect_where_and]
+  OR: [Redirect_where_or]
 }
 
 input Redirect_where_or {
@@ -18221,6 +18634,12 @@ input Redirect_where_or {
   updatedAt: Redirect_updatedAt_operator
   createdAt: Redirect_createdAt_operator
   id: Redirect_id_operator
+  AND: [Redirect_where_and]
+  OR: [Redirect_where_or]
+}
+
+type countRedirects {
+  totalDocs: Int
 }
 
 type redirectsDocAccess {
@@ -18541,6 +18960,8 @@ input PayloadPreference_where_and {
   updatedAt: PayloadPreference_updatedAt_operator
   createdAt: PayloadPreference_createdAt_operator
   id: PayloadPreference_id_operator
+  AND: [PayloadPreference_where_and]
+  OR: [PayloadPreference_where_or]
 }
 
 input PayloadPreference_where_or {
@@ -18550,6 +18971,12 @@ input PayloadPreference_where_or {
   updatedAt: PayloadPreference_updatedAt_operator
   createdAt: PayloadPreference_createdAt_operator
   id: PayloadPreference_id_operator
+  AND: [PayloadPreference_where_and]
+  OR: [PayloadPreference_where_or]
+}
+
+type countPayloadPreferences {
+  totalDocs: Int
 }
 
 type payload_preferencesDocAccess {
@@ -18704,7 +19131,7 @@ type PayloadPreferencesDeleteDocAccess {
 }
 
 type Settings {
-  productsPage: Page
+  productsPage(draft: Boolean): Page
   updatedAt: DateTime
   createdAt: DateTime
 }
@@ -18814,7 +19241,7 @@ type Header_NavItems {
 type Header_NavItems_Link {
   type: Header_NavItems_Link_type
   newTab: Boolean
-  reference: Header_NavItems_Link_Reference_Relationship
+  reference(draft: Boolean): Header_NavItems_Link_Reference_Relationship
   url: String
   label: String
   icon(where: Header_NavItems_Link_Icon_where): Media
@@ -18847,6 +19274,8 @@ input Header_NavItems_Link_Icon_where {
   filesize: Header_NavItems_Link_Icon_filesize_operator
   width: Header_NavItems_Link_Icon_width_operator
   height: Header_NavItems_Link_Icon_height_operator
+  focalX: Header_NavItems_Link_Icon_focalX_operator
+  focalY: Header_NavItems_Link_Icon_focalY_operator
   id: Header_NavItems_Link_Icon_id_operator
   AND: [Header_NavItems_Link_Icon_where_and]
   OR: [Header_NavItems_Link_Icon_where_or]
@@ -18955,6 +19384,26 @@ input Header_NavItems_Link_Icon_height_operator {
   exists: Boolean
 }
 
+input Header_NavItems_Link_Icon_focalX_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
+input Header_NavItems_Link_Icon_focalY_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
 input Header_NavItems_Link_Icon_id_operator {
   equals: String
   not_equals: String
@@ -18977,7 +19426,11 @@ input Header_NavItems_Link_Icon_where_and {
   filesize: Header_NavItems_Link_Icon_filesize_operator
   width: Header_NavItems_Link_Icon_width_operator
   height: Header_NavItems_Link_Icon_height_operator
+  focalX: Header_NavItems_Link_Icon_focalX_operator
+  focalY: Header_NavItems_Link_Icon_focalY_operator
   id: Header_NavItems_Link_Icon_id_operator
+  AND: [Header_NavItems_Link_Icon_where_and]
+  OR: [Header_NavItems_Link_Icon_where_or]
 }
 
 input Header_NavItems_Link_Icon_where_or {
@@ -18991,7 +19444,11 @@ input Header_NavItems_Link_Icon_where_or {
   filesize: Header_NavItems_Link_Icon_filesize_operator
   width: Header_NavItems_Link_Icon_width_operator
   height: Header_NavItems_Link_Icon_height_operator
+  focalX: Header_NavItems_Link_Icon_focalX_operator
+  focalY: Header_NavItems_Link_Icon_focalY_operator
   id: Header_NavItems_Link_Icon_id_operator
+  AND: [Header_NavItems_Link_Icon_where_and]
+  OR: [Header_NavItems_Link_Icon_where_or]
 }
 
 type headerDocAccess {
@@ -19286,7 +19743,7 @@ type HeaderUpdateDocAccess {
 }
 
 type Footer {
-  copyright: String!
+  copyright: String
   navItems: [Footer_NavItems!]
   updatedAt: DateTime
   createdAt: DateTime
@@ -19300,7 +19757,7 @@ type Footer_NavItems {
 type Footer_NavItems_Link {
   type: Footer_NavItems_Link_type
   newTab: Boolean
-  reference: Footer_NavItems_Link_Reference_Relationship
+  reference(draft: Boolean): Footer_NavItems_Link_Reference_Relationship
   url: String
   label: String
   icon(where: Footer_NavItems_Link_Icon_where): Media
@@ -19333,6 +19790,8 @@ input Footer_NavItems_Link_Icon_where {
   filesize: Footer_NavItems_Link_Icon_filesize_operator
   width: Footer_NavItems_Link_Icon_width_operator
   height: Footer_NavItems_Link_Icon_height_operator
+  focalX: Footer_NavItems_Link_Icon_focalX_operator
+  focalY: Footer_NavItems_Link_Icon_focalY_operator
   id: Footer_NavItems_Link_Icon_id_operator
   AND: [Footer_NavItems_Link_Icon_where_and]
   OR: [Footer_NavItems_Link_Icon_where_or]
@@ -19441,6 +19900,26 @@ input Footer_NavItems_Link_Icon_height_operator {
   exists: Boolean
 }
 
+input Footer_NavItems_Link_Icon_focalX_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
+input Footer_NavItems_Link_Icon_focalY_operator {
+  equals: Float
+  not_equals: Float
+  greater_than_equal: Float
+  greater_than: Float
+  less_than_equal: Float
+  less_than: Float
+  exists: Boolean
+}
+
 input Footer_NavItems_Link_Icon_id_operator {
   equals: String
   not_equals: String
@@ -19463,7 +19942,11 @@ input Footer_NavItems_Link_Icon_where_and {
   filesize: Footer_NavItems_Link_Icon_filesize_operator
   width: Footer_NavItems_Link_Icon_width_operator
   height: Footer_NavItems_Link_Icon_height_operator
+  focalX: Footer_NavItems_Link_Icon_focalX_operator
+  focalY: Footer_NavItems_Link_Icon_focalY_operator
   id: Footer_NavItems_Link_Icon_id_operator
+  AND: [Footer_NavItems_Link_Icon_where_and]
+  OR: [Footer_NavItems_Link_Icon_where_or]
 }
 
 input Footer_NavItems_Link_Icon_where_or {
@@ -19477,7 +19960,11 @@ input Footer_NavItems_Link_Icon_where_or {
   filesize: Footer_NavItems_Link_Icon_filesize_operator
   width: Footer_NavItems_Link_Icon_width_operator
   height: Footer_NavItems_Link_Icon_height_operator
+  focalX: Footer_NavItems_Link_Icon_focalX_operator
+  focalY: Footer_NavItems_Link_Icon_focalY_operator
   id: Footer_NavItems_Link_Icon_id_operator
+  AND: [Footer_NavItems_Link_Icon_where_and]
+  OR: [Footer_NavItems_Link_Icon_where_or]
 }
 
 type footerDocAccess {
@@ -20295,34 +20782,9 @@ type PagesFields_meta_Delete {
 }
 
 type PagesFields_meta_Fields {
-  overview: PagesFields_meta_overview
   title: PagesFields_meta_title
   description: PagesFields_meta_description
   image: PagesFields_meta_image
-  preview: PagesFields_meta_preview
-}
-
-type PagesFields_meta_overview {
-  create: PagesFields_meta_overview_Create
-  read: PagesFields_meta_overview_Read
-  update: PagesFields_meta_overview_Update
-  delete: PagesFields_meta_overview_Delete
-}
-
-type PagesFields_meta_overview_Create {
-  permission: Boolean!
-}
-
-type PagesFields_meta_overview_Read {
-  permission: Boolean!
-}
-
-type PagesFields_meta_overview_Update {
-  permission: Boolean!
-}
-
-type PagesFields_meta_overview_Delete {
-  permission: Boolean!
 }
 
 type PagesFields_meta_title {
@@ -20391,29 +20853,6 @@ type PagesFields_meta_image_Update {
 }
 
 type PagesFields_meta_image_Delete {
-  permission: Boolean!
-}
-
-type PagesFields_meta_preview {
-  create: PagesFields_meta_preview_Create
-  read: PagesFields_meta_preview_Read
-  update: PagesFields_meta_preview_Update
-  delete: PagesFields_meta_preview_Delete
-}
-
-type PagesFields_meta_preview_Create {
-  permission: Boolean!
-}
-
-type PagesFields_meta_preview_Read {
-  permission: Boolean!
-}
-
-type PagesFields_meta_preview_Update {
-  permission: Boolean!
-}
-
-type PagesFields_meta_preview_Delete {
   permission: Boolean!
 }
 
@@ -20816,34 +21255,9 @@ type ProductsFields_meta_Delete {
 }
 
 type ProductsFields_meta_Fields {
-  overview: ProductsFields_meta_overview
   title: ProductsFields_meta_title
   description: ProductsFields_meta_description
   image: ProductsFields_meta_image
-  preview: ProductsFields_meta_preview
-}
-
-type ProductsFields_meta_overview {
-  create: ProductsFields_meta_overview_Create
-  read: ProductsFields_meta_overview_Read
-  update: ProductsFields_meta_overview_Update
-  delete: ProductsFields_meta_overview_Delete
-}
-
-type ProductsFields_meta_overview_Create {
-  permission: Boolean!
-}
-
-type ProductsFields_meta_overview_Read {
-  permission: Boolean!
-}
-
-type ProductsFields_meta_overview_Update {
-  permission: Boolean!
-}
-
-type ProductsFields_meta_overview_Delete {
-  permission: Boolean!
 }
 
 type ProductsFields_meta_title {
@@ -20912,29 +21326,6 @@ type ProductsFields_meta_image_Update {
 }
 
 type ProductsFields_meta_image_Delete {
-  permission: Boolean!
-}
-
-type ProductsFields_meta_preview {
-  create: ProductsFields_meta_preview_Create
-  read: ProductsFields_meta_preview_Read
-  update: ProductsFields_meta_preview_Update
-  delete: ProductsFields_meta_preview_Delete
-}
-
-type ProductsFields_meta_preview_Create {
-  permission: Boolean!
-}
-
-type ProductsFields_meta_preview_Read {
-  permission: Boolean!
-}
-
-type ProductsFields_meta_preview_Update {
-  permission: Boolean!
-}
-
-type ProductsFields_meta_preview_Delete {
   permission: Boolean!
 }
 
@@ -21326,6 +21717,8 @@ type MediaFields {
   filesize: MediaFields_filesize
   width: MediaFields_width
   height: MediaFields_height
+  focalX: MediaFields_focalX
+  focalY: MediaFields_focalY
 }
 
 type MediaFields_alt {
@@ -21555,6 +21948,52 @@ type MediaFields_height_Update {
 }
 
 type MediaFields_height_Delete {
+  permission: Boolean!
+}
+
+type MediaFields_focalX {
+  create: MediaFields_focalX_Create
+  read: MediaFields_focalX_Read
+  update: MediaFields_focalX_Update
+  delete: MediaFields_focalX_Delete
+}
+
+type MediaFields_focalX_Create {
+  permission: Boolean!
+}
+
+type MediaFields_focalX_Read {
+  permission: Boolean!
+}
+
+type MediaFields_focalX_Update {
+  permission: Boolean!
+}
+
+type MediaFields_focalX_Delete {
+  permission: Boolean!
+}
+
+type MediaFields_focalY {
+  create: MediaFields_focalY_Create
+  read: MediaFields_focalY_Read
+  update: MediaFields_focalY_Update
+  delete: MediaFields_focalY_Delete
+}
+
+type MediaFields_focalY_Create {
+  permission: Boolean!
+}
+
+type MediaFields_focalY_Read {
+  permission: Boolean!
+}
+
+type MediaFields_focalY_Update {
+  permission: Boolean!
+}
+
+type MediaFields_focalY_Delete {
   permission: Boolean!
 }
 
@@ -23294,30 +23733,30 @@ type Mutation {
   updateProduct(id: String!, autosave: Boolean, data: mutationProductUpdateInput!, draft: Boolean): Product
   deleteProduct(id: String!): Product
   restoreVersionProduct(id: String): Product
-  createOrder(data: mutationOrderInput!, draft: Boolean): Order
-  updateOrder(id: String!, autosave: Boolean, data: mutationOrderUpdateInput!, draft: Boolean): Order
+  createOrder(data: mutationOrderInput!): Order
+  updateOrder(id: String!, autosave: Boolean, data: mutationOrderUpdateInput!): Order
   deleteOrder(id: String!): Order
-  createMedia(data: mutationMediaInput!, draft: Boolean): Media
-  updateMedia(id: String!, autosave: Boolean, data: mutationMediaUpdateInput!, draft: Boolean): Media
+  createMedia(data: mutationMediaInput!): Media
+  updateMedia(id: String!, autosave: Boolean, data: mutationMediaUpdateInput!): Media
   deleteMedia(id: String!): Media
-  createCategory(data: mutationCategoryInput!, draft: Boolean): Category
-  updateCategory(id: String!, autosave: Boolean, data: mutationCategoryUpdateInput!, draft: Boolean): Category
+  createCategory(data: mutationCategoryInput!): Category
+  updateCategory(id: String!, autosave: Boolean, data: mutationCategoryUpdateInput!): Category
   deleteCategory(id: String!): Category
-  createUser(data: mutationUserInput!, draft: Boolean): User
-  updateUser(id: String!, autosave: Boolean, data: mutationUserUpdateInput!, draft: Boolean): User
+  createUser(data: mutationUserInput!): User
+  updateUser(id: String!, autosave: Boolean, data: mutationUserUpdateInput!): User
   deleteUser(id: String!): User
-  refreshTokenUser(token: String): usersRefreshedUser
+  refreshTokenUser: usersRefreshedUser
   logoutUser: String
   unlockUser(email: String!): Boolean!
   loginUser(email: String, password: String): usersLoginResult
   forgotPasswordUser(disableEmail: Boolean, email: String!, expiration: Int): Boolean!
   resetPasswordUser(password: String, token: String): usersResetPassword
   verifyEmailUser(token: String): Boolean
-  createRedirect(data: mutationRedirectInput!, draft: Boolean): Redirect
-  updateRedirect(id: String!, autosave: Boolean, data: mutationRedirectUpdateInput!, draft: Boolean): Redirect
+  createRedirect(data: mutationRedirectInput!): Redirect
+  updateRedirect(id: String!, autosave: Boolean, data: mutationRedirectUpdateInput!): Redirect
   deleteRedirect(id: String!): Redirect
-  createPayloadPreference(data: mutationPayloadPreferenceInput!, draft: Boolean): PayloadPreference
-  updatePayloadPreference(id: String!, autosave: Boolean, data: mutationPayloadPreferenceUpdateInput!, draft: Boolean): PayloadPreference
+  createPayloadPreference(data: mutationPayloadPreferenceInput!): PayloadPreference
+  updatePayloadPreference(id: String!, autosave: Boolean, data: mutationPayloadPreferenceUpdateInput!): PayloadPreference
   deletePayloadPreference(id: String!): PayloadPreference
   updateSettings(data: mutationSettingsInput!, draft: Boolean): Settings
   updateHeader(data: mutationHeaderInput!, draft: Boolean): Header
@@ -23561,6 +24000,8 @@ input mutationMediaInput {
   filesize: Float
   width: Float
   height: Float
+  focalX: Float
+  focalY: Float
 }
 
 input mutationMediaUpdateInput {
@@ -23574,6 +24015,8 @@ input mutationMediaUpdateInput {
   filesize: Float
   width: Float
   height: Float
+  focalX: Float
+  focalY: Float
 }
 
 input mutationCategoryInput {
@@ -23679,6 +24122,7 @@ input mutationUserUpdate_Cart_ItemsInput {
 type usersRefreshedUser {
   exp: Int
   refreshedToken: String
+  strategy: String
   user: usersJWT
 }
 
@@ -23814,7 +24258,7 @@ enum Header_NavItems_Link_ReferenceRelationshipInputRelationTo {
 }
 
 input mutationFooterInput {
-  copyright: String!
+  copyright: String
   navItems: [mutationFooter_NavItemsInput]
   updatedAt: String
   createdAt: String
@@ -23853,11 +24297,17 @@ enum Footer_NavItems_Link_ReferenceRelationshipInputRelationTo {
  * and re-run `payload generate:types` to regenerate this file.
  */
 
-export type CartItems = {
-  product?: string | Product;
-  quantity?: number;
-  id?: string;
-}[];
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CartItems".
+ */
+export type CartItems =
+  | {
+      product?: (string | null) | Product;
+      quantity?: number | null;
+      id?: string | null;
+    }[]
+  | null;
 
 export interface Config {
   collections: {
@@ -23877,425 +24327,465 @@ export interface Config {
     footer: Footer;
   };
 }
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages".
+ */
 export interface Page {
   id: string;
   title: string;
-  publishedOn?: string;
+  publishedOn?: string | null;
   hero: {
     type: 'none' | 'highImpact' | 'mediumImpact' | 'lowImpact' | 'customHero';
     richText: {
       [k: string]: unknown;
     }[];
-    links?: {
-      link: {
-        type?: 'reference' | 'custom';
-        newTab?: boolean;
-        reference: {
-          relationTo: 'pages';
-          value: string | Page;
-        };
-        url: string;
-        label: string;
-        icon?: string | Media;
-        appearance?: 'default' | 'primary' | 'secondary';
-      };
-      id?: string;
-    }[];
-    media: string | Media;
+    links?:
+      | {
+          link: {
+            type?: ('reference' | 'custom') | null;
+            newTab?: boolean | null;
+            reference?: {
+              relationTo: 'pages';
+              value: string | Page;
+            } | null;
+            url?: string | null;
+            label: string;
+            icon?: string | Media | null;
+            appearance?: ('default' | 'primary' | 'secondary') | null;
+          };
+          id?: string | null;
+        }[]
+      | null;
+    media?: string | Media | null;
   };
   layout: (
     | {
-        invertBackground?: boolean;
+        invertBackground?: boolean | null;
         richText: {
           [k: string]: unknown;
         }[];
-        links?: {
-          link: {
-            type?: 'reference' | 'custom';
-            newTab?: boolean;
-            reference: {
-              relationTo: 'pages';
-              value: string | Page;
-            };
-            url: string;
-            label: string;
-            icon?: string | Media;
-            appearance?: 'primary' | 'secondary';
-          };
-          id?: string;
-        }[];
-        id?: string;
-        blockName?: string;
+        links?:
+          | {
+              link: {
+                type?: ('reference' | 'custom') | null;
+                newTab?: boolean | null;
+                reference?: {
+                  relationTo: 'pages';
+                  value: string | Page;
+                } | null;
+                url?: string | null;
+                label: string;
+                icon?: string | Media | null;
+                appearance?: ('primary' | 'secondary') | null;
+              };
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+        blockName?: string | null;
         blockType: 'cta';
       }
     | {
-        invertBackground?: boolean;
-        columns?: {
-          size?: 'oneThird' | 'half' | 'twoThirds' | 'full';
-          richText: {
-            [k: string]: unknown;
-          }[];
-          enableLink?: boolean;
-          link?: {
-            type?: 'reference' | 'custom';
-            newTab?: boolean;
-            reference: {
-              relationTo: 'pages';
-              value: string | Page;
-            };
-            url: string;
-            label: string;
-            icon?: string | Media;
-            appearance?: 'default' | 'primary' | 'secondary';
-          };
-          id?: string;
-        }[];
-        id?: string;
-        blockName?: string;
+        invertBackground?: boolean | null;
+        columns?:
+          | {
+              size?: ('oneThird' | 'half' | 'twoThirds' | 'full') | null;
+              richText: {
+                [k: string]: unknown;
+              }[];
+              enableLink?: boolean | null;
+              link?: {
+                type?: ('reference' | 'custom') | null;
+                newTab?: boolean | null;
+                reference?: {
+                  relationTo: 'pages';
+                  value: string | Page;
+                } | null;
+                url?: string | null;
+                label: string;
+                icon?: string | Media | null;
+                appearance?: ('default' | 'primary' | 'secondary') | null;
+              };
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+        blockName?: string | null;
         blockType: 'content';
       }
     | {
-        invertBackground?: boolean;
-        position?: 'default' | 'fullscreen';
+        invertBackground?: boolean | null;
+        position?: ('default' | 'fullscreen') | null;
         media: string | Media;
-        id?: string;
-        blockName?: string;
+        id?: string | null;
+        blockName?: string | null;
         blockType: 'mediaBlock';
       }
     | {
         introContent: {
           [k: string]: unknown;
         }[];
-        populateBy?: 'collection' | 'selection';
-        relationTo?: 'products';
-        categories?: string[] | Category[];
-        limit?: number;
+        populateBy?: ('collection' | 'selection') | null;
+        relationTo?: 'products' | null;
+        categories?: (string | Category)[] | null;
+        limit?: number | null;
         selectedDocs?:
           | {
               relationTo: 'products';
-              value: string;
+              value: string | Product;
             }[]
-          | {
-              relationTo: 'products';
-              value: Product;
-            }[];
+          | null;
         populatedDocs?:
           | {
               relationTo: 'products';
-              value: string;
+              value: string | Product;
             }[]
-          | {
-              relationTo: 'products';
-              value: Product;
-            }[];
-        populatedDocsTotal?: number;
-        id?: string;
-        blockName?: string;
+          | null;
+        populatedDocsTotal?: number | null;
+        id?: string | null;
+        blockName?: string | null;
         blockType: 'archive';
       }
   )[];
-  slug?: string;
+  slug?: string | null;
   meta?: {
-    title?: string;
-    description?: string;
-    image?: string | Media;
+    title?: string | null;
+    description?: string | null;
+    image?: string | Media | null;
   };
   updatedAt: string;
   createdAt: string;
-  _status?: 'draft' | 'published';
+  _status?: ('draft' | 'published') | null;
 }
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
 export interface Media {
   id: string;
   alt: string;
-  caption?: {
-    [k: string]: unknown;
-  }[];
+  caption?:
+    | {
+        [k: string]: unknown;
+      }[]
+    | null;
   updatedAt: string;
   createdAt: string;
-  url?: string;
-  filename?: string;
-  mimeType?: string;
-  filesize?: number;
-  width?: number;
-  height?: number;
+  url?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
 }
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories".
+ */
 export interface Category {
   id: string;
   title: string;
-  media?: string | Media;
-  parent?: string | Category;
-  breadcrumbs?: {
-    doc?: string | Category;
-    url?: string;
-    label?: string;
-    id?: string;
-  }[];
+  media?: string | Media | null;
+  parent?: (string | null) | Category;
+  breadcrumbs?:
+    | {
+        doc?: (string | null) | Category;
+        url?: string | null;
+        label?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   updatedAt: string;
   createdAt: string;
 }
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products".
+ */
 export interface Product {
   id: string;
   title: string;
-  publishedOn?: string;
-  layout?: (
-    | {
-        invertBackground?: boolean;
-        richText: {
-          [k: string]: unknown;
-        }[];
-        links?: {
-          link: {
-            type?: 'reference' | 'custom';
-            newTab?: boolean;
-            reference: {
-              relationTo: 'pages';
-              value: string | Page;
-            };
-            url: string;
-            label: string;
-            icon?: string | Media;
-            appearance?: 'primary' | 'secondary';
-          };
-          id?: string;
-        }[];
-        id?: string;
-        blockName?: string;
-        blockType: 'cta';
-      }
-    | {
-        invertBackground?: boolean;
-        columns?: {
-          size?: 'oneThird' | 'half' | 'twoThirds' | 'full';
-          richText: {
-            [k: string]: unknown;
-          }[];
-          enableLink?: boolean;
-          link?: {
-            type?: 'reference' | 'custom';
-            newTab?: boolean;
-            reference: {
-              relationTo: 'pages';
-              value: string | Page;
-            };
-            url: string;
-            label: string;
-            icon?: string | Media;
-            appearance?: 'default' | 'primary' | 'secondary';
-          };
-          id?: string;
-        }[];
-        id?: string;
-        blockName?: string;
-        blockType: 'content';
-      }
-    | {
-        invertBackground?: boolean;
-        position?: 'default' | 'fullscreen';
-        media: string | Media;
-        id?: string;
-        blockName?: string;
-        blockType: 'mediaBlock';
-      }
-    | {
-        introContent: {
-          [k: string]: unknown;
-        }[];
-        populateBy?: 'collection' | 'selection';
-        relationTo?: 'products';
-        categories?: string[] | Category[];
-        limit?: number;
-        selectedDocs?:
-          | {
-              relationTo: 'products';
-              value: string;
-            }[]
-          | {
-              relationTo: 'products';
-              value: Product;
+  publishedOn?: string | null;
+  layout?:
+    | (
+        | {
+            invertBackground?: boolean | null;
+            richText: {
+              [k: string]: unknown;
             }[];
-        populatedDocs?:
-          | {
-              relationTo: 'products';
-              value: string;
-            }[]
-          | {
-              relationTo: 'products';
-              value: Product;
+            links?:
+              | {
+                  link: {
+                    type?: ('reference' | 'custom') | null;
+                    newTab?: boolean | null;
+                    reference?: {
+                      relationTo: 'pages';
+                      value: string | Page;
+                    } | null;
+                    url?: string | null;
+                    label: string;
+                    icon?: string | Media | null;
+                    appearance?: ('primary' | 'secondary') | null;
+                  };
+                  id?: string | null;
+                }[]
+              | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'cta';
+          }
+        | {
+            invertBackground?: boolean | null;
+            columns?:
+              | {
+                  size?: ('oneThird' | 'half' | 'twoThirds' | 'full') | null;
+                  richText: {
+                    [k: string]: unknown;
+                  }[];
+                  enableLink?: boolean | null;
+                  link?: {
+                    type?: ('reference' | 'custom') | null;
+                    newTab?: boolean | null;
+                    reference?: {
+                      relationTo: 'pages';
+                      value: string | Page;
+                    } | null;
+                    url?: string | null;
+                    label: string;
+                    icon?: string | Media | null;
+                    appearance?: ('default' | 'primary' | 'secondary') | null;
+                  };
+                  id?: string | null;
+                }[]
+              | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'content';
+          }
+        | {
+            invertBackground?: boolean | null;
+            position?: ('default' | 'fullscreen') | null;
+            media: string | Media;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'mediaBlock';
+          }
+        | {
+            introContent: {
+              [k: string]: unknown;
             }[];
-        populatedDocsTotal?: number;
-        id?: string;
-        blockName?: string;
-        blockType: 'archive';
-      }
-  )[];
-  stripeProductID?: string;
-  priceJSON?: string;
-  enablePaywall?: boolean;
-  paywall?: (
-    | {
-        invertBackground?: boolean;
-        richText: {
-          [k: string]: unknown;
-        }[];
-        links?: {
-          link: {
-            type?: 'reference' | 'custom';
-            newTab?: boolean;
-            reference: {
-              relationTo: 'pages';
-              value: string | Page;
-            };
-            url: string;
-            label: string;
-            icon?: string | Media;
-            appearance?: 'primary' | 'secondary';
-          };
-          id?: string;
-        }[];
-        id?: string;
-        blockName?: string;
-        blockType: 'cta';
-      }
-    | {
-        invertBackground?: boolean;
-        columns?: {
-          size?: 'oneThird' | 'half' | 'twoThirds' | 'full';
-          richText: {
-            [k: string]: unknown;
-          }[];
-          enableLink?: boolean;
-          link?: {
-            type?: 'reference' | 'custom';
-            newTab?: boolean;
-            reference: {
-              relationTo: 'pages';
-              value: string | Page;
-            };
-            url: string;
-            label: string;
-            icon?: string | Media;
-            appearance?: 'default' | 'primary' | 'secondary';
-          };
-          id?: string;
-        }[];
-        id?: string;
-        blockName?: string;
-        blockType: 'content';
-      }
-    | {
-        invertBackground?: boolean;
-        position?: 'default' | 'fullscreen';
-        media: string | Media;
-        id?: string;
-        blockName?: string;
-        blockType: 'mediaBlock';
-      }
-    | {
-        introContent: {
-          [k: string]: unknown;
-        }[];
-        populateBy?: 'collection' | 'selection';
-        relationTo?: 'products';
-        categories?: string[] | Category[];
-        limit?: number;
-        selectedDocs?:
-          | {
-              relationTo: 'products';
-              value: string;
-            }[]
-          | {
-              relationTo: 'products';
-              value: Product;
+            populateBy?: ('collection' | 'selection') | null;
+            relationTo?: 'products' | null;
+            categories?: (string | Category)[] | null;
+            limit?: number | null;
+            selectedDocs?:
+              | {
+                  relationTo: 'products';
+                  value: string | Product;
+                }[]
+              | null;
+            populatedDocs?:
+              | {
+                  relationTo: 'products';
+                  value: string | Product;
+                }[]
+              | null;
+            populatedDocsTotal?: number | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'archive';
+          }
+      )[]
+    | null;
+  stripeProductID?: string | null;
+  priceJSON?: string | null;
+  enablePaywall?: boolean | null;
+  paywall?:
+    | (
+        | {
+            invertBackground?: boolean | null;
+            richText: {
+              [k: string]: unknown;
             }[];
-        populatedDocs?:
-          | {
-              relationTo: 'products';
-              value: string;
-            }[]
-          | {
-              relationTo: 'products';
-              value: Product;
+            links?:
+              | {
+                  link: {
+                    type?: ('reference' | 'custom') | null;
+                    newTab?: boolean | null;
+                    reference?: {
+                      relationTo: 'pages';
+                      value: string | Page;
+                    } | null;
+                    url?: string | null;
+                    label: string;
+                    icon?: string | Media | null;
+                    appearance?: ('primary' | 'secondary') | null;
+                  };
+                  id?: string | null;
+                }[]
+              | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'cta';
+          }
+        | {
+            invertBackground?: boolean | null;
+            columns?:
+              | {
+                  size?: ('oneThird' | 'half' | 'twoThirds' | 'full') | null;
+                  richText: {
+                    [k: string]: unknown;
+                  }[];
+                  enableLink?: boolean | null;
+                  link?: {
+                    type?: ('reference' | 'custom') | null;
+                    newTab?: boolean | null;
+                    reference?: {
+                      relationTo: 'pages';
+                      value: string | Page;
+                    } | null;
+                    url?: string | null;
+                    label: string;
+                    icon?: string | Media | null;
+                    appearance?: ('default' | 'primary' | 'secondary') | null;
+                  };
+                  id?: string | null;
+                }[]
+              | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'content';
+          }
+        | {
+            invertBackground?: boolean | null;
+            position?: ('default' | 'fullscreen') | null;
+            media: string | Media;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'mediaBlock';
+          }
+        | {
+            introContent: {
+              [k: string]: unknown;
             }[];
-        populatedDocsTotal?: number;
-        id?: string;
-        blockName?: string;
-        blockType: 'archive';
-      }
-  )[];
-  categories?: string[] | Category[];
-  relatedProducts?: string[] | Product[];
-  slug?: string;
-  skipSync?: boolean;
+            populateBy?: ('collection' | 'selection') | null;
+            relationTo?: 'products' | null;
+            categories?: (string | Category)[] | null;
+            limit?: number | null;
+            selectedDocs?:
+              | {
+                  relationTo: 'products';
+                  value: string | Product;
+                }[]
+              | null;
+            populatedDocs?:
+              | {
+                  relationTo: 'products';
+                  value: string | Product;
+                }[]
+              | null;
+            populatedDocsTotal?: number | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'archive';
+          }
+      )[]
+    | null;
+  categories?: (string | Category)[] | null;
+  relatedProducts?: (string | Product)[] | null;
+  slug?: string | null;
+  skipSync?: boolean | null;
   meta?: {
-    title?: string;
-    description?: string;
-    image?: string | Media;
+    title?: string | null;
+    description?: string | null;
+    image?: string | Media | null;
   };
   updatedAt: string;
   createdAt: string;
-  _status?: 'draft' | 'published';
+  _status?: ('draft' | 'published') | null;
 }
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders".
+ */
 export interface Order {
   id: string;
-  orderedBy?: string | User;
-  stripePaymentIntentID?: string;
+  orderedBy?: (string | null) | User;
+  stripePaymentIntentID?: string | null;
   total: number;
-  items?: {
-    product: string | Product;
-    price?: number;
-    quantity?: number;
-    id?: string;
-  }[];
+  items?:
+    | {
+        product: string | Product;
+        price?: number | null;
+        quantity?: number | null;
+        id?: string | null;
+      }[]
+    | null;
   updatedAt: string;
   createdAt: string;
 }
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users".
+ */
 export interface User {
   id: string;
-  name?: string;
-  roles?: ('admin' | 'customer')[];
-  purchases?: string[] | Product[];
-  stripeCustomerID?: string;
+  name?: string | null;
+  roles?: ('admin' | 'customer')[] | null;
+  purchases?: (string | Product)[] | null;
+  stripeCustomerID?: string | null;
   cart?: {
     items?: CartItems;
   };
-  skipSync?: boolean;
+  skipSync?: boolean | null;
   updatedAt: string;
   createdAt: string;
   email: string;
-  resetPasswordToken?: string;
-  resetPasswordExpiration?: string;
-  salt?: string;
-  hash?: string;
-  loginAttempts?: number;
-  lockUntil?: string;
-  password: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  password: string | null;
 }
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "redirects".
+ */
 export interface Redirect {
   id: string;
   from: string;
-  to: {
-    type?: 'reference' | 'custom';
-    reference:
-      | {
+  to?: {
+    type?: ('reference' | 'custom') | null;
+    reference?:
+      | ({
           relationTo: 'pages';
           value: string | Page;
-        }
-      | {
+        } | null)
+      | ({
           relationTo: 'products';
           value: string | Product;
-        };
-    url: string;
+        } | null);
+    url?: string | null;
   };
   updatedAt: string;
   createdAt: string;
 }
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-preferences".
+ */
 export interface PayloadPreference {
   id: string;
   user: {
     relationTo: 'users';
     value: string | User;
   };
-  key?: string;
+  key?: string | null;
   value?:
     | {
         [k: string]: unknown;
@@ -24308,57 +24798,77 @@ export interface PayloadPreference {
   updatedAt: string;
   createdAt: string;
 }
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-migrations".
+ */
 export interface PayloadMigration {
   id: string;
-  name?: string;
-  batch?: number;
+  name?: string | null;
+  batch?: number | null;
   updatedAt: string;
   createdAt: string;
 }
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "settings".
+ */
 export interface Settings {
   id: string;
-  productsPage?: string | Page;
-  updatedAt?: string;
-  createdAt?: string;
+  productsPage?: (string | null) | Page;
+  updatedAt?: string | null;
+  createdAt?: string | null;
 }
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "header".
+ */
 export interface Header {
   id: string;
-  navItems?: {
-    link: {
-      type?: 'reference' | 'custom';
-      newTab?: boolean;
-      reference: {
-        relationTo: 'pages';
-        value: string | Page;
-      };
-      url: string;
-      label: string;
-      icon?: string | Media;
-    };
-    id?: string;
-  }[];
-  updatedAt?: string;
-  createdAt?: string;
+  navItems?:
+    | {
+        link: {
+          type?: ('reference' | 'custom') | null;
+          newTab?: boolean | null;
+          reference?: {
+            relationTo: 'pages';
+            value: string | Page;
+          } | null;
+          url?: string | null;
+          label: string;
+          icon?: string | Media | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
 }
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footer".
+ */
 export interface Footer {
   id: string;
-  copyright: string;
-  navItems?: {
-    link: {
-      type?: 'reference' | 'custom';
-      newTab?: boolean;
-      reference: {
-        relationTo: 'pages';
-        value: string | Page;
-      };
-      url: string;
-      label: string;
-      icon?: string | Media;
-    };
-    id?: string;
-  }[];
-  updatedAt?: string;
-  createdAt?: string;
+  copyright?: string | null;
+  navItems?:
+    | {
+        link: {
+          type?: ('reference' | 'custom') | null;
+          newTab?: boolean | null;
+          reference?: {
+            relationTo: 'pages';
+            value: string | Page;
+          } | null;
+          url?: string | null;
+          label: string;
+          icon?: string | Media | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
 }
 
 
@@ -24368,16 +24878,15 @@ declare module 'payload' {
 
 ==== FILE: C:\Users\user\Desktop\ecommerce\src\payload\payload.config.ts ====
 
-import { webpackBundler } from '@payloadcms/bundler-webpack' // bundler-import
-import { mongooseAdapter } from '@payloadcms/db-mongodb' // database-adapter-import
+import { webpackBundler } from '@payloadcms/bundler-webpack'
+import { mongooseAdapter } from '@payloadcms/db-mongodb'
 import { payloadCloud } from '@payloadcms/plugin-cloud'
-// import formBuilder from '@payloadcms/plugin-form-builder'
 import nestedDocs from '@payloadcms/plugin-nested-docs'
 import redirects from '@payloadcms/plugin-redirects'
 import seo from '@payloadcms/plugin-seo'
 import type { GenerateTitle } from '@payloadcms/plugin-seo/types'
 import stripePlugin from '@payloadcms/plugin-stripe'
-import { slateEditor } from '@payloadcms/richtext-slate' // editor-import
+import { slateEditor } from '@payloadcms/richtext-slate'
 import dotenv from 'dotenv'
 import path from 'path'
 import { buildConfig } from 'payload/config'
@@ -24391,8 +24900,7 @@ import Users from './collections/Users'
 import BeforeDashboard from './components/BeforeDashboard'
 import BeforeLogin from './components/BeforeLogin'
 import { createPaymentIntent } from './endpoints/create-payment-intent'
-import { customersProxy } from './endpoints/customers'
-import { productsProxy } from './endpoints/products'
+import { stripeProductsHandler } from './endpoints/stripe-products'
 import { seed } from './endpoints/seed'
 import { Footer } from './globals/Footer'
 import { Header } from './globals/Header'
@@ -24413,13 +24921,9 @@ dotenv.config({
 export default buildConfig({
   admin: {
     user: Users.slug,
-    bundler: webpackBundler(), // bundler-config
+    bundler: webpackBundler(),
     components: {
-      // The `BeforeLogin` component renders a message that you see while logging into your admin panel.
-      // Feel free to delete this at any time. Simply remove the line below and the import `BeforeLogin` statement on line 15.
       beforeLogin: [BeforeLogin],
-      // The `BeforeDashboard` component renders the 'welcome' block that you see after logging into your admin panel.
-      // Feel free to delete this at any time. Simply remove the line below and the import `BeforeDashboard` statement on line 15.
       beforeDashboard: [BeforeDashboard],
     },
     webpack: config => {
@@ -24435,22 +24939,18 @@ export default buildConfig({
               mockModulePath,
             [path.resolve(__dirname, 'collections/Users/endpoints/customer')]: mockModulePath,
             [path.resolve(__dirname, 'endpoints/create-payment-intent')]: mockModulePath,
-            [path.resolve(__dirname, 'endpoints/customers')]: mockModulePath,
-            [path.resolve(__dirname, 'endpoints/products')]: mockModulePath,
             [path.resolve(__dirname, 'endpoints/seed')]: mockModulePath,
-            stripe: mockModulePath,
+            // Remove stripe alias to allow proper import
             express: mockModulePath,
           },
         },
       }
     },
   },
-  editor: slateEditor({}), // editor-config
-  // database-adapter-config-start
+  editor: slateEditor({}),
   db: mongooseAdapter({
     url: process.env.DATABASE_URI,
   }),
-  // database-adapter-config-end
   serverURL: process.env.PAYLOAD_PUBLIC_SERVER_URL,
   collections: [Pages, Products, Orders, Media, Categories, Users],
   globals: [Settings, Header, Footer],
@@ -24460,12 +24960,14 @@ export default buildConfig({
   graphQL: {
     schemaOutputFile: path.resolve(__dirname, 'generated-schema.graphql'),
   },
-  cors: ['https://checkout.stripe.com', process.env.PAYLOAD_PUBLIC_SERVER_URL || ''].filter(
-    Boolean,
-  ),
-  csrf: ['https://checkout.stripe.com', process.env.PAYLOAD_PUBLIC_SERVER_URL || ''].filter(
-    Boolean,
-  ),
+  cors: [
+    'https://checkout.stripe.com', 
+    process.env.PAYLOAD_PUBLIC_SERVER_URL || ''
+  ].filter(Boolean),
+  csrf: [
+    'https://checkout.stripe.com', 
+    process.env.PAYLOAD_PUBLIC_SERVER_URL || ''
+  ].filter(Boolean),
   endpoints: [
     {
       path: '/create-payment-intent',
@@ -24473,17 +24975,10 @@ export default buildConfig({
       handler: createPaymentIntent,
     },
     {
-      path: '/stripe/customers',
+      path: '/stripe-products',
       method: 'get',
-      handler: customersProxy,
+      handler: stripeProductsHandler,
     },
-    {
-      path: '/stripe/products',
-      method: 'get',
-      handler: productsProxy,
-    },
-    // The seed endpoint is used to populate the database with some example data
-    // You should delete this endpoint before deploying your site to production
     {
       path: '/seed',
       method: 'get',
@@ -24491,12 +24986,11 @@ export default buildConfig({
     },
   ],
   plugins: [
-    // formBuilder({}),
     stripePlugin({
       stripeSecretKey: process.env.STRIPE_SECRET_KEY || '',
       isTestKey: Boolean(process.env.PAYLOAD_PUBLIC_STRIPE_IS_TEST_KEY),
       stripeWebhooksEndpointSecret: process.env.STRIPE_WEBHOOKS_SIGNING_SECRET,
-      rest: false,
+      rest: true,
       webhooks: {
         'product.created': productUpdated,
         'product.updated': productUpdated,
@@ -25503,119 +25997,246 @@ export const revalidateProduct: AfterChangeHook = ({ doc, req: { payload } }) =>
 
 ==== FILE: C:\Users\user\Desktop\ecommerce\src\payload\collections\Products\ui\ProductSelect.tsx ====
 
-import * as React from 'react'
-import { Select, useFormFields } from 'payload/components/forms'
-import CopyToClipboard from 'payload/dist/admin/components/elements/CopyToClipboard'
-import { TextField } from 'payload/dist/fields/config/types'
+'use client'
 
-export const ProductSelect: React.FC<TextField> = props => {
-  const { name, label } = props
-  const [options, setOptions] = React.useState<
-    {
-      label: string
-      value: string
-    }[]
-  >([])
+import React, { useState, useEffect } from 'react'
+import { useField } from 'payload/components/forms'
 
-  const { value: stripeProductID } = useFormFields(([fields]) => fields[name])
+export const ProductSelect: React.FC<{ 
+  name: string
+  label?: string 
+  path?: string
+  required?: boolean
+}> = (props) => {
+  const { name, label, required } = props
+  
+  const { value = '', setValue } = useField<string>({ path: name })
+  const [products, setProducts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [selectedProductId, setSelectedProductId] = useState<string>(value as string || '')
 
-  React.useEffect(() => {
-    const getStripeProducts = async () => {
-      const productsFetch = await fetch('/api/stripe/products', {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
+  useEffect(() => {
+    if (value !== undefined && value !== selectedProductId) {
+      setSelectedProductId(value as string)
+    }
+  }, [value])
 
-      const res = await productsFetch.json()
-
-      if (res?.data) {
-        const fetchedProducts = res.data.reduce(
-          (acc, item) => {
-            acc.push({
-              label: item.name || item.id,
-              value: item.id,
-            })
-            return acc
+  useEffect(() => {
+    const fetchStripeProducts = async () => {
+      setLoading(true)
+      setError(null)
+      
+      try {
+        console.log('Fetching Stripe products from /api/stripe-products...')
+        const response = await fetch('/api/stripe-products', {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
           },
-          [
-            {
-              label: 'Select a product',
-              value: '',
-            },
-          ],
-        )
-        setOptions(fetchedProducts)
+        })
+
+        console.log('Response status:', response.status)
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`)
+        }
+
+        const result = await response.json()
+        console.log('Stripe products response:', result)
+        
+        if (result.success && Array.isArray(result.data)) {
+          console.log(`Successfully fetched ${result.data.length} products from Stripe`)
+          setProducts(result.data)
+        } else {
+          throw new Error('Invalid response format from server')
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred'
+        console.error('Error fetching Stripe products:', err)
+        setError(errorMessage)
+      } finally {
+        setLoading(false)
       }
     }
 
-    getStripeProducts()
+    fetchStripeProducts()
   }, [])
 
-  const href = `https://dashboard.stripe.com/${
-    process.env.PAYLOAD_PUBLIC_STRIPE_IS_TEST_KEY ? 'test/' : ''
-  }products/${stripeProductID}`
+  const handleProductChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newValue = e.target.value
+    console.log('Selected product ID:', newValue)
+    setSelectedProductId(newValue)
+    setValue(newValue)
+  }
+
+  const selectedProduct = products.find(p => p.id === selectedProductId)
+  const isTestMode = process.env.PAYLOAD_PUBLIC_STRIPE_IS_TEST_KEY === 'true'
+  const href = `https://dashboard.stripe.com/${isTestMode ? 'test/' : ''}products/${selectedProductId}`
 
   return (
-    <div>
-      <p style={{ marginBottom: '0' }}>{typeof label === 'string' ? label : 'Product'}</p>
-      <p
-        style={{
-          marginBottom: '0.75rem',
-          color: 'var(--theme-elevation-400)',
-        }}
-      >
-        {`Select the related Stripe product or `}
-        <a
-          href={`https://dashboard.stripe.com/${
-            process.env.PAYLOAD_PUBLIC_STRIPE_IS_TEST_KEY ? 'test/' : ''
-          }products/create`}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: 'var(--theme-text' }}
-        >
-          create a new one
-        </a>
-        {'.'}
-      </p>
-      <Select {...props} label="" options={options} />
-      {Boolean(stripeProductID) && (
-        <div
+    <div style={{ marginBottom: '24px' }}>
+      <div style={{ marginBottom: '8px' }}>
+        <label 
+          htmlFor={name}
           style={{
-            marginTop: '-1rem',
-            marginBottom: '1.5rem',
+            display: 'block',
+            marginBottom: '8px',
+            fontWeight: '600',
+            fontSize: '14px',
           }}
         >
-          <div>
+          {typeof label === 'string' ? label : 'Stripe Product'}
+          {required && <span style={{ color: '#c62828', marginLeft: '4px' }}>*</span>}
+        </label>
+        <p
+          style={{
+            marginBottom: '12px',
+            color: '#666',
+            fontSize: '13px',
+          }}
+        >
+          Select the related Stripe product or{' '}
+          <a
+            href={`https://dashboard.stripe.com/${isTestMode ? 'test/' : ''}products/create`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: '#0070f3', textDecoration: 'none' }}
+          >
+            create a new one
+          </a>
+          .
+        </p>
+      </div>
+
+      {error && (
+        <div
+          style={{
+            marginBottom: '16px',
+            padding: '12px',
+            backgroundColor: '#ffebee',
+            color: '#c62828',
+            borderRadius: '4px',
+            fontSize: '13px',
+            border: '1px solid #ffcdd2',
+          }}
+        >
+          <strong>Error loading Stripe products:</strong>
+          <br />
+          {error}
+        </div>
+      )}
+
+      {loading && (
+        <div
+          style={{
+            marginBottom: '16px',
+            padding: '12px',
+            backgroundColor: '#e3f2fd',
+            color: '#1565c0',
+            borderRadius: '4px',
+            fontSize: '13px',
+          }}
+        >
+          ðŸ”„ Loading products from Stripe...
+        </div>
+      )}
+
+      {!loading && !error && (
+        <select
+          id={name}
+          name={name}
+          value={selectedProductId}
+          onChange={handleProductChange}
+          style={{
+            width: '100%',
+            padding: '10px',
+            fontSize: '14px',
+            border: '1px solid #ccc',
+            borderRadius: '4px',
+            backgroundColor: '#fff',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+          }}
+        >
+          <option value="">-- Select a product --</option>
+          {products.map((product) => (
+            <option key={product.id} value={product.id}>
+              {product.name}
+            </option>
+          ))}
+        </select>
+      )}
+
+      {!loading && !error && products.length === 0 && (
+        <div
+          style={{
+            marginTop: '8px',
+            padding: '8px',
+            backgroundColor: '#fff3e0',
+            color: '#e65100',
+            borderRadius: '4px',
+            fontSize: '13px',
+          }}
+        >
+          âš ï¸ No products found in Stripe. Create some products in your Stripe dashboard first.
+        </div>
+      )}
+
+      {!loading && !error && products.length > 0 && (
+        <div
+          style={{
+            marginTop: '8px',
+            fontSize: '12px',
+            color: '#666',
+          }}
+        >
+          ðŸ“¦ {products.length} product(s) available in Stripe
+        </div>
+      )}
+
+      {selectedProductId && !error && selectedProduct && (
+        <div
+          style={{
+            marginTop: '16px',
+            padding: '12px',
+            backgroundColor: '#e8f5e9',
+            borderRadius: '4px',
+            border: '1px solid #c8e6c9',
+          }}
+        >
+          <div style={{ marginBottom: '8px' }}>
             <span
-              className="label"
               style={{
-                color: '#9A9A9A',
+                fontSize: '11px',
+                textTransform: 'uppercase',
+                color: '#2e7d32',
+                fontWeight: '600',
+                letterSpacing: '0.5px',
               }}
             >
-              {`Manage "${
-                options.find(option => option.value === stripeProductID)?.label || 'Unknown'
-              }" in Stripe`}
+              âœ… Linked Product
             </span>
-            <CopyToClipboard value={href} />
           </div>
           <div
             style={{
               overflow: 'hidden',
               textOverflow: 'ellipsis',
-              fontWeight: '600',
+              fontWeight: '500',
             }}
           >
             <a
-              href={`https://dashboard.stripe.com/${
-                process.env.PAYLOAD_PUBLIC_STRIPE_IS_TEST_KEY ? 'test/' : ''
-              }products/${stripeProductID}`}
+              href={href}
               target="_blank"
               rel="noreferrer noopener"
+              style={{ color: '#0070f3', textDecoration: 'none' }}
             >
-              {href}
+              {selectedProduct.name}
             </a>
+          </div>
+          <div style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
+            Stripe ID: {selectedProduct.id}
           </div>
         </div>
       )}
@@ -26456,7 +27077,7 @@ export const createPaymentIntent: PayloadHandler = async (req, res): Promise<voi
   }
 }
 
-==== FILE: C:\Users\user\Desktop\ecommerce\src\payload\endpoints\customers.ts ====
+==== FILE: C:\Users\user\Desktop\ecommerce\src\payload\endpoints\prices.ts ====
 
 import type { PayloadHandler } from 'payload/config'
 import type { PayloadRequest } from 'payload/types'
@@ -26470,58 +27091,29 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 
 const logs = process.env.LOGS_STRIPE_PROXY === '1'
 
-// use this handler to get all Stripe customers
-// prevents unauthorized or non-admin users from accessing all Stripe customers
-// GET /api/customers
-export const customersProxy: PayloadHandler = async (req: PayloadRequest, res) => {
+// GET /api/stripe/prices?product=prod_xxx
+export const pricesProxy: PayloadHandler = async (req: PayloadRequest, res) => {
   if (!req.user || !checkRole(['admin'], req.user)) {
-    if (logs) req.payload.logger.error({ err: `You are not authorized to access customers` })
-    res.status(401).json({ error: 'You are not authorized to access customers' })
+    if (logs) req.payload.logger.error({ err: `You are not authorized to access prices` })
+    res.status(401).json({ error: 'You are not authorized to access prices' })
+    return
+  }
+
+  const productId = req.query.product as string
+
+  if (!productId) {
+    res.status(400).json({ error: 'Product ID is required' })
     return
   }
 
   try {
-    const customers = await stripe.customers.list({
+    const prices = await stripe.prices.list({
+      product: productId,
       limit: 100,
+      active: true,
     })
 
-    res.status(200).json(customers)
-  } catch (error: unknown) {
-    if (logs) req.payload.logger.error({ err: `Error using Stripe API: ${error}` })
-    res.status(500).json({ error: `Error using Stripe API: ${error}` })
-  }
-}
-
-==== FILE: C:\Users\user\Desktop\ecommerce\src\payload\endpoints\products.ts ====
-
-import type { PayloadHandler } from 'payload/config'
-import type { PayloadRequest } from 'payload/types'
-import Stripe from 'stripe'
-
-import { checkRole } from '../collections/Users/checkRole'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2022-08-01',
-})
-
-const logs = process.env.LOGS_STRIPE_PROXY === '1'
-
-// use this handler to get all Stripe products
-// prevents unauthorized or non-admin users from accessing all Stripe products
-// GET /api/products
-export const productsProxy: PayloadHandler = async (req: PayloadRequest, res) => {
-  if (!req.user || !checkRole(['admin'], req.user)) {
-    if (logs) req.payload.logger.error({ err: `You are not authorized to access products` })
-    res.status(401).json({ error: 'You are not authorized to access products' })
-    return
-  }
-
-  try {
-    const products = await stripe.products.list({
-      limit: 100,
-    })
-
-    res.status(200).json(products)
+    res.status(200).json(prices)
   } catch (error: unknown) {
     if (logs) req.payload.logger.error({ err: `Error using Stripe API: ${error}` })
     res.status(500).json({ error: `Error using Stripe API: ${error}` })
@@ -26549,6 +27141,70 @@ export const seed: PayloadHandler = async (req, res): Promise<void> => {
     const message = error instanceof Error ? error.message : 'Unknown error'
     payload.logger.error(message)
     res.json({ error: message })
+  }
+}
+
+==== FILE: C:\Users\user\Desktop\ecommerce\src\payload\endpoints\stripe-products.ts ====
+
+import type { PayloadHandler } from 'payload/config'
+import type { PayloadRequest } from 'payload/types'
+
+// Dynamic import for Stripe to avoid client-side bundling issues
+const getStripe = async () => {
+  const Stripe = (await import('stripe')).default
+  return new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+    apiVersion: '2022-08-01',
+  })
+}
+
+export const stripeProductsHandler: PayloadHandler = async (req: PayloadRequest, res) => {
+  console.log('=== Stripe Products Endpoint Called ===')
+  
+  if (!req.user) {
+    console.log('No user authenticated')
+    return res.status(401).json({ error: 'Unauthorized - Please log in' })
+  }
+
+  const isAdmin = req.user.roles?.includes('admin')
+  if (!isAdmin) {
+    console.log('User is not admin:', req.user.roles)
+    return res.status(403).json({ error: 'Forbidden - Admin access required' })
+  }
+
+  if (!process.env.STRIPE_SECRET_KEY) {
+    console.error('STRIPE_SECRET_KEY is not set')
+    return res.status(500).json({ error: 'Stripe configuration is missing' })
+  }
+
+  try {
+    console.log('Fetching products from Stripe...')
+    
+    const stripe = await getStripe()
+    
+    const products = await stripe.products.list({
+      limit: 100,
+      active: true,
+    })
+
+    console.log(`Found ${products.data.length} products in Stripe`)
+    
+    return res.status(200).json({
+      success: true,
+      data: products.data.map(product => ({
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        active: product.active,
+        default_price: product.default_price,
+      })),
+    })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+    console.error('Error fetching Stripe products:', errorMessage)
+    return res.status(500).json({ 
+      success: false,
+      error: errorMessage,
+    })
   }
 }
 

@@ -10,22 +10,29 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 
 const logs = process.env.LOGS_STRIPE_PROXY === '1'
 
-// use this handler to get all Stripe products
-// prevents unauthorized or non-admin users from accessing all Stripe products
-// GET /api/products
-export const productsProxy: PayloadHandler = async (req: PayloadRequest, res) => {
+// GET /api/stripe/prices?product=prod_xxx
+export const pricesProxy: PayloadHandler = async (req: PayloadRequest, res) => {
   if (!req.user || !checkRole(['admin'], req.user)) {
-    if (logs) req.payload.logger.error({ err: `You are not authorized to access products` })
-    res.status(401).json({ error: 'You are not authorized to access products' })
+    if (logs) req.payload.logger.error({ err: `You are not authorized to access prices` })
+    res.status(401).json({ error: 'You are not authorized to access prices' })
+    return
+  }
+
+  const productId = req.query.product as string
+
+  if (!productId) {
+    res.status(400).json({ error: 'Product ID is required' })
     return
   }
 
   try {
-    const products = await stripe.products.list({
+    const prices = await stripe.prices.list({
+      product: productId,
       limit: 100,
+      active: true,
     })
 
-    res.status(200).json(products)
+    res.status(200).json(prices)
   } catch (error: unknown) {
     if (logs) req.payload.logger.error({ err: `Error using Stripe API: ${error}` })
     res.status(500).json({ error: `Error using Stripe API: ${error}` })

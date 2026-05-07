@@ -1,29 +1,29 @@
 'use client'
-import React, { useEffect, useMemo, useState } from 'react'
+
+import React, { useEffect, useState } from 'react'
 
 import classes from './index.module.scss'
 
 const Promotion = () => {
   const [time, setTime] = useState({
-    days: 0,
+    days: 6,
     hours: 0,
     minutes: 0,
     seconds: 0,
   })
 
-  const targetDate = useMemo(() => {
-    const date = new Date()
-    date.setDate(date.getDate() + 3)
-    return date
-  }, [])
-
   useEffect(() => {
+    const targetDate = new Date()
+    targetDate.setDate(targetDate.getDate() + 6)
+
     const timerInterval = setInterval(() => {
       const currentTime = new Date()
       const timeDifference = Math.max(Number(targetDate) - Number(currentTime), 0)
 
       const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24))
-      const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+      const hours = Math.floor(
+        (timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+      )
       const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60))
       const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000)
 
@@ -37,16 +37,17 @@ const Promotion = () => {
     return () => {
       clearInterval(timerInterval)
     }
-  }, [targetDate])
+  }, [])
 
   return (
     <section className={classes.promotion}>
       <div className={classes.textBox}>
         <h3 className={classes.title}>Deals of the Month</h3>
         <p>
-          Get ready for a shopping experience like never before with our Deals of the Month! Every
-          purchase comes with exclusive perks and offers, making this month a celebration of savvy
-          choices and amazing deals. Don't miss out! 🎁🛒
+          Get ready for a shopping experience like never before with our Deals of
+          the Month! Every purchase comes with exclusive perks and offers, making
+          this month a celebration of savvy choices and amazing deals. Don't miss
+          out! 🎁🛒
         </p>
 
         <ul className={classes.stats}>
