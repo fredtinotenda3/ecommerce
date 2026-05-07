@@ -37,7 +37,7 @@ const Promotion = () => {
     return () => {
       clearInterval(timerInterval)
     }
-  }, [])
+  }, []) // Empty dependency array - targetDate is created inside effect
 
   return (
     <section className={classes.promotion}>

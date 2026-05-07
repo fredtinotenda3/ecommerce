@@ -1,0 +1,12 @@
+{
+  "extends": "next/core-web-vitals",
+  "plugins": [],
+  "rules": {
+    "prettier/prettier": "off",
+    "react-hooks/exhaustive-deps": "warn",
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "eol-last": "off",
+    "no-irregular-whitespace": "off",
+    "@typescript-eslint/no-explicit-any": "off"
+  }
+}
