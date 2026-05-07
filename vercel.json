@@ -2,12 +2,7 @@
   "buildCommand": "yarn build",
   "installCommand": "yarn install",
   "framework": "nextjs",
-  "functions": {
-    "dist/server.js": {
-      "includeFiles": "dist/**",
-      "excludeFiles": "dist/client/**"
-    }
-  },
+  "outputDirectory": ".next",
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -16,14 +11,6 @@
     {
       "source": "/admin/(.*)",
       "destination": "/admin/$1"
-    },
-    {
-      "source": "/media/(.*)",
-      "destination": "/media/$1"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/$1"
     }
   ]
 }
