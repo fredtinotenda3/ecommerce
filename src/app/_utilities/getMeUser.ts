@@ -7,35 +7,64 @@ export const getMeUser = async (args?: {
   nullUserRedirect?: string
   validUserRedirect?: string
 }): Promise<{
-  user: User
-  token: string
+  user: User | null
+  token: string | null
 }> => {
   const { nullUserRedirect, validUserRedirect } = args || {}
+
   const cookieStore = cookies()
+
   const token = cookieStore.get('payload-token')?.value
 
-  const meUserReq = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/me`, {
-    headers: {
-      Authorization: `JWT ${token}`,
-    },
-  })
+  if (!token) {
+    if (nullUserRedirect) {
+      redirect(nullUserRedirect)
+    }
 
-  const {
-    user,
-  }: {
-    user: User
-  } = await meUserReq.json()
-
-  if (validUserRedirect && meUserReq.ok && user) {
-    redirect(validUserRedirect)
+    return {
+      user: null,
+      token: null,
+    }
   }
 
-  if (nullUserRedirect && (!meUserReq.ok || !user)) {
-    redirect(nullUserRedirect)
-  }
+  try {
+    const meUserReq = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/me`, {
+      headers: {
+        Authorization: `JWT ${token}`,
+      },
+      cache: 'no-store',
+    })
 
-  return {
-    user,
-    token,
+    if (!meUserReq.ok) {
+      throw new Error('Failed to fetch user')
+    }
+
+    const data = await meUserReq.json()
+
+    const user = data?.user || null
+
+    if (validUserRedirect && user) {
+      redirect(validUserRedirect)
+    }
+
+    if (nullUserRedirect && !user) {
+      redirect(nullUserRedirect)
+    }
+
+    return {
+      user,
+      token,
+    }
+  } catch (error: unknown) {
+    console.error(error)
+
+    if (nullUserRedirect) {
+      redirect(nullUserRedirect)
+    }
+
+    return {
+      user: null,
+      token: null,
+    }
   }
 }
