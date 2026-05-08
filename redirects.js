@@ -22,6 +22,22 @@ module.exports = async () => {
       `${process.env.NEXT_PUBLIC_SERVER_URL}/api/redirects?limit=1000&depth=1`,
     )
 
+    // Ensure request succeeded
+    if (!redirectsRes.ok) {
+      console.warn('Redirects API not available')
+
+      return [internetExplorerRedirect]
+    }
+
+    // Ensure response is JSON
+    const contentType = redirectsRes.headers.get('content-type')
+
+    if (!contentType || !contentType.includes('application/json')) {
+      console.warn('Redirects API did not return JSON')
+
+      return [internetExplorerRedirect]
+    }
+
     const redirectsData = await redirectsRes.json()
     const { docs } = redirectsData
 
@@ -36,7 +52,10 @@ module.exports = async () => {
           .split('?')[0]
           .toLowerCase()
 
-        if (source.endsWith('/')) source = source.slice(0, -1) // a trailing slash will break this redirect
+        // trailing slash breaks redirects
+        if (source.endsWith('/')) {
+          source = source.slice(0, -1)
+        }
 
         let destination = '/'
 
@@ -46,7 +65,7 @@ module.exports = async () => {
 
         if (
           type === 'reference' &&
-          typeof reference.value === 'object' &&
+          typeof reference?.value === 'object' &&
           reference?.value?._status === 'published'
         ) {
           destination = `${process.env.NEXT_PUBLIC_SERVER_URL}/${
@@ -61,10 +80,8 @@ module.exports = async () => {
         }
 
         if (source.startsWith('/') && destination && source !== destination) {
-          return dynamicRedirects.push(redirect)
+          dynamicRedirects.push(redirect)
         }
-
-        return
       })
     }
 
@@ -72,10 +89,8 @@ module.exports = async () => {
 
     return redirects
   } catch (error) {
-    if (process.env.NODE_ENV === 'production') {
-      console.error(`Error configuring redirects: ${error}`) // eslint-disable-line no-console
-    }
+    console.error(`Error configuring redirects: ${error}`)
 
-    return []
+    return [internetExplorerRedirect]
   }
 }
