@@ -88,11 +88,7 @@ export const fetchGlobals = async (): Promise<{
   const headerData = fetchHeader()
   const footerData = fetchFooter()
 
-  const [settings, header, footer]: [Settings, Header, Footer] = await Promise.all([
-    await settingsData,
-    await headerData,
-    await footerData,
-  ])
+  const [settings, header, footer] = await Promise.all([settingsData, headerData, footerData])
 
   return {
     settings,

@@ -16,6 +16,7 @@ const app = express()
 const PORT = process.env.PORT || 3000
 
 const start = async (): Promise<void> => {
+  // Initialize Payload first
   await payload.init({
     secret: process.env.PAYLOAD_SECRET || '',
     express: app,
@@ -29,17 +30,31 @@ const start = async (): Promise<void> => {
     process.exit()
   }
 
-  if (process.env.NEXT_BUILD) {
-    app.listen(PORT, async () => {
-      payload.logger.info(`Next.js is now building...`)
-      // @ts-expect-error
-      await nextBuild(path.join(__dirname, '../'))
-      process.exit()
+  // Check if we're in build mode
+  if (process.env.NEXT_BUILD === 'true') {
+    payload.logger.info(`Next.js is now building...`)
+
+    // Start the server so API routes are available during build
+    const server = app.listen(PORT, async () => {
+      payload.logger.info(`Build server running on port ${PORT}`)
+
+      try {
+        // @ts-expect-error
+        await nextBuild(path.join(__dirname, '../'))
+        server.close(() => {
+          payload.logger.info('Build complete, shutting down')
+          process.exit(0)
+        })
+      } catch (error: unknown) {
+        payload.logger.error('Build failed:', error)
+        server.close(() => process.exit(1))
+      }
     })
 
     return
   }
 
+  // Production mode - run Next.js
   const nextApp = next({
     dev: process.env.NODE_ENV !== 'production',
   })

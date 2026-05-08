@@ -1,16 +1,8 @@
 {
-  "version": 2,
-  "framework": "nextjs",
   "buildCommand": "yarn build",
   "installCommand": "yarn install",
-  "rewrites": [
-    {
-      "source": "/admin",
-      "destination": "/admin/index.html"
-    },
-    {
-      "source": "/admin/(.*)",
-      "destination": "/admin/index.html"
-    }
-  ]
+  "framework": "nextjs",
+  "env": {
+    "NEXT_BUILD": "true"
+  }
 }

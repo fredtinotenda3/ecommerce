@@ -28,7 +28,7 @@ export const fetchDoc = async <T>(args: {
   id?: string
   draft?: boolean
 }): Promise<T | null> => {
-  const { collection, slug, draft } = args || {}
+  const { collection, slug, draft, id } = args || {}
 
   if (!queryMap[collection]) throw new Error(`Collection ${collection} not found`)
 
@@ -44,27 +44,38 @@ export const fetchDoc = async <T>(args: {
   }
 
   try {
-    const res = await fetch(`${GRAPHQL_API_URL}/api/graphql`, {
-      method: 'POST',
+    const url = id ? `${GRAPHQL_API_URL}/api/${collection}/${id}` : `${GRAPHQL_API_URL}/api/graphql`
+
+    const res = await fetch(url, {
+      method: id ? 'GET' : 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...(token?.value && draft ? { Authorization: `JWT ${token.value}` } : {}),
       },
       cache: 'no-store',
-      next: { tags: [`${collection}_${slug}`] },
-      body: JSON.stringify({
-        query: queryMap[collection].query,
-        variables: {
-          slug,
-          draft,
-        },
-      }),
+      next: { tags: [`${collection}_${slug || id}`] },
+      ...(id
+        ? {}
+        : {
+            body: JSON.stringify({
+              query: queryMap[collection].query,
+              variables: {
+                slug,
+                draft,
+              },
+            }),
+          }),
     })
 
     const contentType = res.headers.get('content-type')
 
-    if (!res.ok || !contentType || !contentType.includes('application/json')) {
-      console.error(`Fetch failed for ${collection} slug: ${slug}. Status: ${res.status}`)
+    if (!res.ok) {
+      console.error(`Fetch failed for ${collection} slug: ${slug || id}. Status: ${res.status}`)
+      return null
+    }
+
+    if (!contentType?.includes('application/json')) {
+      console.error(`Invalid content type for ${collection} slug: ${slug || id}`)
       return null
     }
 
@@ -73,6 +84,10 @@ export const fetchDoc = async <T>(args: {
     if (json.errors) {
       console.error(`GraphQL Error: ${json.errors[0]?.message}`)
       return null
+    }
+
+    if (id) {
+      return json
     }
 
     return json?.data?.[queryMap[collection].key]?.docs?.[0] || null

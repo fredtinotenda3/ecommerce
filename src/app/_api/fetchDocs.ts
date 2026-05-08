@@ -22,6 +22,12 @@ const queryMap = {
 export const fetchDocs = async <T>(collection: keyof Config['collections']): Promise<T[]> => {
   if (!queryMap[collection]) throw new Error(`Collection ${collection} not found`)
 
+  // During build, if the server isn't ready, return empty array gracefully
+  if (process.env.NEXT_BUILD === 'true' && !process.env.PAYLOAD_PUBLIC_SERVER_URL) {
+    console.warn(`Skipping ${collection} fetch during build - server URL not configured`)
+    return []
+  }
+
   try {
     const res = await fetch(`${GRAPHQL_API_URL}/api/graphql`, {
       method: 'POST',
@@ -36,8 +42,13 @@ export const fetchDocs = async <T>(collection: keyof Config['collections']): Pro
 
     const contentType = res.headers.get('content-type')
 
-    if (!res.ok || !contentType || !contentType.includes('application/json')) {
+    if (!res.ok) {
       console.error(`FetchDocs failed for ${collection}. Status: ${res.status}`)
+      return []
+    }
+
+    if (!contentType?.includes('application/json')) {
+      console.error(`Invalid content type for ${collection}`)
       return []
     }
 
