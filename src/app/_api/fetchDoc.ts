@@ -27,7 +27,7 @@ export const fetchDoc = async <T>(args: {
   slug?: string
   id?: string
   draft?: boolean
-}): Promise<T> => {
+}): Promise<T | null> => {
   const { collection, slug, draft } = args || {}
 
   if (!queryMap[collection]) throw new Error(`Collection ${collection} not found`)
@@ -35,31 +35,49 @@ export const fetchDoc = async <T>(args: {
   let token: RequestCookie | undefined
 
   if (draft) {
-    const { cookies } = await import('next/headers')
-    token = cookies().get(payloadToken)
+    try {
+      const { cookies } = await import('next/headers')
+      token = cookies().get(payloadToken)
+    } catch (e: unknown) {
+      // Cookies not available in this context
+    }
   }
 
-  const doc: T = await fetch(`${GRAPHQL_API_URL}/api/graphql`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token?.value && draft ? { Authorization: `JWT ${token.value}` } : {}),
-    },
-    cache: 'no-store',
-    next: { tags: [`${collection}_${slug}`] },
-    body: JSON.stringify({
-      query: queryMap[collection].query,
-      variables: {
-        slug,
-        draft,
+  try {
+    const res = await fetch(`${GRAPHQL_API_URL}/api/graphql`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token?.value && draft ? { Authorization: `JWT ${token.value}` } : {}),
       },
-    }),
-  })
-    ?.then(res => res.json())
-    ?.then(res => {
-      if (res.errors) throw new Error(res?.errors?.[0]?.message ?? 'Error fetching doc')
-      return res?.data?.[queryMap[collection].key]?.docs?.[0]
+      cache: 'no-store',
+      next: { tags: [`${collection}_${slug}`] },
+      body: JSON.stringify({
+        query: queryMap[collection].query,
+        variables: {
+          slug,
+          draft,
+        },
+      }),
     })
 
-  return doc
+    const contentType = res.headers.get('content-type')
+
+    if (!res.ok || !contentType || !contentType.includes('application/json')) {
+      console.error(`Fetch failed for ${collection} slug: ${slug}. Status: ${res.status}`)
+      return null
+    }
+
+    const json = await res.json()
+
+    if (json.errors) {
+      console.error(`GraphQL Error: ${json.errors[0]?.message}`)
+      return null
+    }
+
+    return json?.data?.[queryMap[collection].key]?.docs?.[0] || null
+  } catch (error: unknown) {
+    console.error(`Error in fetchDoc:`, error)
+    return null
+  }
 }
