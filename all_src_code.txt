@@ -3615,7 +3615,7 @@ const Filters = ({ categories }: { categories: Category[] }) => {
       <div>
         <h6 className={classes.title}>Product Categories</h6>
         <div className={classes.categories}>
-          {categories.map(category => {
+          {(categories || []).map(category => {
             const isSelected = categoryFilters.includes(category.id)
 
             return (
@@ -4892,7 +4892,7 @@ export const fetchDoc = async <T>(args: {
   slug?: string
   id?: string
   draft?: boolean
-}): Promise<T> => {
+}): Promise<T | null> => {
   const { collection, slug, draft } = args || {}
 
   if (!queryMap[collection]) throw new Error(`Collection ${collection} not found`)
@@ -4900,46 +4900,60 @@ export const fetchDoc = async <T>(args: {
   let token: RequestCookie | undefined
 
   if (draft) {
-    const { cookies } = await import('next/headers')
-    token = cookies().get(payloadToken)
+    try {
+      const { cookies } = await import('next/headers')
+      token = cookies().get(payloadToken)
+    } catch (e: unknown) {
+      // Cookies not available in this context
+    }
   }
 
-  const doc: T = await fetch(`${GRAPHQL_API_URL}/api/graphql`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token?.value && draft ? { Authorization: `JWT ${token.value}` } : {}),
-    },
-    cache: 'no-store',
-    next: { tags: [`${collection}_${slug}`] },
-    body: JSON.stringify({
-      query: queryMap[collection].query,
-      variables: {
-        slug,
-        draft,
+  try {
+    const res = await fetch(`${GRAPHQL_API_URL}/api/graphql`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token?.value && draft ? { Authorization: `JWT ${token.value}` } : {}),
       },
-    }),
-  })
-    ?.then(res => res.json())
-    ?.then(res => {
-      if (res.errors) throw new Error(res?.errors?.[0]?.message ?? 'Error fetching doc')
-      return res?.data?.[queryMap[collection].key]?.docs?.[0]
+      cache: 'no-store',
+      next: { tags: [`${collection}_${slug}`] },
+      body: JSON.stringify({
+        query: queryMap[collection].query,
+        variables: {
+          slug,
+          draft,
+        },
+      }),
     })
 
-  return doc
+    const contentType = res.headers.get('content-type')
+
+    if (!res.ok || !contentType || !contentType.includes('application/json')) {
+      console.error(`Fetch failed for ${collection} slug: ${slug}. Status: ${res.status}`)
+      return null
+    }
+
+    const json = await res.json()
+
+    if (json.errors) {
+      console.error(`GraphQL Error: ${json.errors[0]?.message}`)
+      return null
+    }
+
+    return json?.data?.[queryMap[collection].key]?.docs?.[0] || null
+  } catch (error: unknown) {
+    console.error(`Error in fetchDoc:`, error)
+    return null
+  }
 }
 
 ==== FILE: C:\Users\user\Desktop\ecommerce\src\app\_api\fetchDocs.ts ====
 
-import type { RequestCookie } from 'next/dist/compiled/@edge-runtime/cookies'
-
 import type { Config } from '../../payload/payload-types'
 import { CATEGORIES } from '../_graphql/categories'
-import { ORDERS } from '../_graphql/orders'
 import { PAGES } from '../_graphql/pages'
 import { PRODUCTS } from '../_graphql/products'
 import { GRAPHQL_API_URL } from './shared'
-import { payloadToken } from './token'
 
 const queryMap = {
   pages: {
@@ -4950,49 +4964,46 @@ const queryMap = {
     query: PRODUCTS,
     key: 'Products',
   },
-  orders: {
-    query: ORDERS,
-    key: 'Orders',
-  },
   categories: {
     query: CATEGORIES,
     key: 'Categories',
   },
 }
 
-export const fetchDocs = async <T>(
-  collection: keyof Config['collections'],
-  draft?: boolean,
-): Promise<T[]> => {
+export const fetchDocs = async <T>(collection: keyof Config['collections']): Promise<T[]> => {
   if (!queryMap[collection]) throw new Error(`Collection ${collection} not found`)
 
-  let token: RequestCookie | undefined
-
-  if (draft) {
-    const { cookies } = await import('next/headers')
-    token = cookies().get(payloadToken)
-  }
-
-  const docs: T[] = await fetch(`${GRAPHQL_API_URL}/api/graphql`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token?.value && draft ? { Authorization: `JWT ${token.value}` } : {}),
-    },
-    cache: 'no-store',
-    next: { tags: [collection] },
-    body: JSON.stringify({
-      query: queryMap[collection].query,
-    }),
-  })
-    ?.then(res => res.json())
-    ?.then(res => {
-      if (res.errors) throw new Error(res?.errors?.[0]?.message ?? 'Error fetching docs')
-
-      return res?.data?.[queryMap[collection].key]?.docs
+  try {
+    const res = await fetch(`${GRAPHQL_API_URL}/api/graphql`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+      body: JSON.stringify({
+        query: queryMap[collection].query,
+      }),
     })
 
-  return docs
+    const contentType = res.headers.get('content-type')
+
+    if (!res.ok || !contentType || !contentType.includes('application/json')) {
+      console.error(`FetchDocs failed for ${collection}. Status: ${res.status}`)
+      return []
+    }
+
+    const json = await res.json()
+
+    if (json.errors) {
+      console.error(json.errors)
+      return []
+    }
+
+    return json?.data?.[queryMap[collection].key]?.docs || []
+  } catch (error: unknown) {
+    console.error(error)
+    return []
+  }
 }
 
 ==== FILE: C:\Users\user\Desktop\ecommerce\src\app\_api\fetchGlobals.ts ====
