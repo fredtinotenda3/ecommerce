@@ -1,66 +1,75 @@
-// Note: This will not work in dev mode and will throw an error upon startup
-// This is because the Payload APIs are not yet running when the Next.js server starts
-// This is not a problem in production as Payload is booted up before building Next.js
-// For this reason the errors can be silently ignored in dev mode
+const path = require('path')
 
-module.exports = async () => {
+const redirectsFn = async () => {
   const internetExplorerRedirect = {
-    source: '/:path((?!ie-incompatible.html$).*)', // all pages except the incompatibility page
+    source: '/:path((?!ie-incompatible.html$).*)',
     has: [
       {
         type: 'header',
         key: 'user-agent',
-        value: '(.*Trident.*)', // all ie browsers
+        value: '(.*Trident.*)',
       },
     ],
     permanent: false,
     destination: '/ie-incompatible.html',
   }
 
+  const serverURL = process.env.NEXT_PUBLIC_SERVER_URL
+
+  if (!serverURL) {
+    console.warn('NEXT_PUBLIC_SERVER_URL is not defined, skipping dynamic redirects')
+    return [internetExplorerRedirect]
+  }
+
   try {
-    const redirectsRes = await fetch(
-      `${process.env.NEXT_PUBLIC_SERVER_URL}/api/redirects?limit=1000&depth=1`,
-    )
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000)
 
-    // Ensure request succeeded
+    let redirectsRes
+
+    try {
+      redirectsRes = await fetch(`${serverURL}/api/redirects?limit=1000&depth=1`, {
+        signal: controller.signal,
+      })
+    } catch (fetchError) {
+      // Server not ready yet (common in dev/build), silently skip
+      return [internetExplorerRedirect]
+    } finally {
+      clearTimeout(timeoutId)
+    }
+
     if (!redirectsRes.ok) {
-      console.warn('Redirects API not available')
-
       return [internetExplorerRedirect]
     }
 
-    // Ensure response is JSON
     const contentType = redirectsRes.headers.get('content-type')
-
     if (!contentType || !contentType.includes('application/json')) {
-      console.warn('Redirects API did not return JSON')
-
       return [internetExplorerRedirect]
     }
 
     const redirectsData = await redirectsRes.json()
     const { docs } = redirectsData
 
-    let dynamicRedirects = []
+    const dynamicRedirects = []
 
-    if (docs) {
+    if (docs && Array.isArray(docs)) {
       docs.forEach(doc => {
         const { from, to: { type, url, reference } = {} } = doc
 
-        let source = from
-          .replace(process.env.NEXT_PUBLIC_SERVER_URL, '')
-          .split('?')[0]
-          .toLowerCase()
+        if (!from) return
 
-        // trailing slash breaks redirects
+        let source = from.replace(serverURL, '').split('?')[0].toLowerCase()
+
         if (source.endsWith('/')) {
           source = source.slice(0, -1)
         }
 
+        if (!source.startsWith('/')) return
+
         let destination = '/'
 
         if (type === 'custom' && url) {
-          destination = url.replace(process.env.NEXT_PUBLIC_SERVER_URL, '')
+          destination = url.replace(serverURL, '')
         }
 
         if (
@@ -68,29 +77,46 @@ module.exports = async () => {
           typeof reference?.value === 'object' &&
           reference?.value?._status === 'published'
         ) {
-          destination = `${process.env.NEXT_PUBLIC_SERVER_URL}/${
-            reference.relationTo !== 'pages' ? `${reference.relationTo}/` : ''
-          }${reference.value.slug}`
+          destination = `${reference.relationTo !== 'pages' ? `/${reference.relationTo}` : ''}/${
+            reference.value.slug
+          }`
         }
 
-        const redirect = {
-          source,
-          destination,
-          permanent: true,
-        }
-
-        if (source.startsWith('/') && destination && source !== destination) {
-          dynamicRedirects.push(redirect)
+        if (destination && source !== destination) {
+          dynamicRedirects.push({
+            source,
+            destination,
+            permanent: true,
+          })
         }
       })
     }
 
-    const redirects = [internetExplorerRedirect, ...dynamicRedirects]
-
-    return redirects
+    return [internetExplorerRedirect, ...dynamicRedirects]
   } catch (error) {
-    console.error(`Error configuring redirects: ${error}`)
+    // Silently fail during dev/build — Payload API not yet available
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('Redirects API not available during build, using defaults only')
+    } else {
+      console.error(`Error configuring redirects: ${error}`)
+    }
 
     return [internetExplorerRedirect]
   }
 }
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  images: {
+    domains: [
+      'localhost',
+      process.env.NEXT_PUBLIC_SERVER_URL
+        ? new URL(process.env.NEXT_PUBLIC_SERVER_URL).hostname
+        : '',
+    ].filter(Boolean),
+  },
+  redirects: redirectsFn,
+}
+
+module.exports = nextConfig
