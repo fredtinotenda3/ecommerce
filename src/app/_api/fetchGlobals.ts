@@ -1,81 +1,46 @@
 import type { Footer, Header, Settings } from '../../payload/payload-types'
 import { FOOTER_QUERY, HEADER_QUERY, SETTINGS_QUERY } from '../_graphql/globals'
+import { GRAPHQL_API_URL } from './shared'
+
+async function safeFetch(query: string): Promise<any> {
+  if (!GRAPHQL_API_URL) {
+    throw new Error('NEXT_PUBLIC_SERVER_URL is not defined')
+  }
+
+  const response = await fetch(`${GRAPHQL_API_URL}/api/graphql`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    cache: 'no-store',
+    body: JSON.stringify({ query }),
+  })
+
+  if (!response.ok) {
+    throw new Error(`GraphQL request failed: ${response.status} ${response.statusText}`)
+  }
+
+  const contentType = response.headers.get('content-type')
+  if (!contentType?.includes('application/json')) {
+    throw new Error(`Expected JSON but got ${contentType} — is NEXT_PUBLIC_SERVER_URL correct?`)
+  }
+
+  const json = await response.json()
+  if (json?.errors) throw new Error(json.errors[0]?.message ?? 'GraphQL error')
+  return json
+}
 
 export async function fetchSettings(): Promise<Settings> {
-  const serverURL = process.env.NEXT_PUBLIC_SERVER_URL
-  if (!serverURL) throw new Error('NEXT_PUBLIC_SERVER_URL environment variable is required')
-
-  const settings = await fetch(`${serverURL}/api/graphql`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    cache: 'no-store',
-    body: JSON.stringify({
-      query: SETTINGS_QUERY,
-    }),
-  })
-    ?.then(res => {
-      if (!res.ok) throw new Error('Error fetching doc')
-      return res.json()
-    })
-    ?.then(res => {
-      if (res?.errors) throw new Error(res?.errors[0]?.message || 'Error fetching settings')
-      return res.data?.Settings
-    })
-
-  return settings
+  const json = await safeFetch(SETTINGS_QUERY)
+  return json.data?.Settings
 }
 
 export async function fetchHeader(): Promise<Header> {
-  const serverURL = process.env.NEXT_PUBLIC_SERVER_URL
-  if (!serverURL) throw new Error('NEXT_PUBLIC_SERVER_URL environment variable is required')
-
-  const header = await fetch(`${serverURL}/api/graphql`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    cache: 'no-store',
-    body: JSON.stringify({
-      query: HEADER_QUERY,
-    }),
-  })
-    ?.then(res => {
-      if (!res.ok) throw new Error('Error fetching doc')
-      return res.json()
-    })
-    ?.then(res => {
-      if (res?.errors) throw new Error(res?.errors[0]?.message || 'Error fetching header')
-      return res.data?.Header
-    })
-
-  return header
+  const json = await safeFetch(HEADER_QUERY)
+  return json.data?.Header
 }
 
 export async function fetchFooter(): Promise<Footer> {
-  const serverURL = process.env.NEXT_PUBLIC_SERVER_URL
-  if (!serverURL) throw new Error('NEXT_PUBLIC_SERVER_URL environment variable is required')
-
-  const footer = await fetch(`${serverURL}/api/graphql`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      query: FOOTER_QUERY,
-    }),
-  })
-    .then(res => {
-      if (!res.ok) throw new Error('Error fetching doc')
-      return res.json()
-    })
-    ?.then(res => {
-      if (res?.errors) throw new Error(res?.errors[0]?.message || 'Error fetching footer')
-      return res.data?.Footer
-    })
-
-  return footer
+  const json = await safeFetch(FOOTER_QUERY)
+  return json.data?.Footer
 }
 
 export const fetchGlobals = async (): Promise<{
@@ -83,20 +48,10 @@ export const fetchGlobals = async (): Promise<{
   header: Header
   footer: Footer
 }> => {
-  // initiate requests in parallel, then wait for them to resolve
-  const settingsData = fetchSettings()
-  const headerData = fetchHeader()
-  const footerData = fetchFooter()
-
-  const [settings, header, footer]: [Settings, Header, Footer] = await Promise.all([
-    await settingsData,
-    await headerData,
-    await footerData,
+  const [settings, header, footer] = await Promise.all([
+    fetchSettings(),
+    fetchHeader(),
+    fetchFooter(),
   ])
-
-  return {
-    settings,
-    header,
-    footer,
-  }
+  return { settings, header, footer }
 }
