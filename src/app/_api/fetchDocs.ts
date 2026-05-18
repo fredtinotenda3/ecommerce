@@ -1,8 +1,12 @@
+import type { RequestCookie } from 'next/dist/compiled/@edge-runtime/cookies'
+
 import type { Config } from '../../payload/payload-types'
 import { CATEGORIES } from '../_graphql/categories'
+import { ORDERS } from '../_graphql/orders'
 import { PAGES } from '../_graphql/pages'
 import { PRODUCTS } from '../_graphql/products'
 import { GRAPHQL_API_URL } from './shared'
+import { payloadToken } from './token'
 
 const queryMap = {
   pages: {
@@ -13,55 +17,47 @@ const queryMap = {
     query: PRODUCTS,
     key: 'Products',
   },
+  orders: {
+    query: ORDERS,
+    key: 'Orders',
+  },
   categories: {
     query: CATEGORIES,
     key: 'Categories',
   },
 }
 
-export const fetchDocs = async <T>(collection: keyof Config['collections']): Promise<T[]> => {
+export const fetchDocs = async <T>(
+  collection: keyof Config['collections'],
+  draft?: boolean,
+): Promise<T[]> => {
   if (!queryMap[collection]) throw new Error(`Collection ${collection} not found`)
 
-  // During build, if the server isn't ready, return empty array gracefully
-  if (process.env.NEXT_BUILD === 'true' && !process.env.PAYLOAD_PUBLIC_SERVER_URL) {
-    console.warn(`Skipping ${collection} fetch during build - server URL not configured`)
-    return []
+  let token: RequestCookie | undefined
+
+  if (draft) {
+    const { cookies } = await import('next/headers')
+    token = cookies().get(payloadToken)
   }
 
-  try {
-    const res = await fetch(`${GRAPHQL_API_URL}/api/graphql`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store',
-      body: JSON.stringify({
-        query: queryMap[collection].query,
-      }),
+  const docs: T[] = await fetch(`${GRAPHQL_API_URL}/api/graphql`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token?.value && draft ? { Authorization: `JWT ${token.value}` } : {}),
+    },
+    cache: 'no-store',
+    next: { tags: [collection] },
+    body: JSON.stringify({
+      query: queryMap[collection].query,
+    }),
+  })
+    ?.then(res => res.json())
+    ?.then(res => {
+      if (res.errors) throw new Error(res?.errors?.[0]?.message ?? 'Error fetching docs')
+
+      return res?.data?.[queryMap[collection].key]?.docs
     })
 
-    const contentType = res.headers.get('content-type')
-
-    if (!res.ok) {
-      console.error(`FetchDocs failed for ${collection}. Status: ${res.status}`)
-      return []
-    }
-
-    if (!contentType?.includes('application/json')) {
-      console.error(`Invalid content type for ${collection}`)
-      return []
-    }
-
-    const json = await res.json()
-
-    if (json.errors) {
-      console.error(json.errors)
-      return []
-    }
-
-    return json?.data?.[queryMap[collection].key]?.docs || []
-  } catch (error: unknown) {
-    console.error(error)
-    return []
-  }
+  return docs
 }

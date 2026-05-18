@@ -27,72 +27,39 @@ export const fetchDoc = async <T>(args: {
   slug?: string
   id?: string
   draft?: boolean
-}): Promise<T | null> => {
-  const { collection, slug, draft, id } = args || {}
+}): Promise<T> => {
+  const { collection, slug, draft } = args || {}
 
   if (!queryMap[collection]) throw new Error(`Collection ${collection} not found`)
 
   let token: RequestCookie | undefined
 
   if (draft) {
-    try {
-      const { cookies } = await import('next/headers')
-      token = cookies().get(payloadToken)
-    } catch (e: unknown) {
-      // Cookies not available in this context
-    }
+    const { cookies } = await import('next/headers')
+    token = cookies().get(payloadToken)
   }
 
-  try {
-    const url = id ? `${GRAPHQL_API_URL}/api/${collection}/${id}` : `${GRAPHQL_API_URL}/api/graphql`
-
-    const res = await fetch(url, {
-      method: id ? 'GET' : 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token?.value && draft ? { Authorization: `JWT ${token.value}` } : {}),
+  const doc: T = await fetch(`${GRAPHQL_API_URL}/api/graphql`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token?.value && draft ? { Authorization: `JWT ${token.value}` } : {}),
+    },
+    cache: 'no-store',
+    next: { tags: [`${collection}_${slug}`] },
+    body: JSON.stringify({
+      query: queryMap[collection].query,
+      variables: {
+        slug,
+        draft,
       },
-      cache: 'no-store',
-      next: { tags: [`${collection}_${slug || id}`] },
-      ...(id
-        ? {}
-        : {
-            body: JSON.stringify({
-              query: queryMap[collection].query,
-              variables: {
-                slug,
-                draft,
-              },
-            }),
-          }),
+    }),
+  })
+    ?.then(res => res.json())
+    ?.then(res => {
+      if (res.errors) throw new Error(res?.errors?.[0]?.message ?? 'Error fetching doc')
+      return res?.data?.[queryMap[collection].key]?.docs?.[0]
     })
 
-    const contentType = res.headers.get('content-type')
-
-    if (!res.ok) {
-      console.error(`Fetch failed for ${collection} slug: ${slug || id}. Status: ${res.status}`)
-      return null
-    }
-
-    if (!contentType?.includes('application/json')) {
-      console.error(`Invalid content type for ${collection} slug: ${slug || id}`)
-      return null
-    }
-
-    const json = await res.json()
-
-    if (json.errors) {
-      console.error(`GraphQL Error: ${json.errors[0]?.message}`)
-      return null
-    }
-
-    if (id) {
-      return json
-    }
-
-    return json?.data?.[queryMap[collection].key]?.docs?.[0] || null
-  } catch (error: unknown) {
-    console.error(`Error in fetchDoc:`, error)
-    return null
-  }
+  return doc
 }
