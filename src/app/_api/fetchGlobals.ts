@@ -1,11 +1,11 @@
 import type { Footer, Header, Settings } from '../../payload/payload-types'
 import { FOOTER_QUERY, HEADER_QUERY, SETTINGS_QUERY } from '../_graphql/globals'
-import { GRAPHQL_API_URL } from './shared'
 
 export async function fetchSettings(): Promise<Settings> {
-  if (!GRAPHQL_API_URL) throw new Error('NEXT_PUBLIC_SERVER_URL not found')
+  const serverURL = process.env.NEXT_PUBLIC_SERVER_URL
+  if (!serverURL) throw new Error('NEXT_PUBLIC_SERVER_URL environment variable is required')
 
-  const settings = await fetch(`${GRAPHQL_API_URL}/api/graphql`, {
+  const settings = await fetch(`${serverURL}/api/graphql`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -28,9 +28,10 @@ export async function fetchSettings(): Promise<Settings> {
 }
 
 export async function fetchHeader(): Promise<Header> {
-  if (!GRAPHQL_API_URL) throw new Error('NEXT_PUBLIC_SERVER_URL not found')
+  const serverURL = process.env.NEXT_PUBLIC_SERVER_URL
+  if (!serverURL) throw new Error('NEXT_PUBLIC_SERVER_URL environment variable is required')
 
-  const header = await fetch(`${GRAPHQL_API_URL}/api/graphql`, {
+  const header = await fetch(`${serverURL}/api/graphql`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -53,9 +54,10 @@ export async function fetchHeader(): Promise<Header> {
 }
 
 export async function fetchFooter(): Promise<Footer> {
-  if (!GRAPHQL_API_URL) throw new Error('NEXT_PUBLIC_SERVER_URL not found')
+  const serverURL = process.env.NEXT_PUBLIC_SERVER_URL
+  if (!serverURL) throw new Error('NEXT_PUBLIC_SERVER_URL environment variable is required')
 
-  const footer = await fetch(`${GRAPHQL_API_URL}/api/graphql`, {
+  const footer = await fetch(`${serverURL}/api/graphql`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -82,8 +84,6 @@ export const fetchGlobals = async (): Promise<{
   footer: Footer
 }> => {
   // initiate requests in parallel, then wait for them to resolve
-  // this will eagerly start to the fetch requests at the same time
-  // see https://nextjs.org/docs/app/building-your-application/data-fetching/fetching
   const settingsData = fetchSettings()
   const headerData = fetchHeader()
   const footerData = fetchFooter()

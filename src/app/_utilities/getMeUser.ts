@@ -14,28 +14,36 @@ export const getMeUser = async (args?: {
   const cookieStore = cookies()
   const token = cookieStore.get('payload-token')?.value
 
-  const meUserReq = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/me`, {
+  const serverURL = process.env.NEXT_PUBLIC_SERVER_URL
+  if (!serverURL) {
+    throw new Error('NEXT_PUBLIC_SERVER_URL environment variable is required')
+  }
+
+  const meUserReq = await fetch(`${serverURL}/api/users/me`, {
     headers: {
       Authorization: `JWT ${token}`,
+      'Content-Type': 'application/json',
     },
+    cache: 'no-store',
   })
 
-  const {
-    user,
-  }: {
-    user: User
-  } = await meUserReq.json()
+  let user: User | null = null
 
-  if (validUserRedirect && meUserReq.ok && user) {
+  if (meUserReq.ok) {
+    const json = await meUserReq.json()
+    user = json.user || null
+  }
+
+  if (validUserRedirect && user) {
     redirect(validUserRedirect)
   }
 
-  if (nullUserRedirect && (!meUserReq.ok || !user)) {
+  if (nullUserRedirect && !user) {
     redirect(nullUserRedirect)
   }
 
   return {
-    user,
-    token,
+    user: user as User,
+    token: token || '',
   }
 }
