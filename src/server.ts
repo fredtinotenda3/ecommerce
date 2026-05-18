@@ -37,7 +37,14 @@ const start = async (): Promise<void> => {
       const server = app.listen(PORT, async () => {
         payload.logger.info(`Build server ready at http://127.0.0.1:${PORT}`)
 
-        // Give the server time to fully initialize before Next.js starts
+        // CRITICAL: Set INTERNAL_SERVER_URL so that all fetch() calls inside
+        // the Next.js build process (static generation, generateStaticParams, etc.)
+        // hit the local Payload server instead of NEXT_PUBLIC_SERVER_URL.
+        // This variable is NOT inlined by Next.js webpack (only NEXT_PUBLIC_* are),
+        // so it is read fresh at runtime inside the build worker processes.
+        process.env.INTERNAL_SERVER_URL = `http://127.0.0.1:${PORT}`
+
+        // Give the server time to be fully ready before Next.js starts
         // making API requests during static page generation
         await new Promise(r => setTimeout(r, 3000))
 
@@ -59,7 +66,7 @@ const start = async (): Promise<void> => {
     return
   }
 
-  // Production runtime mode — serve Next.js through Express + Payload
+  // Production runtime — serve Next.js through Express + Payload
   const nextApp = next({
     dev: process.env.NODE_ENV !== 'production',
   })
@@ -70,7 +77,6 @@ const start = async (): Promise<void> => {
 
   nextApp.prepare().then(() => {
     payload.logger.info('Starting Next.js...')
-
     app.listen(PORT, async () => {
       payload.logger.info(`Next.js App URL: ${process.env.PAYLOAD_PUBLIC_SERVER_URL}`)
     })

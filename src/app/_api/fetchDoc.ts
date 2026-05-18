@@ -40,7 +40,11 @@ export const fetchDoc = async <T>(args: {
     token = cookies().get(payloadToken)
   }
 
-  const response = await fetch(`${GRAPHQL_API_URL}/api/graphql`, {
+  // Re-read at call time so build-time worker processes see INTERNAL_SERVER_URL
+  const apiUrl =
+    process.env.INTERNAL_SERVER_URL || process.env.NEXT_PUBLIC_SERVER_URL || GRAPHQL_API_URL
+
+  const response = await fetch(`${apiUrl}/api/graphql`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -56,15 +60,16 @@ export const fetchDoc = async <T>(args: {
 
   if (!response.ok) {
     throw new Error(
-      `fetchDoc failed for "${collection}/${slug}": ${response.status} ${response.statusText} from ${GRAPHQL_API_URL}`,
+      `fetchDoc "${collection}/${slug}": HTTP ${response.status} ${response.statusText} — URL: ${apiUrl}`,
     )
   }
 
   const contentType = response.headers.get('content-type') || ''
   if (!contentType.includes('application/json')) {
     throw new Error(
-      `fetchDoc: expected JSON for "${collection}/${slug}" but received "${contentType}". ` +
-        `Is NEXT_PUBLIC_SERVER_URL set correctly? Current value: ${GRAPHQL_API_URL}`,
+      `fetchDoc "${collection}/${slug}": expected JSON but got "${contentType}" from ${apiUrl}. ` +
+        `INTERNAL_SERVER_URL=${process.env.INTERNAL_SERVER_URL} ` +
+        `NEXT_PUBLIC_SERVER_URL=${process.env.NEXT_PUBLIC_SERVER_URL}`,
     )
   }
 
