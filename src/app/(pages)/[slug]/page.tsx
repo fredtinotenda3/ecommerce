@@ -17,7 +17,7 @@ import { generateMeta } from '../../_utilities/generateMeta'
 // To do this, we include the `no-cache` header on the fetch requests used to get the data for this page
 // But we also need to force Next.js to dynamically render this page on each request for preview mode to work
 // See https://nextjs.org/docs/app/api-reference/file-conventions/route-segment-config#dynamic
-// If you are not using Payload Cloud then this line can be removed
+// If you are not using Payload Cloud then this line can be removed, see `../../../README.md#cache`
 export const dynamic = 'force-dynamic'
 
 import Categories from '../../_components/Categories'
@@ -25,17 +25,11 @@ import Promotion from '../../_components/Promotion'
 
 import classes from './index.module.scss'
 
-type Props = {
-  params: {
-    slug?: string
-  }
-}
-
-export default async function Page({ params: { slug = 'home' } }: Props) {
+export default async function Page({ params: { slug = 'home' } }) {
   const { isEnabled: isDraftMode } = draftMode()
 
   let page: Page | null = null
-  let categories: Category[] = []
+  let categories: Category[] | null = null
 
   try {
     page = await fetchDoc<Page>({
@@ -44,16 +38,17 @@ export default async function Page({ params: { slug = 'home' } }: Props) {
       draft: isDraftMode,
     })
 
-    const fetchedCategories = await fetchDocs<Category>('categories')
-
-    if (Array.isArray(fetchedCategories)) {
-      categories = fetchedCategories
-    }
+    categories = await fetchDocs<Category>('categories')
   } catch (error) {
-    console.error('Error fetching page/categories:', error)
+    // when deploying this template on Payload Cloud, this page needs to build before the APIs are live
+    // so swallow the error here and simply render the page with fallback data where necessary
+    // in production you may want to redirect to a 404  page or at least log the error somewhere
+    // console.error(error)
   }
 
   // if no `home` page exists, render a static one using dummy content
+  // you should delete this code once you have a home page in the CMS
+  // this is really only useful for those who are demoing this template
   if (!page && slug === 'home') {
     page = staticHome
   }
@@ -62,14 +57,13 @@ export default async function Page({ params: { slug = 'home' } }: Props) {
     return notFound()
   }
 
-  const hero = page?.hero || null
-  const layout = page?.layout || []
+  const { hero, layout } = page
 
   return (
     <React.Fragment>
       {slug === 'home' ? (
         <section>
-          {hero && <Hero {...hero} />}
+          <Hero {...hero} />
 
           <Gutter className={classes.home}>
             <Categories categories={categories} />
@@ -78,8 +72,7 @@ export default async function Page({ params: { slug = 'home' } }: Props) {
         </section>
       ) : (
         <>
-          {hero && <Hero {...hero} />}
-
+          <Hero {...hero} />
           <Blocks
             blocks={layout}
             disableTopPadding={!hero || hero?.type === 'none' || hero?.type === 'lowImpact'}
@@ -93,21 +86,13 @@ export default async function Page({ params: { slug = 'home' } }: Props) {
 export async function generateStaticParams() {
   try {
     const pages = await fetchDocs<Page>('pages')
-
-    if (!Array.isArray(pages)) {
-      return []
-    }
-
-    return pages.map(({ slug }) => ({
-      slug,
-    }))
+    return pages?.map(({ slug }) => slug)
   } catch (error) {
-    console.error('Error generating static params:', error)
     return []
   }
 }
 
-export async function generateMetadata({ params: { slug = 'home' } }: Props): Promise<Metadata> {
+export async function generateMetadata({ params: { slug = 'home' } }): Promise<Metadata> {
   const { isEnabled: isDraftMode } = draftMode()
 
   let page: Page | null = null
@@ -119,7 +104,10 @@ export async function generateMetadata({ params: { slug = 'home' } }: Props): Pr
       draft: isDraftMode,
     })
   } catch (error) {
-    console.error('Error generating metadata:', error)
+    // don't throw an error if the fetch fails
+    // this is so that we can render a static home page for the demo
+    // when deploying this template on Payload Cloud, this page needs to build before the APIs are live
+    // in production you may want to redirect to a 404  page or at least log the error somewhere
   }
 
   if (!page && slug === 'home') {
