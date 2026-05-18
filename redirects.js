@@ -32,14 +32,11 @@ const redirectsFn = async () => {
         signal: controller.signal,
       })
     } catch (fetchError) {
-      // Server not ready yet (common in dev/build), silently skip
       return [internetExplorerRedirect]
     } finally {
       clearTimeout(timeoutId)
     }
 
-<<<<<<< HEAD
-=======
     if (!redirectsRes.ok) {
       return [internetExplorerRedirect]
     }
@@ -49,7 +46,6 @@ const redirectsFn = async () => {
       return [internetExplorerRedirect]
     }
 
->>>>>>> a5bb40ed9878687f9c5c7dd9b3a827d497477a48
     const redirectsData = await redirectsRes.json()
     const { docs } = redirectsData
 
@@ -63,13 +59,9 @@ const redirectsFn = async () => {
 
         let source = from.replace(serverURL, '').split('?')[0].toLowerCase()
 
-<<<<<<< HEAD
-        if (source.endsWith('/')) source = source.slice(0, -1) // a trailing slash will break this redirect
-=======
         if (source.endsWith('/')) {
           source = source.slice(0, -1)
         }
->>>>>>> a5bb40ed9878687f9c5c7dd9b3a827d497477a48
 
         if (!source.startsWith('/')) return
 
@@ -89,59 +81,26 @@ const redirectsFn = async () => {
           }`
         }
 
-<<<<<<< HEAD
-        const redirect = {
-          source,
-          destination,
-          permanent: true,
-        }
-
-        if (source.startsWith('/') && destination && source !== destination) {
-          return dynamicRedirects.push(redirect)
-=======
         if (destination && source !== destination) {
           dynamicRedirects.push({
             source,
             destination,
             permanent: true,
           })
->>>>>>> a5bb40ed9878687f9c5c7dd9b3a827d497477a48
         }
-
-        return
       })
     }
 
     return [internetExplorerRedirect, ...dynamicRedirects]
   } catch (error) {
-<<<<<<< HEAD
-    if (process.env.NODE_ENV === 'production') {
-      console.error(`Error configuring redirects: ${error}`) // eslint-disable-line no-console
-=======
-    // Silently fail during dev/build — Payload API not yet available
     if (process.env.NODE_ENV !== 'production') {
       console.warn('Redirects API not available during build, using defaults only')
     } else {
       console.error(`Error configuring redirects: ${error}`)
->>>>>>> a5bb40ed9878687f9c5c7dd9b3a827d497477a48
     }
 
-    return []
+    return [internetExplorerRedirect]
   }
 }
 
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  reactStrictMode: true,
-  images: {
-    domains: [
-      'localhost',
-      process.env.NEXT_PUBLIC_SERVER_URL
-        ? new URL(process.env.NEXT_PUBLIC_SERVER_URL).hostname
-        : '',
-    ].filter(Boolean),
-  },
-  redirects: redirectsFn,
-}
-
-module.exports = nextConfig
+module.exports = redirectsFn
