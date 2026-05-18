@@ -55,23 +55,25 @@ export const fetchDocs = async <T>(
   })
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch ${collection}: ${response.status} ${response.statusText}`)
+    throw new Error(
+      `fetchDocs failed for "${collection}": ${response.status} ${response.statusText} from ${GRAPHQL_API_URL}`,
+    )
   }
 
-  const contentType = response.headers.get('content-type')
-  if (!contentType?.includes('application/json')) {
+  const contentType = response.headers.get('content-type') || ''
+  if (!contentType.includes('application/json')) {
     throw new Error(
-      `Expected JSON response for ${collection} but got ${contentType ?? 'unknown content type'}`,
+      `fetchDocs: expected JSON for "${collection}" but received "${contentType}". ` +
+        `Is NEXT_PUBLIC_SERVER_URL set correctly? Current value: ${GRAPHQL_API_URL}`,
     )
   }
 
   const json = await response.json()
 
   if (json.errors) {
-    throw new Error(json.errors?.[0]?.message ?? `Error fetching ${collection}`)
+    throw new Error(json.errors?.[0]?.message ?? `GraphQL error fetching "${collection}"`)
   }
 
   const docs: T[] = json?.data?.[queryMap[collection].key]?.docs
-
   return Array.isArray(docs) ? docs : []
 }

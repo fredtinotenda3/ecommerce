@@ -37,7 +37,8 @@ const start = async (): Promise<void> => {
       const server = app.listen(PORT, async () => {
         payload.logger.info(`Build server ready at http://127.0.0.1:${PORT}`)
 
-        // Give the server extra time to be fully ready to accept requests
+        // Give the server time to fully initialize before Next.js starts
+        // making API requests during static page generation
         await new Promise(r => setTimeout(r, 3000))
 
         try {
@@ -58,6 +59,7 @@ const start = async (): Promise<void> => {
     return
   }
 
+  // Production runtime mode — serve Next.js through Express + Payload
   const nextApp = next({
     dev: process.env.NODE_ENV !== 'production',
   })
