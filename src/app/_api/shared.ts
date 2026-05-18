@@ -1,8 +1,4 @@
-// Use the environment variable for API calls - NEVER use localhost during build
-const serverURL = process.env.NEXT_PUBLIC_SERVER_URL
-
-if (!serverURL) {
-  throw new Error('NEXT_PUBLIC_SERVER_URL environment variable is required')
-}
-
-export const GRAPHQL_API_URL = serverURL
+// src/app/_api/shared.ts
+export const GRAPHQL_API_URL = process.env.NEXT_BUILD
+  ? `http://127.0.0.1:${process.env.PORT || 3000}`
+  : process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'

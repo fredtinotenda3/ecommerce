@@ -1,3 +1,4 @@
+// src/app/(pages)/products/Filters/index.tsx
 'use client'
 
 import React from 'react'
@@ -16,7 +17,6 @@ const Filters = ({ categories }: { categories: Category[] }) => {
   const handleCategories = (categoryId: string) => {
     if (categoryFilters.includes(categoryId)) {
       const updatedCategories = categoryFilters.filter(id => id !== categoryId)
-
       setCategoryFilters(updatedCategories)
     } else {
       setCategoryFilters([...categoryFilters, categoryId])
@@ -25,14 +25,15 @@ const Filters = ({ categories }: { categories: Category[] }) => {
 
   const handleSort = (value: string) => setSort(value)
 
+  const safeCategories = Array.isArray(categories) ? categories : []
+
   return (
     <div className={classes.filters}>
       <div>
         <h6 className={classes.title}>Product Categories</h6>
         <div className={classes.categories}>
-          {categories.map(category => {
+          {safeCategories.map(category => {
             const isSelected = categoryFilters.includes(category.id)
-
             return (
               <Checkbox
                 key={category.id}

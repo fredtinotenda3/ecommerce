@@ -1,3 +1,4 @@
+// src/server.ts
 import dotenv from 'dotenv'
 import next from 'next'
 import nextBuild from 'next/dist/build'
@@ -30,13 +31,30 @@ const start = async (): Promise<void> => {
   }
 
   if (process.env.NEXT_BUILD) {
-    app.listen(PORT, async () => {
-      payload.logger.info(`Next.js is now building...`)
-      // @ts-expect-error
-      await nextBuild(path.join(__dirname, '../'))
-      process.exit()
+    payload.logger.info(`Starting build server on port ${PORT}...`)
+
+    await new Promise<void>((resolve, reject) => {
+      const server = app.listen(PORT, async () => {
+        payload.logger.info(`Build server ready at http://127.0.0.1:${PORT}`)
+
+        // Give the server extra time to be fully ready to accept requests
+        await new Promise(r => setTimeout(r, 3000))
+
+        try {
+          // @ts-expect-error
+          await nextBuild(path.join(__dirname, '../'))
+          payload.logger.info('Next.js build completed successfully')
+          server.close(() => resolve())
+        } catch (error: unknown) {
+          payload.logger.error('Next.js build failed:', error)
+          server.close(() => reject(error))
+        }
+      })
+
+      server.on('error', reject)
     })
 
+    process.exit(0)
     return
   }
 

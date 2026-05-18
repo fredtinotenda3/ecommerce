@@ -1,3 +1,4 @@
+// src/app/_api/fetchDoc.ts
 import type { RequestCookie } from 'next/dist/compiled/@edge-runtime/cookies'
 
 import type { Config } from '../../payload/payload-types'
@@ -39,7 +40,7 @@ export const fetchDoc = async <T>(args: {
     token = cookies().get(payloadToken)
   }
 
-  const doc: T = await fetch(`${GRAPHQL_API_URL}/api/graphql`, {
+  const response = await fetch(`${GRAPHQL_API_URL}/api/graphql`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -55,11 +56,29 @@ export const fetchDoc = async <T>(args: {
       },
     }),
   })
-    ?.then(res => res.json())
-    ?.then(res => {
-      if (res.errors) throw new Error(res?.errors?.[0]?.message ?? 'Error fetching doc')
-      return res?.data?.[queryMap[collection].key]?.docs?.[0]
-    })
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch ${collection}/${slug}: ${response.status} ${response.statusText}`,
+    )
+  }
+
+  const contentType = response.headers.get('content-type')
+  if (!contentType?.includes('application/json')) {
+    throw new Error(
+      `Expected JSON for ${collection}/${slug} but received ${
+        contentType ?? 'unknown content type'
+      }`,
+    )
+  }
+
+  const json = await response.json()
+
+  if (json.errors) {
+    throw new Error(json.errors?.[0]?.message ?? `Error fetching ${collection}/${slug}`)
+  }
+
+  const doc: T = json?.data?.[queryMap[collection].key]?.docs?.[0]
 
   return doc
 }
