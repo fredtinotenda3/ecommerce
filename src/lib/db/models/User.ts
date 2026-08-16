@@ -8,7 +8,8 @@
 // (not-yet-wired) native auth foundation, which will define its own
 // explicit hash field when it's actually activated in a later phase.
 
-import { Schema, type Connection, type Document, type Types } from 'mongoose'
+import { type Connection, type Document, Schema, type Types } from 'mongoose'
+
 import { getOrCreateModel } from './getOrCreateModel'
 
 export interface CartItemSubdocument {

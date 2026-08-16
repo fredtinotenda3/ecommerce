@@ -1,14 +1,17 @@
 // src/lib/repositories/CategoryRepository.ts
 import type { Connection, Types } from 'mongoose'
+
+import { type CategoryDocument, getCategoryModel } from '../db/models/Category'
 import type { Category } from '../domain/types'
-import { getCategoryModel, type CategoryDocument } from '../db/models/Category'
 
 export interface CategoryRepository {
   getById(id: string): Promise<Category | null>
   list(): Promise<Category[]>
-  create(input: { title: string; mediaId?: string | null; parentId?: string | null }): Promise<
-    Category
-  >
+  create(input: {
+    title: string
+    mediaId?: string | null
+    parentId?: string | null
+  }): Promise<Category>
   update(
     id: string,
     patch: Partial<{ title: string; mediaId: string | null; parentId: string | null }>,

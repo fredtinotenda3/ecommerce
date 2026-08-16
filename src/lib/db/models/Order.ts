@@ -12,7 +12,8 @@
 // later phase (see the audit's Data Migration Plan) — this phase only
 // defines the shape.
 
-import { Schema, type Connection, type Document, type Types } from 'mongoose'
+import { type Connection, type Document, Schema, type Types } from 'mongoose'
+
 import type { OrderStatus } from '../../domain/types'
 import { getOrCreateModel } from './getOrCreateModel'
 

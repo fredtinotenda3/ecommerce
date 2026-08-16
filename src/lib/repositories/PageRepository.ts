@@ -1,7 +1,8 @@
 // src/lib/repositories/PageRepository.ts
 import type { Connection } from 'mongoose'
-import type { Page } from '../domain/types'
+
 import { getPageModel, type PageDocument } from '../db/models/Page'
+import type { Page } from '../domain/types'
 
 export interface PageRepository {
   getById(id: string): Promise<Page | null>

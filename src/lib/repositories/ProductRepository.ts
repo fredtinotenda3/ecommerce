@@ -8,8 +8,9 @@
 // — see tests/fakes/FakeProductRepository.ts — without a live database.
 
 import type { Connection, FilterQuery, Types } from 'mongoose'
-import type { Product, ProductListFilter } from '../domain/types'
+
 import { getProductModel, type ProductDocument } from '../db/models/Product'
+import type { Product, ProductListFilter } from '../domain/types'
 
 export interface ProductRepository {
   getById(id: string): Promise<Product | null>
@@ -23,9 +24,10 @@ export interface ProductRepository {
     id: string,
     price: { amount: number; currency: string; compareAtPrice?: number | null },
   ): Promise<Product | null>
-  update(id: string, patch: Partial<Pick<Product, 'title' | 'slug' | 'enablePaywall'>>): Promise<
-    Product | null
-  >
+  update(
+    id: string,
+    patch: Partial<Pick<Product, 'title' | 'slug' | 'enablePaywall'>>,
+  ): Promise<Product | null>
   delete(id: string): Promise<boolean>
 }
 

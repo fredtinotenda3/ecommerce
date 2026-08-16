@@ -7,7 +7,8 @@
 // Paynow for this order, and what did it say?" without relying on
 // application logs.
 
-import { Schema, type Connection, type Document, type Types } from 'mongoose'
+import { type Connection, type Document, Schema, type Types } from 'mongoose'
+
 import type { PaymentAttemptStatus, PaymentProviderName } from '../../domain/types'
 import { getOrCreateModel } from './getOrCreateModel'
 

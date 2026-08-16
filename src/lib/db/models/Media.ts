@@ -3,7 +3,8 @@
 // many derived fields (sizes, focalPoint, etc.) at write time — left as
 // passthrough via `strict: false` since this phase only needs to read
 // alt/url/dimensions for display.
-import { Schema, type Connection, type Document, type Types } from 'mongoose'
+import { type Connection, type Document, Schema, type Types } from 'mongoose'
+
 import { getOrCreateModel } from './getOrCreateModel'
 
 export interface MediaDocument extends Document {

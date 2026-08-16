@@ -6,7 +6,8 @@
 // that a single order can (in principle) have more than one payment
 // attempt across its lifetime without overloading the Order document.
 
-import { Schema, type Connection, type Document, type Types } from 'mongoose'
+import { type Connection, type Document, Schema, type Types } from 'mongoose'
+
 import type { PaymentProviderName, PaymentStatus } from '../../domain/types'
 import { getOrCreateModel } from './getOrCreateModel'
 

@@ -18,7 +18,8 @@
 // legacyStripeProductId) are optional/nullable so that documents written
 // before the backfill migration runs remain perfectly valid.
 
-import { Schema, type Connection, type Document, type Types } from 'mongoose'
+import { type Connection, type Document, Schema, type Types } from 'mongoose'
+
 import { getOrCreateModel } from './getOrCreateModel'
 
 export interface ProductDocument extends Document {

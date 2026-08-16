@@ -1,7 +1,8 @@
 // src/lib/repositories/PaymentRepository.ts
 import type { Connection, Types } from 'mongoose'
-import type { Payment, PaymentProviderName, PaymentStatus } from '../domain/types'
+
 import { getPaymentModel, type PaymentDocument } from '../db/models/Payment'
+import type { Payment, PaymentProviderName, PaymentStatus } from '../domain/types'
 
 export interface CreatePaymentInput {
   orderId: string
@@ -19,7 +20,11 @@ export interface PaymentRepository {
   updateStatus(
     id: string,
     status: PaymentStatus,
-    extra?: { providerReference?: string; paymentMethod?: string; metadata?: Record<string, unknown> },
+    extra?: {
+      providerReference?: string
+      paymentMethod?: string
+      metadata?: Record<string, unknown>
+    },
   ): Promise<Payment | null>
 }
 

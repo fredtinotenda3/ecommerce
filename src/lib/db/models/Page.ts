@@ -3,7 +3,8 @@
 // left as Mixed/passthrough — block and SEO schema ownership stays with
 // the CMS/render layer for this phase; only structural fields needed for
 // listing/lookup are declared explicitly.
-import { Schema, type Connection, type Document, type Types } from 'mongoose'
+import { type Connection, type Document, Schema, type Types } from 'mongoose'
+
 import { getOrCreateModel } from './getOrCreateModel'
 
 export interface PageDocument extends Document {

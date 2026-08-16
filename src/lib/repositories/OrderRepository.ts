@@ -1,7 +1,8 @@
 // src/lib/repositories/OrderRepository.ts
 import type { Connection, Types } from 'mongoose'
-import type { Order, OrderItem, OrderStatus } from '../domain/types'
+
 import { getOrderModel, type OrderDocument } from '../db/models/Order'
+import type { Order, OrderItem, OrderStatus } from '../domain/types'
 
 export interface CreateOrderInput {
   orderNumber: string

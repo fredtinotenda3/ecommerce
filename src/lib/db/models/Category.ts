@@ -1,6 +1,7 @@
 // src/lib/db/models/Category.ts
 // Maps onto the existing `categories` collection.
-import { Schema, type Connection, type Document, type Types } from 'mongoose'
+import { type Connection, type Document, Schema, type Types } from 'mongoose'
+
 import { getOrCreateModel } from './getOrCreateModel'
 
 export interface CategoryDocument extends Document {

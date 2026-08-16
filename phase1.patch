@@ -1,0 +1,3826 @@
+diff --git a/.gitignore b/.gitignore
+index e70834d..1bbe951 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1,4 +1,8 @@
+-node_modules/
+-.next/
+-scripts/migrations/reports/
+-*.log
++build
++dist
++/media
++node_modules
++.DS_Store
++.env
++.next
++.vercel
+diff --git a/docs/admin-architecture.md b/docs/admin-architecture.md
+new file mode 100644
+index 0000000..066ff0c
+--- /dev/null
++++ b/docs/admin-architecture.md
+@@ -0,0 +1,48 @@
++# Planned Native Admin — Route Boundaries
++
++**Status: planning document only.** No admin UI is built in Phase 1. Payload's
++existing admin at `/admin` remains the live, only admin dashboard until a
++future phase explicitly replaces it (see the audit's Phased Implementation
++Plan, Phase 6).
++
++This document exists so the repository/service layer built in Phase 1
++(`ProductRepository`, `OrderRepository`, `CategoryRepository`, `PageRepository`,
++`MediaRepository`, plus the corresponding services) is shaped around the
++admin surface it will eventually need to serve, rather than being designed
++in a vacuum and reshaped later.
++
++Scope is intentionally bounded to what the audit found actually in use
++today — see `MIGRATION-AUDIT.md`, "Admin Audit" section — not a hypothetical
++superset of ecommerce-admin features.
++
++## Planned routes
++
++| Route | Purpose | Backed by (Phase 1 services) |
++|---|---|---|
++| `/admin/products` | List/search products | `ProductService.listPublished` (extended later with a draft+published admin list variant) |
++| `/admin/products/[id]` | Create/edit a product: title, **price + currency**, categories, images, block content, SEO, paywall toggle | `ProductService.setPrice`, `ProductRepository.update` |
++| `/admin/categories` | CRUD + parent selection | `CategoryRepository` |
++| `/admin/orders` | List orders, filter by status | `OrderRepository.getByCustomer` / a future `list()` method |
++| `/admin/orders/[id]` | Order detail: customer, items, totals, payment status/reference | `OrderService.getById` + `PaymentRepository.getByOrderId` |
++| `/admin/customers` | List/search customers | `UserRepository` (read paths only; no admin mutation planned beyond role assignment) |
++| `/admin/customers/[id]` | Customer detail: account info, orders, purchases | `UserRepository.getById` + `OrderService.getByCustomer` |
++| `/admin/pages` | CMS Pages CRUD, block editor | `PageRepository` |
++| `/admin/media` | Media library: upload, browse, alt text | `MediaRepository` |
++| `/admin/settings` | Site settings, Header, Footer singleton editors | Not yet modeled as a repository — Settings/Header/Footer globals need a small dedicated repository in a later phase, deliberately out of scope for Phase 1 since nothing else depends on it yet |
++| `/admin/users` | Admin user management, role assignment | `UserRepository` + `src/lib/auth/roles.ts` (`assertHasRole`) |
++
++## Authorization boundary
++
++Every `/admin/**` route will require `roles.includes('admin')` — checked
++server-side (route handler / Server Component), never trusted from the
++client. This mirrors Payload's existing `checkRole(['admin'], user)` pattern
++identified in the audit, so the authorization *semantics* are not changing,
++only *where* they're enforced (service/route layer vs. Payload's
++`access.admin` collection config).
++
++## Explicitly not planned (not found in current usage)
++
++Per the audit, no evidence was found of: bulk admin actions, CSV export,
++multi-warehouse inventory, discount codes, or multi-currency admin UI. These
++are not modeled in the Phase 1 repository/service layer and should not be
++assumed as future scope without a separate business decision.
+diff --git a/package.json b/package.json
+index dc97e0f..56104d0 100644
+--- a/package.json
++++ b/package.json
+@@ -19,7 +19,10 @@
+     "generate:graphQLSchema": "PAYLOAD_CONFIG_PATH=src/payload/payload.config.ts payload generate:graphQLSchema",
+     "lint": "eslint src",
+     "lint:fix": "eslint --fix --ext .ts,.tsx src",
+-    "payload": "cross-env PAYLOAD_CONFIG_PATH=src/payload/payload.config.ts payload"
++    "payload": "cross-env PAYLOAD_CONFIG_PATH=src/payload/payload.config.ts payload",
++    "test": "vitest run",
++    "test:watch": "vitest",
++    "migration:products:prices": "ts-node -T scripts/migrations/backfillProductPrices.ts"
+   },
+   "dependencies": {
+     "@payloadcms/bundler-webpack": "^1.0.0",
+@@ -37,6 +40,7 @@
+     "dotenv": "^8.2.0",
+     "escape-html": "^1.0.3",
+     "express": "^4.17.1",
++    "mongoose": "^6.12.0",
+     "next": "13.5.2",
+     "os-browserify": "^0.3.0",
+     "payload": "^2.0.7",
+@@ -69,6 +73,7 @@
+     "eslint-plugin-filenames": "^1.3.2",
+     "eslint-plugin-import": "2.25.4",
+     "eslint-plugin-prettier": "^4.0.0",
++    "vitest": "^1.6.0",
+     "eslint-plugin-react-hooks": "^4.6.0",
+     "eslint-plugin-simple-import-sort": "^10.0.0",
+     "nodemon": "^2.0.6",
+diff --git a/scripts/migrations/backfillProductPrices.ts b/scripts/migrations/backfillProductPrices.ts
+new file mode 100644
+index 0000000..eb559ca
+--- /dev/null
++++ b/scripts/migrations/backfillProductPrices.ts
+@@ -0,0 +1,135 @@
++// scripts/migrations/backfillProductPrices.ts
++//
++// Backfills the new native `price`/`currency` fields on Products from the
++// legacy `priceJSON` (raw Stripe Price-list API response — see
++// src/payload/collections/Products/hooks/beforeChange.ts for how it's
++// written today, and src/app/_components/Price/index.tsx for how it's
++// parsed today).
++//
++// SAFETY PROPERTIES (per Phase 1H requirements):
++//   1. Dry-run by default. Run with `--apply` to actually write.
++//   2. Never overwrites an already-populated `price` field unless
++//      `--force` is also passed.
++//   3. Never touches or deletes `priceJSON` / `stripeProductID`.
++//   4. Produces a detailed report (see migrationRunner.ts).
++//   5. Safe to run repeatedly: an already-migrated product is reported as
++//      "skipped", not re-processed.
++//
++// Usage:
++//   npm run migration:products:prices                # dry run
++//   npm run migration:products:prices -- --apply      # actually writes
++//   npm run migration:products:prices -- --apply --force
++//
++// Stripe's `unit_amount` is already an integer in minor units (this is a
++// Stripe API convention, not something this script converts) — see
++// toMinorUnits usage note below for why we still route it through the
++// money module rather than trusting it blindly.
++
++import 'dotenv/config'
++import { getDbConnection, closeDbConnection } from '../../src/lib/db/connection'
++import { getProductModel, type ProductDocument } from '../../src/lib/db/models/Product'
++import { runMigration, type MigrationContext } from './lib/migrationRunner'
++
++interface StripePriceListShape {
++  data?: Array<{
++    unit_amount?: number
++    currency?: string
++  }>
++}
++
++const FALLBACK_CURRENCY = 'USD'
++
++const parsePriceFromLegacyJSON = (
++  priceJSON: string,
++): { amount: number; currency: string } | null => {
++  let parsed: StripePriceListShape
++  try {
++    parsed = JSON.parse(priceJSON)
++  } catch {
++    return null
++  }
++
++  const firstPrice = parsed?.data?.[0]
++  if (!firstPrice || typeof firstPrice.unit_amount !== 'number') {
++    return null
++  }
++
++  return {
++    amount: Math.round(firstPrice.unit_amount), // already minor units per Stripe convention
++    currency: (firstPrice.currency ?? FALLBACK_CURRENCY).toUpperCase(),
++  }
++}
++
++const migrateProducts = async (ctx: MigrationContext, force: boolean): Promise<void> => {
++  const connection = await getDbConnection()
++  const Model = getProductModel(connection)
++
++  const products = await Model.find({}).lean<ProductDocument[]>().exec()
++
++  ctx.log(`Found ${products.length} product(s) to consider.`)
++
++  for (const product of products as unknown as ProductDocument[]) {
++    const id = product._id.toString()
++    const hasAuthoritativePrice = typeof product.price === 'number' && product.price !== null
++
++    if (hasAuthoritativePrice && !force) {
++      ctx.recordResult({
++        id,
++        action: 'skipped',
++        reason: 'price already set (pass --force to overwrite)',
++        before: { price: product.price, currency: product.currency },
++      })
++      continue
++    }
++
++    if (!product.priceJSON) {
++      ctx.recordResult({
++        id,
++        action: 'skipped',
++        reason: 'no legacy priceJSON to migrate from',
++      })
++      continue
++    }
++
++    const parsed = parsePriceFromLegacyJSON(product.priceJSON)
++    if (!parsed) {
++      ctx.recordResult({
++        id,
++        action: 'error',
++        reason: 'priceJSON present but could not be parsed into a usable price',
++      })
++      continue
++    }
++
++    const before = { price: product.price ?? null, currency: product.currency ?? null }
++    const after = { price: parsed.amount, currency: parsed.currency }
++
++    if (!ctx.dryRun) {
++      await Model.findByIdAndUpdate(id, {
++        $set: { price: after.price, currency: after.currency },
++      }).exec()
++    }
++
++    ctx.recordResult({
++      id,
++      action: 'migrated',
++      before,
++      after,
++      reason: ctx.dryRun ? 'would set price/currency from legacy priceJSON' : undefined,
++    })
++  }
++}
++
++const main = async (): Promise<void> => {
++  const force = process.argv.includes('--force')
++
++  await runMigration('backfill-product-prices', ctx => migrateProducts(ctx, force))
++
++  await closeDbConnection()
++}
++
++main().catch(err => {
++  // eslint-disable-next-line no-console
++  console.error('[backfill-product-prices] Fatal error:', err)
++  process.exitCode = 1
++})
+diff --git a/scripts/migrations/lib/migrationRunner.ts b/scripts/migrations/lib/migrationRunner.ts
+new file mode 100644
+index 0000000..873e696
+--- /dev/null
++++ b/scripts/migrations/lib/migrationRunner.ts
+@@ -0,0 +1,115 @@
++// scripts/migrations/lib/migrationRunner.ts
++//
++// Minimal, reusable framework for the additive, non-destructive
++// migrations this project needs (products now; users/orders/payments/
++// categories/pages/media later — see the audit's Data Migration Plan).
++//
++// Design goals, directly from the Phase 1H requirements:
++//   - dry-run by default unless --apply is passed
++//   - safe to run repeatedly (idempotent) — each migration script decides
++//     its own "already migrated" check; this runner just gives it a
++//     consistent place to report that
++//   - produces a detailed, structured report (console + JSON file)
++//   - never issues DROP/TRUNCATE — this runner has no such capability at
++//     all, by design, so a migration script literally cannot do it
++//     through this framework
++
++import { mkdir, writeFile } from 'fs/promises'
++import { join } from 'path'
++
++export interface MigrationRecordResult {
++  id: string
++  action: 'migrated' | 'skipped' | 'error'
++  reason?: string
++  before?: unknown
++  after?: unknown
++}
++
++export interface MigrationReport {
++  migrationName: string
++  dryRun: boolean
++  startedAt: string
++  finishedAt: string
++  totalConsidered: number
++  migrated: number
++  skipped: number
++  errors: number
++  records: MigrationRecordResult[]
++}
++
++export interface MigrationContext {
++  dryRun: boolean
++  log: (message: string) => void
++  recordResult: (result: MigrationRecordResult) => void
++}
++
++export type MigrationFn = (ctx: MigrationContext) => Promise<void>
++
++export const parseDryRunFlag = (argv: string[] = process.argv): boolean => {
++  // Dry-run is the SAFE DEFAULT. Only an explicit --apply flag turns off
++  // dry-run mode. This deliberately inverts the more common "opt into
++  // dry-run" pattern, because the cost of accidentally running for-real
++  // against production is much higher than the cost of an extra flag.
++  return !argv.includes('--apply')
++}
++
++export const runMigration = async (
++  migrationName: string,
++  fn: MigrationFn,
++): Promise<MigrationReport> => {
++  const dryRun = parseDryRunFlag()
++  const startedAt = new Date().toISOString()
++  const records: MigrationRecordResult[] = []
++
++  const ctx: MigrationContext = {
++    dryRun,
++    log: message => {
++      // eslint-disable-next-line no-console
++      console.log(`[${migrationName}]${dryRun ? ' [DRY RUN]' : ''} ${message}`)
++    },
++    recordResult: result => {
++      records.push(result)
++    },
++  }
++
++  ctx.log(`Starting. Mode: ${dryRun ? 'DRY RUN (no writes)' : 'APPLY (will write)'}`)
++
++  await fn(ctx)
++
++  const finishedAt = new Date().toISOString()
++
++  const report: MigrationReport = {
++    migrationName,
++    dryRun,
++    startedAt,
++    finishedAt,
++    totalConsidered: records.length,
++    migrated: records.filter(r => r.action === 'migrated').length,
++    skipped: records.filter(r => r.action === 'skipped').length,
++    errors: records.filter(r => r.action === 'error').length,
++    records,
++  }
++
++  await writeReport(report)
++  printSummary(report)
++
++  return report
++}
++
++const writeReport = async (report: MigrationReport): Promise<void> => {
++  const dir = join(process.cwd(), 'scripts', 'migrations', 'reports')
++  await mkdir(dir, { recursive: true })
++  const filename = `${report.migrationName}-${report.startedAt.replace(/[:.]/g, '-')}.json`
++  await writeFile(join(dir, filename), JSON.stringify(report, null, 2), 'utf8')
++  // eslint-disable-next-line no-console
++  console.log(`[${report.migrationName}] Full report written to scripts/migrations/reports/${filename}`)
++}
++
++const printSummary = (report: MigrationReport): void => {
++  // eslint-disable-next-line no-console
++  console.log(
++    `[${report.migrationName}] Done. considered=${report.totalConsidered} ` +
++      `migrated=${report.migrated} skipped=${report.skipped} errors=${report.errors} ` +
++      `(${report.dryRun ? 'DRY RUN — nothing was written' : 'APPLIED'})`,
++  )
++}
+diff --git a/src/lib/auth/password.ts b/src/lib/auth/password.ts
+new file mode 100644
+index 0000000..e885b93
+--- /dev/null
++++ b/src/lib/auth/password.ts
+@@ -0,0 +1,47 @@
++// src/lib/auth/password.ts
++//
++// Foundation only — NOT wired into any route in this phase. Payload's
++// own authentication continues to be the live auth system (see the
++// Phase 1 brief's explicit instruction not to replace auth yet).
++//
++// Uses Node's built-in `crypto.scrypt`, deliberately avoiding a new
++// runtime dependency (bcrypt/argon2) for this foundational phase. This
++// can be swapped for bcrypt/argon2 later without changing the exported
++// function signatures, if that's preferred once native auth is actually
++// activated — scrypt is a legitimate, well-reviewed choice either way
++// (it's what Node's own docs recommend for password hashing use cases).
++
++import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'crypto'
++import { promisify } from 'util'
++
++const scrypt = promisify(scryptCallback)
++
++const KEY_LENGTH = 64
++const SALT_LENGTH = 16
++
++/** Returns a single string encoding both the salt and derived key, e.g.
++ * `"<hex salt>:<hex hash>"`, so callers only need to persist one field. */
++export const hashPassword = async (plainPassword: string): Promise<string> => {
++  if (plainPassword.length < 8) {
++    throw new Error('hashPassword: password must be at least 8 characters')
++  }
++  const salt = randomBytes(SALT_LENGTH).toString('hex')
++  const derivedKey = (await scrypt(plainPassword, salt, KEY_LENGTH)) as Buffer
++  return `${salt}:${derivedKey.toString('hex')}`
++}
++
++export const verifyPassword = async (plainPassword: string, storedHash: string): Promise<boolean> => {
++  const [salt, keyHex] = storedHash.split(':')
++  if (!salt || !keyHex) {
++    return false
++  }
++  const derivedKey = (await scrypt(plainPassword, salt, KEY_LENGTH)) as Buffer
++  const storedKey = Buffer.from(keyHex, 'hex')
++
++  // Guard against timingSafeEqual throwing on mismatched lengths, and
++  // against leaking length information via the exception path either.
++  if (storedKey.length !== derivedKey.length) {
++    return false
++  }
++  return timingSafeEqual(derivedKey, storedKey)
++}
+diff --git a/src/lib/auth/roles.ts b/src/lib/auth/roles.ts
+new file mode 100644
+index 0000000..00acfc3
+--- /dev/null
++++ b/src/lib/auth/roles.ts
+@@ -0,0 +1,21 @@
++// src/lib/auth/roles.ts
++//
++// Foundation only — mirrors the role model already in use by Payload's
++// Users collection (`roles: ['admin' | 'customer']`, see the audit's
++// Authentication Audit) so a future switch to native auth doesn't also
++// require redesigning authorization semantics at the same time.
++
++import type { Role } from '../domain/types'
++
++export const isAdmin = (roles: Role[]): boolean => roles.includes('admin')
++
++export const isCustomer = (roles: Role[]): boolean => roles.includes('customer')
++
++export const hasAnyRole = (roles: Role[], required: Role[]): boolean =>
++  required.some(r => roles.includes(r))
++
++export const assertHasRole = (roles: Role[], required: Role[]): void => {
++  if (!hasAnyRole(roles, required)) {
++    throw new Error(`Access denied: requires one of [${required.join(', ')}], has [${roles.join(', ')}]`)
++  }
++}
+diff --git a/src/lib/auth/session.ts b/src/lib/auth/session.ts
+new file mode 100644
+index 0000000..943b1ae
+--- /dev/null
++++ b/src/lib/auth/session.ts
+@@ -0,0 +1,88 @@
++// src/lib/auth/session.ts
++//
++// Foundation only — NOT wired into any route in this phase. Defines the
++// shape a native session token would take (HMAC-signed, JSON payload,
++// base64url-encoded) so that when native auth is actually activated
++// (a later phase), the mechanism already exists and has tests.
++//
++// Requires SESSION_SECRET to be set once this is actually used; reading
++// it lazily (inside the functions, not at module load) so importing this
++// module in a context where SESSION_SECRET isn't set yet (e.g. right now,
++// since nothing calls this) doesn't throw.
++
++import { createHmac, timingSafeEqual } from 'crypto'
++
++export interface SessionPayload {
++  userId: string
++  roles: string[]
++  issuedAt: number
++  expiresAt: number
++}
++
++const getSecret = (): string => {
++  const secret = process.env.SESSION_SECRET
++  if (!secret) {
++    throw new Error(
++      'SESSION_SECRET is not set. This is required before native session tokens can be ' +
++        'issued or verified — not required for Phase 1, which does not call this yet.',
++    )
++  }
++  return secret
++}
++
++const base64url = (input: Buffer | string): string =>
++  Buffer.from(input).toString('base64url')
++
++const fromBase64url = (input: string): Buffer => Buffer.from(input, 'base64url')
++
++const sign = (data: string): string => createHmac('sha256', getSecret()).update(data).digest('base64url')
++
++export const createSessionToken = (
++  payload: Omit<SessionPayload, 'issuedAt' | 'expiresAt'>,
++  ttlSeconds = 60 * 60 * 24 * 7, // 7 days
++): string => {
++  const now = Math.floor(Date.now() / 1000)
++  const fullPayload: SessionPayload = {
++    ...payload,
++    issuedAt: now,
++    expiresAt: now + ttlSeconds,
++  }
++  const encodedPayload = base64url(JSON.stringify(fullPayload))
++  const signature = sign(encodedPayload)
++  return `${encodedPayload}.${signature}`
++}
++
++export class InvalidSessionTokenError extends Error {
++  constructor(reason: string) {
++    super(`Invalid session token: ${reason}`)
++    this.name = 'InvalidSessionTokenError'
++  }
++}
++
++export const verifySessionToken = (token: string): SessionPayload => {
++  const [encodedPayload, signature] = token.split('.')
++  if (!encodedPayload || !signature) {
++    throw new InvalidSessionTokenError('malformed token')
++  }
++
++  const expectedSignature = sign(encodedPayload)
++  const a = Buffer.from(signature)
++  const b = Buffer.from(expectedSignature)
++  if (a.length !== b.length || !timingSafeEqual(a, b)) {
++    throw new InvalidSessionTokenError('signature mismatch')
++  }
++
++  let payload: SessionPayload
++  try {
++    payload = JSON.parse(fromBase64url(encodedPayload).toString('utf8'))
++  } catch {
++    throw new InvalidSessionTokenError('unparseable payload')
++  }
++
++  const now = Math.floor(Date.now() / 1000)
++  if (payload.expiresAt < now) {
++    throw new InvalidSessionTokenError('expired')
++  }
++
++  return payload
++}
+diff --git a/src/lib/db/connection.ts b/src/lib/db/connection.ts
+new file mode 100644
+index 0000000..c7d310d
+--- /dev/null
++++ b/src/lib/db/connection.ts
+@@ -0,0 +1,79 @@
++// src/lib/db/connection.ts
++//
++// Native MongoDB connection for the new application layer.
++//
++// IMPORTANT: This is intentionally a SEPARATE Mongoose connection from the
++// one Payload's @payloadcms/db-mongodb adapter manages internally via the
++// default `mongoose` singleton connection during payload.init(). We use
++// `mongoose.createConnection()` (a distinct Connection instance) rather than
++// the default global connection so that:
++//
++//   1. This module can be imported and used independently of whether
++//      Payload has initialized yet (needed for standalone scripts/tests).
++//   2. We never risk double-registering a model name against the same
++//      global mongoose singleton that Payload also registers models on
++//      (Payload registers models named e.g. "products" on the DEFAULT
++//      connection — see node_modules/@payloadcms/db-mongodb/dist/init.js).
++//
++// Both connections point at the SAME `DATABASE_URI` / same physical
++// database. They are two separate driver-level connections to one
++// database, not two databases. This is a deliberate, temporary
++// arrangement for the incremental migration — once Payload is removed
++// (a future phase), this becomes the only connection.
++//
++// This module does not connect eagerly on import. Call `getDbConnection()`
++// wherever a repository needs the database; it establishes (or reuses) the
++// connection lazily and caches it.
++
++import mongoose, { type Connection } from 'mongoose'
++
++let cachedConnection: Connection | null = null
++let connectingPromise: Promise<Connection> | null = null
++
++const getDatabaseUri = (): string => {
++  const uri = process.env.DATABASE_URI
++  if (!uri) {
++    throw new Error(
++      'DATABASE_URI is not set. The native application layer requires the same ' +
++        'DATABASE_URI already used by Payload (see .env / .env.example).',
++    )
++  }
++  return uri
++}
++
++export const getDbConnection = async (): Promise<Connection> => {
++  if (cachedConnection && cachedConnection.readyState === 1) {
++    return cachedConnection
++  }
++
++  if (connectingPromise) {
++    return connectingPromise
++  }
++
++  connectingPromise = new Promise<Connection>((resolve, reject) => {
++    const connection = mongoose.createConnection(getDatabaseUri())
++
++    connection.once('open', () => {
++      cachedConnection = connection
++      connectingPromise = null
++      resolve(connection)
++    })
++
++    connection.once('error', err => {
++      connectingPromise = null
++      reject(err)
++    })
++  })
++
++  return connectingPromise
++}
++
++/** For tests and scripts that need a clean shutdown. Not used by request-
++ * scoped Next.js code paths (the connection is intentionally long-lived
++ * there, matching standard Mongoose-in-serverless/Node patterns). */
++export const closeDbConnection = async (): Promise<void> => {
++  if (cachedConnection) {
++    await cachedConnection.close()
++    cachedConnection = null
++  }
++}
+diff --git a/src/lib/db/models/Category.ts b/src/lib/db/models/Category.ts
+new file mode 100644
+index 0000000..e3af8bd
+--- /dev/null
++++ b/src/lib/db/models/Category.ts
+@@ -0,0 +1,32 @@
++// src/lib/db/models/Category.ts
++// Maps onto the existing `categories` collection.
++import { Schema, type Connection, type Document, type Types } from 'mongoose'
++import { getOrCreateModel } from './getOrCreateModel'
++
++export interface CategoryDocument extends Document {
++  _id: Types.ObjectId
++  title: string
++  media?: Types.ObjectId | null
++  /** Added by @payloadcms/plugin-nested-docs at the Payload layer today;
++   * declared here as optional/passthrough so this model can read it
++   * without owning the nested-docs breadcrumb-building logic yet. */
++  parent?: Types.ObjectId | null
++  createdAt: Date
++  updatedAt: Date
++}
++
++const CategorySchema = new Schema<CategoryDocument>(
++  {
++    title: { type: String },
++    media: { type: Schema.Types.ObjectId, ref: 'media' },
++    parent: { type: Schema.Types.ObjectId, ref: 'categories' },
++  },
++  {
++    strict: false,
++    timestamps: true,
++    collection: 'categories',
++  },
++)
++
++export const getCategoryModel = (connection: Connection) =>
++  getOrCreateModel<CategoryDocument>(connection, 'NativeCategory', CategorySchema, 'categories')
+diff --git a/src/lib/db/models/Media.ts b/src/lib/db/models/Media.ts
+new file mode 100644
+index 0000000..d72df00
+--- /dev/null
++++ b/src/lib/db/models/Media.ts
+@@ -0,0 +1,40 @@
++// src/lib/db/models/Media.ts
++// Maps onto the existing `media` collection. Payload's upload field adds
++// many derived fields (sizes, focalPoint, etc.) at write time — left as
++// passthrough via `strict: false` since this phase only needs to read
++// alt/url/dimensions for display.
++import { Schema, type Connection, type Document, type Types } from 'mongoose'
++import { getOrCreateModel } from './getOrCreateModel'
++
++export interface MediaDocument extends Document {
++  _id: Types.ObjectId
++  alt: string
++  filename?: string | null
++  url?: string | null
++  mimeType?: string | null
++  filesize?: number | null
++  width?: number | null
++  height?: number | null
++  createdAt: Date
++  updatedAt: Date
++}
++
++const MediaSchema = new Schema<MediaDocument>(
++  {
++    alt: { type: String },
++    filename: { type: String },
++    url: { type: String },
++    mimeType: { type: String },
++    filesize: { type: Number },
++    width: { type: Number },
++    height: { type: Number },
++  },
++  {
++    strict: false,
++    timestamps: true,
++    collection: 'media',
++  },
++)
++
++export const getMediaModel = (connection: Connection) =>
++  getOrCreateModel<MediaDocument>(connection, 'NativeMedia', MediaSchema, 'media')
+diff --git a/src/lib/db/models/Order.ts b/src/lib/db/models/Order.ts
+new file mode 100644
+index 0000000..7d5b8fd
+--- /dev/null
++++ b/src/lib/db/models/Order.ts
+@@ -0,0 +1,80 @@
++// src/lib/db/models/Order.ts
++//
++// Maps onto the EXISTING `orders` collection. Every field Payload's
++// current `Orders` config already writes (`orderedBy`, `stripePaymentIntentID`,
++// `total`, `items[].product/price/quantity`) is left untouched and
++// readable via `strict: false` passthrough.
++//
++// NEW fields introduced by Phase 1C (orderNumber, status, subtotal,
++// currency, item title/currency snapshot) are additive and optional, so
++// every existing order document remains perfectly valid without a
++// migration having run yet. The backfill/compat strategy for these is a
++// later phase (see the audit's Data Migration Plan) — this phase only
++// defines the shape.
++
++import { Schema, type Connection, type Document, type Types } from 'mongoose'
++import type { OrderStatus } from '../../domain/types'
++import { getOrCreateModel } from './getOrCreateModel'
++
++export interface OrderItemSubdocument {
++  product: Types.ObjectId
++  title?: string
++  price?: number
++  currency?: string
++  quantity?: number
++}
++
++export interface OrderDocument extends Document {
++  _id: Types.ObjectId
++  orderedBy?: Types.ObjectId
++
++  // --- New native order fields (Phase 1C) ---
++  orderNumber?: string | null
++  status?: OrderStatus | null
++  subtotal?: number | null
++  currency?: string | null
++
++  // --- Existing fields (untouched) ---
++  total?: number
++  items?: OrderItemSubdocument[]
++  stripePaymentIntentID?: string | null
++
++  createdAt: Date
++  updatedAt: Date
++}
++
++const OrderSchema = new Schema<OrderDocument>(
++  {
++    orderedBy: { type: Schema.Types.ObjectId, ref: 'users' },
++
++    orderNumber: { type: String, default: null },
++    status: { type: String, default: null },
++    subtotal: { type: Number, default: null },
++    currency: { type: String, default: null },
++
++    total: { type: Number },
++    items: [
++      {
++        _id: false,
++        product: { type: Schema.Types.ObjectId, ref: 'products' },
++        title: { type: String },
++        price: { type: Number },
++        currency: { type: String },
++        quantity: { type: Number },
++      },
++    ],
++    stripePaymentIntentID: { type: String },
++  },
++  {
++    strict: false,
++    timestamps: true,
++    collection: 'orders',
++  },
++)
++
++// Sparse + unique: only enforced once orderNumber is actually populated,
++// so existing orders (orderNumber == null) never collide with each other.
++OrderSchema.index({ orderNumber: 1 }, { unique: true, sparse: true })
++
++export const getOrderModel = (connection: Connection) =>
++  getOrCreateModel<OrderDocument>(connection, 'NativeOrder', OrderSchema, 'orders')
+diff --git a/src/lib/db/models/Page.ts b/src/lib/db/models/Page.ts
+new file mode 100644
+index 0000000..8b2d551
+--- /dev/null
++++ b/src/lib/db/models/Page.ts
+@@ -0,0 +1,44 @@
++// src/lib/db/models/Page.ts
++// Maps onto the existing `pages` collection. `layout`/`hero`/`meta` are
++// left as Mixed/passthrough — block and SEO schema ownership stays with
++// the CMS/render layer for this phase; only structural fields needed for
++// listing/lookup are declared explicitly.
++import { Schema, type Connection, type Document, type Types } from 'mongoose'
++import { getOrCreateModel } from './getOrCreateModel'
++
++export interface PageDocument extends Document {
++  _id: Types.ObjectId
++  title: string
++  slug: string
++  _status?: 'draft' | 'published'
++  layout?: unknown[]
++  hero?: unknown
++  meta?: {
++    title?: string
++    description?: string
++    image?: Types.ObjectId | null
++  }
++  createdAt: Date
++  updatedAt: Date
++}
++
++const PageSchema = new Schema<PageDocument>(
++  {
++    title: { type: String },
++    slug: { type: String },
++    _status: { type: String },
++    layout: { type: Schema.Types.Mixed },
++    hero: { type: Schema.Types.Mixed },
++    meta: { type: Schema.Types.Mixed },
++  },
++  {
++    strict: false,
++    timestamps: true,
++    collection: 'pages',
++  },
++)
++
++PageSchema.index({ slug: 1 })
++
++export const getPageModel = (connection: Connection) =>
++  getOrCreateModel<PageDocument>(connection, 'NativePage', PageSchema, 'pages')
+diff --git a/src/lib/db/models/Payment.ts b/src/lib/db/models/Payment.ts
+new file mode 100644
+index 0000000..dc0d066
+--- /dev/null
++++ b/src/lib/db/models/Payment.ts
+@@ -0,0 +1,58 @@
++// src/lib/db/models/Payment.ts
++//
++// Brand-new collection (`payments`) — does not exist in the current
++// Payload schema, so there is no legacy-compatibility concern here. This
++// is the system of record for payment lifecycle, separate from Order so
++// that a single order can (in principle) have more than one payment
++// attempt across its lifetime without overloading the Order document.
++
++import { Schema, type Connection, type Document, type Types } from 'mongoose'
++import type { PaymentProviderName, PaymentStatus } from '../../domain/types'
++import { getOrCreateModel } from './getOrCreateModel'
++
++export interface PaymentDocument extends Document {
++  _id: Types.ObjectId
++  orderId: Types.ObjectId
++  provider: PaymentProviderName
++  providerReference?: string | null
++  merchantReference: string
++  amount: number
++  currency: string
++  status: PaymentStatus
++  paymentMethod?: string | null
++  initiatedAt: Date
++  paidAt?: Date | null
++  failedAt?: Date | null
++  metadata?: Record<string, unknown>
++  createdAt: Date
++  updatedAt: Date
++}
++
++const PaymentSchema = new Schema<PaymentDocument>(
++  {
++    orderId: { type: Schema.Types.ObjectId, ref: 'orders', required: true },
++    provider: { type: String, required: true },
++    providerReference: { type: String, default: null },
++    merchantReference: { type: String, required: true },
++    amount: { type: Number, required: true },
++    currency: { type: String, required: true },
++    status: { type: String, required: true, default: 'PENDING' },
++    paymentMethod: { type: String, default: null },
++    initiatedAt: { type: Date, required: true, default: () => new Date() },
++    paidAt: { type: Date, default: null },
++    failedAt: { type: Date, default: null },
++    metadata: { type: Schema.Types.Mixed, default: {} },
++  },
++  {
++    timestamps: true,
++    collection: 'payments',
++  },
++)
++
++// Idempotency: a merchant reference must map to exactly one Payment.
++PaymentSchema.index({ merchantReference: 1 }, { unique: true })
++PaymentSchema.index({ orderId: 1 })
++PaymentSchema.index({ providerReference: 1 })
++
++export const getPaymentModel = (connection: Connection) =>
++  getOrCreateModel<PaymentDocument>(connection, 'NativePayment', PaymentSchema, 'payments')
+diff --git a/src/lib/db/models/PaymentAttempt.ts b/src/lib/db/models/PaymentAttempt.ts
+new file mode 100644
+index 0000000..6b4ee1d
+--- /dev/null
++++ b/src/lib/db/models/PaymentAttempt.ts
+@@ -0,0 +1,53 @@
++// src/lib/db/models/PaymentAttempt.ts
++//
++// Brand-new collection (`payment_attempts`). Records every individual
++// call out to a payment provider (and its raw request/response), even
++// when it fails before a Payment status change would otherwise be
++// recorded. This is what lets support/ops answer "did we actually call
++// Paynow for this order, and what did it say?" without relying on
++// application logs.
++
++import { Schema, type Connection, type Document, type Types } from 'mongoose'
++import type { PaymentAttemptStatus, PaymentProviderName } from '../../domain/types'
++import { getOrCreateModel } from './getOrCreateModel'
++
++export interface PaymentAttemptDocument extends Document {
++  _id: Types.ObjectId
++  orderId: Types.ObjectId
++  paymentId?: Types.ObjectId | null
++  provider: PaymentProviderName
++  merchantReference: string
++  status: PaymentAttemptStatus
++  requestPayload?: Record<string, unknown> | null
++  responsePayload?: Record<string, unknown> | null
++  errorMessage?: string | null
++  createdAt: Date
++}
++
++const PaymentAttemptSchema = new Schema<PaymentAttemptDocument>(
++  {
++    orderId: { type: Schema.Types.ObjectId, ref: 'orders', required: true },
++    paymentId: { type: Schema.Types.ObjectId, ref: 'payments', default: null },
++    provider: { type: String, required: true },
++    merchantReference: { type: String, required: true },
++    status: { type: String, required: true, default: 'PENDING' },
++    requestPayload: { type: Schema.Types.Mixed, default: null },
++    responsePayload: { type: Schema.Types.Mixed, default: null },
++    errorMessage: { type: String, default: null },
++  },
++  {
++    timestamps: { createdAt: true, updatedAt: false },
++    collection: 'payment_attempts',
++  },
++)
++
++PaymentAttemptSchema.index({ orderId: 1 })
++PaymentAttemptSchema.index({ merchantReference: 1 })
++
++export const getPaymentAttemptModel = (connection: Connection) =>
++  getOrCreateModel<PaymentAttemptDocument>(
++    connection,
++    'NativePaymentAttempt',
++    PaymentAttemptSchema,
++    'payment_attempts',
++  )
+diff --git a/src/lib/db/models/Product.ts b/src/lib/db/models/Product.ts
+new file mode 100644
+index 0000000..62d54f5
+--- /dev/null
++++ b/src/lib/db/models/Product.ts
+@@ -0,0 +1,74 @@
++// src/lib/db/models/Product.ts
++//
++// Maps onto the EXISTING `products` collection (same collection Payload's
++// `Products` config writes to — see src/payload/collections/Products/index.ts
++// and node_modules/@payloadcms/db-mongodb/dist/init.js, which registers
++// Payload's own model as `mongoose.model(collection.slug, schema, collection.slug)`,
++// i.e. collection name === slug, no pluralization).
++//
++// This schema is intentionally `strict: false`: Payload documents contain
++// many fields this native layer does not yet need to understand in detail
++// (e.g. the full `layout` block tree, `paywall` blocks, versioning
++// metadata). `strict: false` lets Mongoose read and pass through fields
++// not declared here without validating or stripping them, so this model
++// is safe to use for the additive fields (price/currency/etc.) without
++// requiring a full re-implementation of the block schema in this phase.
++//
++// NEW fields added by this phase (price, currency, compareAtPrice,
++// legacyStripeProductId) are optional/nullable so that documents written
++// before the backfill migration runs remain perfectly valid.
++
++import { Schema, type Connection, type Document, type Types } from 'mongoose'
++import { getOrCreateModel } from './getOrCreateModel'
++
++export interface ProductDocument extends Document {
++  _id: Types.ObjectId
++  title: string
++  slug: string
++  _status?: 'draft' | 'published'
++
++  // --- Native authoritative pricing (Phase 1B) ---
++  price?: number | null
++  currency?: string | null
++  compareAtPrice?: number | null
++
++  // --- Legacy Stripe fields (untouched, read-only from this layer) ---
++  stripeProductID?: string | null
++  priceJSON?: string | null
++
++  categories?: Types.ObjectId[]
++  relatedProducts?: Types.ObjectId[]
++  enablePaywall?: boolean
++
++  createdAt: Date
++  updatedAt: Date
++}
++
++const ProductSchema = new Schema<ProductDocument>(
++  {
++    title: { type: String },
++    slug: { type: String },
++    _status: { type: String },
++
++    price: { type: Number, default: null },
++    currency: { type: String, default: null },
++    compareAtPrice: { type: Number, default: null },
++
++    stripeProductID: { type: String },
++    priceJSON: { type: String },
++
++    categories: [{ type: Schema.Types.ObjectId, ref: 'categories' }],
++    relatedProducts: [{ type: Schema.Types.ObjectId, ref: 'products' }],
++    enablePaywall: { type: Boolean },
++  },
++  {
++    strict: false,
++    timestamps: true,
++    collection: 'products',
++  },
++)
++
++ProductSchema.index({ slug: 1 })
++
++export const getProductModel = (connection: Connection) =>
++  getOrCreateModel<ProductDocument>(connection, 'NativeProduct', ProductSchema, 'products')
+diff --git a/src/lib/db/models/User.ts b/src/lib/db/models/User.ts
+new file mode 100644
+index 0000000..ca65c0c
+--- /dev/null
++++ b/src/lib/db/models/User.ts
+@@ -0,0 +1,61 @@
++// src/lib/db/models/User.ts
++//
++// Maps onto the existing `users` collection. Payload's `auth: true`
++// option adds its own authentication fields at write time (password hash
++// under a Payload-internal field name, salt, login attempt tracking,
++// etc.) — those are intentionally left untouched/passthrough here.
++// This model does NOT implement authentication; see src/lib/auth for the
++// (not-yet-wired) native auth foundation, which will define its own
++// explicit hash field when it's actually activated in a later phase.
++
++import { Schema, type Connection, type Document, type Types } from 'mongoose'
++import { getOrCreateModel } from './getOrCreateModel'
++
++export interface CartItemSubdocument {
++  product: Types.ObjectId
++  quantity: number
++}
++
++export interface UserDocument extends Document {
++  _id: Types.ObjectId
++  name?: string | null
++  email: string
++  roles?: string[]
++  purchases?: Types.ObjectId[]
++  cart?: { items?: CartItemSubdocument[] }
++
++  // --- Legacy Stripe field (untouched, read-only from this layer) ---
++  stripeCustomerID?: string | null
++
++  createdAt: Date
++  updatedAt: Date
++}
++
++const UserSchema = new Schema<UserDocument>(
++  {
++    name: { type: String },
++    email: { type: String },
++    roles: [{ type: String }],
++    purchases: [{ type: Schema.Types.ObjectId, ref: 'products' }],
++    cart: {
++      items: [
++        {
++          _id: false,
++          product: { type: Schema.Types.ObjectId, ref: 'products' },
++          quantity: { type: Number },
++        },
++      ],
++    },
++    stripeCustomerID: { type: String },
++  },
++  {
++    strict: false,
++    timestamps: true,
++    collection: 'users',
++  },
++)
++
++UserSchema.index({ email: 1 })
++
++export const getUserModel = (connection: Connection) =>
++  getOrCreateModel<UserDocument>(connection, 'NativeUser', UserSchema, 'users')
+diff --git a/src/lib/db/models/getOrCreateModel.ts b/src/lib/db/models/getOrCreateModel.ts
+new file mode 100644
+index 0000000..435eb85
+--- /dev/null
++++ b/src/lib/db/models/getOrCreateModel.ts
+@@ -0,0 +1,17 @@
++// src/lib/db/models/getOrCreateModel.ts
++import type { Connection, Model, Schema } from 'mongoose'
++
++/** Mongoose throws "Cannot overwrite model once compiled" if `.model()` is
++ * called twice with the same name on the same connection (e.g. across hot
++ * reloads in dev, or multiple imports in tests). This guards that. */
++export const getOrCreateModel = <T>(
++  connection: Connection,
++  name: string,
++  schema: Schema,
++  collection: string,
++): Model<T> => {
++  if (connection.models[name]) {
++    return connection.models[name] as Model<T>
++  }
++  return connection.model<T>(name, schema, collection)
++}
+diff --git a/src/lib/domain/money.ts b/src/lib/domain/money.ts
+new file mode 100644
+index 0000000..e10bcee
+--- /dev/null
++++ b/src/lib/domain/money.ts
+@@ -0,0 +1,84 @@
++// src/lib/domain/money.ts
++//
++// All monetary values in the native architecture are integers in minor
++// units (e.g. cents). Never represent money as a float — floating point
++// arithmetic on decimal currency amounts silently loses/gains cents.
++//
++// This module is the ONLY place minor-unit conversion math should happen.
++
++import type { CurrencyCode, MinorUnits, Money } from './types'
++
++/** Number of minor units per major unit, by currency. Extend as needed.
++ * Defaults to 2 (cents) for any currency not listed, which covers USD,
++ * ZWL/ZWG, and every other currency currently relevant to this project. */
++const MINOR_UNIT_EXPONENT: Record<string, number> = {
++  USD: 2,
++  ZWL: 2,
++  ZWG: 2,
++  ZAR: 2,
++  EUR: 2,
++  GBP: 2,
++}
++
++export const getMinorUnitExponent = (currency: CurrencyCode): number =>
++  MINOR_UNIT_EXPONENT[currency.toUpperCase()] ?? 2
++
++/** Converts a decimal major-unit amount (e.g. 12.5 dollars) to an integer
++ * minor-unit amount (e.g. 1250 cents). Throws on non-finite input rather
++ * than silently coercing, since a bad conversion here is a pricing bug. */
++export const toMinorUnits = (majorAmount: number, currency: CurrencyCode): MinorUnits => {
++  if (!Number.isFinite(majorAmount)) {
++    throw new Error(`toMinorUnits: majorAmount is not a finite number: ${majorAmount}`)
++  }
++  const exponent = getMinorUnitExponent(currency)
++  const factor = 10 ** exponent
++  // Round at the minor-unit boundary to avoid floating point artifacts
++  // (e.g. 12.50 * 100 can come out as 1249.9999999998 in JS floats).
++  return Math.round(majorAmount * factor)
++}
++
++/** Converts an integer minor-unit amount back to a decimal major-unit
++ * number, for display purposes only. Never use the output of this
++ * function as an input to further monetary arithmetic. */
++export const toMajorUnits = (minorAmount: MinorUnits, currency: CurrencyCode): number => {
++  const exponent = getMinorUnitExponent(currency)
++  const factor = 10 ** exponent
++  return minorAmount / factor
++}
++
++export const formatMoney = (money: Money, locale = 'en-US'): string => {
++  return toMajorUnits(money.amount, money.currency).toLocaleString(locale, {
++    style: 'currency',
++    currency: money.currency,
++  })
++}
++
++export class CurrencyMismatchError extends Error {
++  constructor(a: CurrencyCode, b: CurrencyCode) {
++    super(`Currency mismatch: cannot combine amounts in ${a} and ${b}`)
++    this.name = 'CurrencyMismatchError'
++  }
++}
++
++const assertSameCurrency = (a: CurrencyCode, b: CurrencyCode): void => {
++  if (a.toUpperCase() !== b.toUpperCase()) {
++    throw new CurrencyMismatchError(a, b)
++  }
++}
++
++export const addMoney = (a: Money, b: Money): Money => {
++  assertSameCurrency(a.currency, b.currency)
++  return { amount: a.amount + b.amount, currency: a.currency }
++}
++
++export const multiplyMoney = (money: Money, quantity: number): Money => {
++  if (!Number.isInteger(quantity) || quantity < 0) {
++    throw new Error(`multiplyMoney: quantity must be a non-negative integer, got ${quantity}`)
++  }
++  return { amount: money.amount * quantity, currency: money.currency }
++}
++
++export const zeroMoney = (currency: CurrencyCode): Money => ({ amount: 0, currency })
++
++export const sumMoney = (amounts: Money[], currency: CurrencyCode): Money =>
++  amounts.reduce((acc, m) => addMoney(acc, m), zeroMoney(currency))
+diff --git a/src/lib/domain/types.ts b/src/lib/domain/types.ts
+new file mode 100644
+index 0000000..7b39d24
+--- /dev/null
++++ b/src/lib/domain/types.ts
+@@ -0,0 +1,259 @@
++// src/lib/domain/types.ts
++//
++// Pure domain types for the native application layer.
++//
++// RULES FOR THIS FILE (and everything under src/lib/domain, src/lib/services,
++// src/lib/repositories *interfaces*, src/lib/payments):
++//   - MUST NOT import from `payload`, `@payloadcms/*`, or `stripe`.
++//   - MUST NOT import Mongoose. Mongoose is an infrastructure concern that
++//     belongs in src/lib/db/models and the repository *implementations* only.
++//
++// These types intentionally mirror the shape of the existing Payload
++// collections closely enough that a repository can map a Mongo document
++// onto them without semantic loss, but they are NOT Payload types — this
++// file is the seam the rest of the migration will build on.
++
++/** All monetary amounts in this codebase are integers in MINOR UNITS
++ * (e.g. cents for USD). Never store or compare money as a float. */
++export type MinorUnits = number
++
++export type CurrencyCode = string // ISO 4217, e.g. 'USD'
++
++export interface Money {
++  amount: MinorUnits
++  currency: CurrencyCode
++}
++
++// ---------------------------------------------------------------------------
++// Product
++// ---------------------------------------------------------------------------
++
++export interface Product {
++  id: string
++  title: string
++  slug: string
++  status: 'draft' | 'published'
++
++  /** Authoritative native price. Introduced in Phase 1B. May be `null` for
++   * products that have not yet been backfilled from `legacyPriceJSON` — see
++   * scripts/migrations/backfillProductPrices.ts. The application must treat
++   * a null price as "not yet purchasable", never fall back to a client-
++   * supplied or legacy Stripe price. */
++  price: MinorUnits | null
++  currency: CurrencyCode | null
++  compareAtPrice: MinorUnits | null
++
++  categories: string[]
++  relatedProducts: string[]
++  enablePaywall: boolean
++
++  /** Present only for backward compatibility / migration traceability.
++   * Never read by new business logic for pricing decisions. */
++  legacyStripeProductId: string | null
++  legacyPriceJSON: string | null
++
++  createdAt: Date
++  updatedAt: Date
++}
++
++export interface ProductListFilter {
++  status?: 'draft' | 'published'
++  categoryId?: string
++  ids?: string[]
++  limit?: number
++  page?: number
++}
++
++// ---------------------------------------------------------------------------
++// Category
++// ---------------------------------------------------------------------------
++
++export interface Category {
++  id: string
++  title: string
++  mediaId: string | null
++  parentId: string | null
++  createdAt: Date
++  updatedAt: Date
++}
++
++// ---------------------------------------------------------------------------
++// Page (CMS)
++// ---------------------------------------------------------------------------
++
++export interface Page {
++  id: string
++  title: string
++  slug: string
++  status: 'draft' | 'published'
++  /** Flexible block-based layout — intentionally untyped (Mixed) at this
++   * layer since block schema is owned by the CMS/render layer, not the
++   * domain layer. */
++  layout: unknown[]
++  hero: unknown
++  meta: {
++    title?: string
++    description?: string
++    imageId?: string | null
++  }
++  createdAt: Date
++  updatedAt: Date
++}
++
++// ---------------------------------------------------------------------------
++// Media
++// ---------------------------------------------------------------------------
++
++export interface Media {
++  id: string
++  alt: string
++  url: string | null
++  filename: string | null
++  mimeType: string | null
++  filesize: number | null
++  width: number | null
++  height: number | null
++  createdAt: Date
++  updatedAt: Date
++}
++
++// ---------------------------------------------------------------------------
++// User
++// ---------------------------------------------------------------------------
++
++export type Role = 'admin' | 'customer'
++
++export interface CartItem {
++  productId: string
++  quantity: number
++}
++
++export interface User {
++  id: string
++  name: string | null
++  email: string
++  roles: Role[]
++  purchases: string[]
++  cart: CartItem[]
++
++  /** Historical reference only — never used by new payment logic. */
++  legacyStripeCustomerId: string | null
++
++  createdAt: Date
++  updatedAt: Date
++}
++
++// ---------------------------------------------------------------------------
++// Order
++// ---------------------------------------------------------------------------
++
++export type OrderStatus =
++  | 'PENDING_PAYMENT'
++  | 'PAID'
++  | 'PAYMENT_FAILED'
++  | 'PAYMENT_CANCELLED'
++  | 'PROCESSING'
++  | 'FULFILLED'
++  | 'CANCELLED'
++  | 'REFUNDED'
++
++/** Valid forward transitions for an Order's status. Enforced by
++ * OrderService.transitionStatus — never mutate `status` directly. */
++export const ORDER_STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
++  PENDING_PAYMENT: ['PAID', 'PAYMENT_FAILED', 'PAYMENT_CANCELLED'],
++  PAID: ['PROCESSING', 'REFUNDED'],
++  PAYMENT_FAILED: ['PENDING_PAYMENT', 'CANCELLED'],
++  PAYMENT_CANCELLED: ['PENDING_PAYMENT', 'CANCELLED'],
++  PROCESSING: ['FULFILLED', 'REFUNDED'],
++  FULFILLED: ['REFUNDED'],
++  CANCELLED: [],
++  REFUNDED: [],
++}
++
++export interface OrderItem {
++  productId: string
++  title: string
++  /** The price actually charged for this item, frozen at order-creation
++   * time. MUST NEVER be recalculated from the product's current price
++   * after the fact — see OrderService and the audit's Order Domain
++   * findings. */
++  unitPrice: MinorUnits
++  currency: CurrencyCode
++  quantity: number
++}
++
++export interface Order {
++  id: string
++  /** Unique, customer-facing order number AND the merchant reference
++   * handed to the payment provider. Used for idempotency — see
++   * PaymentService. */
++  orderNumber: string
++  customerId: string
++  items: OrderItem[]
++  subtotal: MinorUnits
++  total: MinorUnits
++  currency: CurrencyCode
++  status: OrderStatus
++
++  /** Present only for orders created before this migration, where the
++   * legacy Stripe checkout flow created the order directly. Never
++   * populated by new order-creation code. */
++  legacyStripePaymentIntentId: string | null
++
++  createdAt: Date
++  updatedAt: Date
++}
++
++// ---------------------------------------------------------------------------
++// Payment / PaymentAttempt
++// ---------------------------------------------------------------------------
++
++export type PaymentProviderName = 'stripe' | 'paynow'
++
++export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED' | 'REFUNDED'
++
++export const PAYMENT_STATUS_TRANSITIONS: Record<PaymentStatus, PaymentStatus[]> = {
++  PENDING: ['PAID', 'FAILED', 'CANCELLED'],
++  PAID: ['REFUNDED'],
++  FAILED: ['PENDING'], // allow a fresh attempt to be initiated
++  CANCELLED: ['PENDING'],
++  REFUNDED: [],
++}
++
++export interface Payment {
++  id: string
++  orderId: string
++  provider: PaymentProviderName
++  /** The provider's own identifier for this payment (Stripe PaymentIntent
++   * id, Paynow poll URL/reference, etc). */
++  providerReference: string | null
++  /** The value we generated and handed to the provider — this is what
++   * idempotency and callback matching are keyed on, NOT providerReference,
++   * since providerReference may not be known until after initiation. */
++  merchantReference: string
++  amount: MinorUnits
++  currency: CurrencyCode
++  status: PaymentStatus
++  paymentMethod: string | null
++  initiatedAt: Date
++  paidAt: Date | null
++  failedAt: Date | null
++  metadata: Record<string, unknown>
++  createdAt: Date
++  updatedAt: Date
++}
++
++export type PaymentAttemptStatus = 'PENDING' | 'SUCCEEDED' | 'FAILED'
++
++export interface PaymentAttempt {
++  id: string
++  orderId: string
++  paymentId: string | null
++  provider: PaymentProviderName
++  merchantReference: string
++  status: PaymentAttemptStatus
++  requestPayload: Record<string, unknown> | null
++  responsePayload: Record<string, unknown> | null
++  errorMessage: string | null
++  createdAt: Date
++}
+diff --git a/src/lib/payments/PaymentProvider.ts b/src/lib/payments/PaymentProvider.ts
+new file mode 100644
+index 0000000..b8e16ee
+--- /dev/null
++++ b/src/lib/payments/PaymentProvider.ts
+@@ -0,0 +1,119 @@
++// src/lib/payments/PaymentProvider.ts
++//
++// Provider-neutral payment abstraction. This phase defines the interface
++// ONLY — no PaynowProvider implementation is created here (that's Phase
++// 7, per the migration brief), and this file must never import a Paynow
++// or Stripe SDK.
++//
++// The interface is deliberately minimal and framed around what the
++// application's checkout flow actually needs (see the audit's Target
++// Payment Flow): initiate a payment, check its status, and process an
++// asynchronous callback. Refunds are modeled but may not be supported by
++// every provider (see `supportsRefunds`).
++
++import type { CurrencyCode, MinorUnits, PaymentProviderName, PaymentStatus } from '../domain/types'
++
++export interface CreatePaymentInput {
++  /** Our own merchant-generated reference — MUST be used by the provider
++   * adapter as the idempotency key handed to the provider, where the
++   * provider's API supports one. */
++  merchantReference: string
++  orderId: string
++  amount: MinorUnits
++  currency: CurrencyCode
++  customerEmail?: string
++  customerPhone?: string
++  description?: string
++  returnUrl?: string
++  resultUrl?: string
++}
++
++export interface CreatePaymentResult {
++  success: boolean
++  /** URL to redirect the customer to complete payment (web-based flows). */
++  redirectUrl?: string
++  /** URL the application can poll to check status (if the provider
++   * supports polling in addition to/instead of callbacks). */
++  pollUrl?: string
++  /** Human-readable instructions for the customer, for flows that don't
++   * redirect (e.g. mobile money push payments). */
++  instructions?: string
++  /** The provider's own identifier for this payment, if known at
++   * initiation time (not all providers return one immediately). */
++  providerReference?: string
++  errorMessage?: string
++  /** Raw provider response, retained for debugging/audit — never parsed
++   * by calling code, only logged/stored. */
++  raw?: unknown
++}
++
++export interface PaymentStatusResult {
++  status: PaymentStatus
++  providerReference?: string
++  paidAmount?: MinorUnits
++  currency?: CurrencyCode
++  raw?: unknown
++}
++
++/** Result of validating and interpreting an inbound provider callback
++ * (e.g. Paynow's resultUrl POST). Implementations MUST validate any
++ * provider-supplied signature/hash before returning a result — a
++ * callback that fails validation should throw, not return a status. */
++export interface CallbackHandlingResult {
++  merchantReference: string
++  status: PaymentStatus
++  providerReference?: string
++  paidAmount?: MinorUnits
++  currency?: CurrencyCode
++  raw?: unknown
++}
++
++export interface RefundInput {
++  paymentId: string
++  providerReference: string
++  amount: MinorUnits
++  currency: CurrencyCode
++  reason?: string
++}
++
++export interface RefundResult {
++  success: boolean
++  providerReference?: string
++  errorMessage?: string
++  raw?: unknown
++}
++
++export interface PaymentProvider {
++  readonly name: PaymentProviderName
++
++  /** Whether this provider can process a payment in the given currency.
++   * Used by PaymentService to pick/validate a provider before attempting
++   * initiation — must be checked before createPayment() is called. */
++  supports(currency: CurrencyCode): boolean
++
++  readonly supportsRefunds: boolean
++
++  createPayment(input: CreatePaymentInput): Promise<CreatePaymentResult>
++
++  getPaymentStatus(providerReferenceOrPollUrl: string): Promise<PaymentStatusResult>
++
++  /** Validates and interprets a raw inbound callback payload. Must throw
++   * on an invalid/unverifiable signature rather than returning a
++   * "best guess" status — the caller (a route handler) is responsible for
++   * catching that and responding appropriately, never for trusting an
++   * unvalidated callback. */
++  handleCallback(rawPayload: unknown): Promise<CallbackHandlingResult>
++
++  refund?(input: RefundInput): Promise<RefundResult>
++}
++
++/** Thrown by a provider implementation when a capability is invoked that
++ * it does not actually support (e.g. refund() on a provider with
++ * `supportsRefunds: false`). Distinguishes "not implemented yet" bugs
++ * from genuine provider-side failures. */
++export class UnsupportedPaymentOperationError extends Error {
++  constructor(provider: PaymentProviderName, operation: string) {
++    super(`Payment provider "${provider}" does not support operation "${operation}"`)
++    this.name = 'UnsupportedPaymentOperationError'
++  }
++}
+diff --git a/src/lib/repositories/CategoryRepository.ts b/src/lib/repositories/CategoryRepository.ts
+new file mode 100644
+index 0000000..2dd738f
+--- /dev/null
++++ b/src/lib/repositories/CategoryRepository.ts
+@@ -0,0 +1,78 @@
++// src/lib/repositories/CategoryRepository.ts
++import type { Connection, Types } from 'mongoose'
++import type { Category } from '../domain/types'
++import { getCategoryModel, type CategoryDocument } from '../db/models/Category'
++
++export interface CategoryRepository {
++  getById(id: string): Promise<Category | null>
++  list(): Promise<Category[]>
++  create(input: { title: string; mediaId?: string | null; parentId?: string | null }): Promise<
++    Category
++  >
++  update(
++    id: string,
++    patch: Partial<{ title: string; mediaId: string | null; parentId: string | null }>,
++  ): Promise<Category | null>
++  delete(id: string): Promise<boolean>
++}
++
++const toDomain = (doc: CategoryDocument): Category => ({
++  id: doc._id.toString(),
++  title: doc.title,
++  mediaId: doc.media ? (doc.media as Types.ObjectId).toString() : null,
++  parentId: doc.parent ? (doc.parent as Types.ObjectId).toString() : null,
++  createdAt: doc.createdAt,
++  updatedAt: doc.updatedAt,
++})
++
++export class MongoCategoryRepository implements CategoryRepository {
++  constructor(private readonly connection: Connection) {}
++
++  async getById(id: string): Promise<Category | null> {
++    const Model = getCategoryModel(this.connection)
++    const doc = await Model.findById(id).lean<CategoryDocument>().exec()
++    return doc ? toDomain(doc as unknown as CategoryDocument) : null
++  }
++
++  async list(): Promise<Category[]> {
++    const Model = getCategoryModel(this.connection)
++    const docs = await Model.find({}).lean<CategoryDocument[]>().exec()
++    return (docs as unknown as CategoryDocument[]).map(toDomain)
++  }
++
++  async create(input: {
++    title: string
++    mediaId?: string | null
++    parentId?: string | null
++  }): Promise<Category> {
++    const Model = getCategoryModel(this.connection)
++    const doc = await Model.create({
++      title: input.title,
++      media: input.mediaId ?? undefined,
++      parent: input.parentId ?? undefined,
++    })
++    return toDomain(doc.toObject() as CategoryDocument)
++  }
++
++  async update(
++    id: string,
++    patch: Partial<{ title: string; mediaId: string | null; parentId: string | null }>,
++  ): Promise<Category | null> {
++    const Model = getCategoryModel(this.connection)
++    const $set: Record<string, unknown> = {}
++    if (patch.title !== undefined) $set.title = patch.title
++    if (patch.mediaId !== undefined) $set.media = patch.mediaId
++    if (patch.parentId !== undefined) $set.parent = patch.parentId
++
++    const doc = await Model.findByIdAndUpdate(id, { $set }, { new: true })
++      .lean<CategoryDocument>()
++      .exec()
++    return doc ? toDomain(doc as unknown as CategoryDocument) : null
++  }
++
++  async delete(id: string): Promise<boolean> {
++    const Model = getCategoryModel(this.connection)
++    const res = await Model.findByIdAndDelete(id).exec()
++    return Boolean(res)
++  }
++}
+diff --git a/src/lib/repositories/MediaRepository.ts b/src/lib/repositories/MediaRepository.ts
+new file mode 100644
+index 0000000..48d3c85
+--- /dev/null
++++ b/src/lib/repositories/MediaRepository.ts
+@@ -0,0 +1,38 @@
++// src/lib/repositories/MediaRepository.ts
++import type { Connection } from 'mongoose'
++import type { Media } from '../domain/types'
++import { getMediaModel, type MediaDocument } from '../db/models/Media'
++
++export interface MediaRepository {
++  getById(id: string): Promise<Media | null>
++  list(limit?: number): Promise<Media[]>
++}
++
++const toDomain = (doc: MediaDocument): Media => ({
++  id: doc._id.toString(),
++  alt: doc.alt,
++  url: doc.url ?? null,
++  filename: doc.filename ?? null,
++  mimeType: doc.mimeType ?? null,
++  filesize: doc.filesize ?? null,
++  width: doc.width ?? null,
++  height: doc.height ?? null,
++  createdAt: doc.createdAt,
++  updatedAt: doc.updatedAt,
++})
++
++export class MongoMediaRepository implements MediaRepository {
++  constructor(private readonly connection: Connection) {}
++
++  async getById(id: string): Promise<Media | null> {
++    const Model = getMediaModel(this.connection)
++    const doc = await Model.findById(id).lean<MediaDocument>().exec()
++    return doc ? toDomain(doc as unknown as MediaDocument) : null
++  }
++
++  async list(limit = 50): Promise<Media[]> {
++    const Model = getMediaModel(this.connection)
++    const docs = await Model.find({}).limit(limit).lean<MediaDocument[]>().exec()
++    return (docs as unknown as MediaDocument[]).map(toDomain)
++  }
++}
+diff --git a/src/lib/repositories/OrderRepository.ts b/src/lib/repositories/OrderRepository.ts
+new file mode 100644
+index 0000000..cd612be
+--- /dev/null
++++ b/src/lib/repositories/OrderRepository.ts
+@@ -0,0 +1,95 @@
++// src/lib/repositories/OrderRepository.ts
++import type { Connection, Types } from 'mongoose'
++import type { Order, OrderItem, OrderStatus } from '../domain/types'
++import { getOrderModel, type OrderDocument } from '../db/models/Order'
++
++export interface CreateOrderInput {
++  orderNumber: string
++  customerId: string
++  items: OrderItem[]
++  subtotal: number
++  total: number
++  currency: string
++  status: OrderStatus
++}
++
++export interface OrderRepository {
++  getById(id: string): Promise<Order | null>
++  getByOrderNumber(orderNumber: string): Promise<Order | null>
++  getByCustomer(customerId: string): Promise<Order[]>
++  create(input: CreateOrderInput): Promise<Order>
++  updateStatus(id: string, status: OrderStatus): Promise<Order | null>
++}
++
++const toDomain = (doc: OrderDocument): Order => ({
++  id: doc._id.toString(),
++  orderNumber: doc.orderNumber ?? doc._id.toString(),
++  customerId: doc.orderedBy ? (doc.orderedBy as Types.ObjectId).toString() : '',
++  items: (doc.items ?? []).map(item => ({
++    productId: item.product?.toString?.() ?? '',
++    title: item.title ?? '',
++    unitPrice: item.price ?? 0,
++    currency: item.currency ?? doc.currency ?? 'USD',
++    quantity: item.quantity ?? 0,
++  })),
++  subtotal: doc.subtotal ?? doc.total ?? 0,
++  total: doc.total ?? 0,
++  currency: doc.currency ?? 'USD',
++  status: (doc.status as OrderStatus) ?? 'PENDING_PAYMENT',
++  legacyStripePaymentIntentId: doc.stripePaymentIntentID ?? null,
++  createdAt: doc.createdAt,
++  updatedAt: doc.updatedAt,
++})
++
++export class MongoOrderRepository implements OrderRepository {
++  constructor(private readonly connection: Connection) {}
++
++  async getById(id: string): Promise<Order | null> {
++    const Model = getOrderModel(this.connection)
++    const doc = await Model.findById(id).lean<OrderDocument>().exec()
++    return doc ? toDomain(doc as unknown as OrderDocument) : null
++  }
++
++  async getByOrderNumber(orderNumber: string): Promise<Order | null> {
++    const Model = getOrderModel(this.connection)
++    const doc = await Model.findOne({ orderNumber }).lean<OrderDocument>().exec()
++    return doc ? toDomain(doc as unknown as OrderDocument) : null
++  }
++
++  async getByCustomer(customerId: string): Promise<Order[]> {
++    const Model = getOrderModel(this.connection)
++    const docs = await Model.find({ orderedBy: customerId })
++      .sort({ createdAt: -1 })
++      .lean<OrderDocument[]>()
++      .exec()
++    return (docs as unknown as OrderDocument[]).map(toDomain)
++  }
++
++  async create(input: CreateOrderInput): Promise<Order> {
++    const Model = getOrderModel(this.connection)
++    const doc = await Model.create({
++      orderNumber: input.orderNumber,
++      orderedBy: input.customerId,
++      items: input.items.map(item => ({
++        product: item.productId,
++        title: item.title,
++        price: item.unitPrice,
++        currency: item.currency,
++        quantity: item.quantity,
++      })),
++      subtotal: input.subtotal,
++      total: input.total,
++      currency: input.currency,
++      status: input.status,
++    })
++    return toDomain(doc.toObject() as OrderDocument)
++  }
++
++  async updateStatus(id: string, status: OrderStatus): Promise<Order | null> {
++    const Model = getOrderModel(this.connection)
++    const doc = await Model.findByIdAndUpdate(id, { $set: { status } }, { new: true })
++      .lean<OrderDocument>()
++      .exec()
++    return doc ? toDomain(doc as unknown as OrderDocument) : null
++  }
++}
+diff --git a/src/lib/repositories/PageRepository.ts b/src/lib/repositories/PageRepository.ts
+new file mode 100644
+index 0000000..690b1e2
+--- /dev/null
++++ b/src/lib/repositories/PageRepository.ts
+@@ -0,0 +1,52 @@
++// src/lib/repositories/PageRepository.ts
++import type { Connection } from 'mongoose'
++import type { Page } from '../domain/types'
++import { getPageModel, type PageDocument } from '../db/models/Page'
++
++export interface PageRepository {
++  getById(id: string): Promise<Page | null>
++  getBySlug(slug: string, status?: 'draft' | 'published'): Promise<Page | null>
++  list(status?: 'draft' | 'published'): Promise<Page[]>
++}
++
++const toDomain = (doc: PageDocument): Page => ({
++  id: doc._id.toString(),
++  title: doc.title,
++  slug: doc.slug,
++  status: doc._status === 'published' ? 'published' : 'draft',
++  layout: doc.layout ?? [],
++  hero: doc.hero ?? null,
++  meta: {
++    title: doc.meta?.title,
++    description: doc.meta?.description,
++    imageId: doc.meta?.image ? doc.meta.image.toString() : null,
++  },
++  createdAt: doc.createdAt,
++  updatedAt: doc.updatedAt,
++})
++
++export class MongoPageRepository implements PageRepository {
++  constructor(private readonly connection: Connection) {}
++
++  async getById(id: string): Promise<Page | null> {
++    const Model = getPageModel(this.connection)
++    const doc = await Model.findById(id).lean<PageDocument>().exec()
++    return doc ? toDomain(doc as unknown as PageDocument) : null
++  }
++
++  async getBySlug(slug: string, status?: 'draft' | 'published'): Promise<Page | null> {
++    const Model = getPageModel(this.connection)
++    const query: Record<string, unknown> = { slug }
++    if (status) query._status = status
++    const doc = await Model.findOne(query).lean<PageDocument>().exec()
++    return doc ? toDomain(doc as unknown as PageDocument) : null
++  }
++
++  async list(status?: 'draft' | 'published'): Promise<Page[]> {
++    const Model = getPageModel(this.connection)
++    const query: Record<string, unknown> = {}
++    if (status) query._status = status
++    const docs = await Model.find(query).lean<PageDocument[]>().exec()
++    return (docs as unknown as PageDocument[]).map(toDomain)
++  }
++}
+diff --git a/src/lib/repositories/PaymentRepository.ts b/src/lib/repositories/PaymentRepository.ts
+new file mode 100644
+index 0000000..58cfcf5
+--- /dev/null
++++ b/src/lib/repositories/PaymentRepository.ts
+@@ -0,0 +1,106 @@
++// src/lib/repositories/PaymentRepository.ts
++import type { Connection, Types } from 'mongoose'
++import type { Payment, PaymentProviderName, PaymentStatus } from '../domain/types'
++import { getPaymentModel, type PaymentDocument } from '../db/models/Payment'
++
++export interface CreatePaymentInput {
++  orderId: string
++  provider: PaymentProviderName
++  merchantReference: string
++  amount: number
++  currency: string
++}
++
++export interface PaymentRepository {
++  getById(id: string): Promise<Payment | null>
++  getByOrderId(orderId: string): Promise<Payment[]>
++  getByMerchantReference(merchantReference: string): Promise<Payment | null>
++  create(input: CreatePaymentInput): Promise<Payment>
++  updateStatus(
++    id: string,
++    status: PaymentStatus,
++    extra?: { providerReference?: string; paymentMethod?: string; metadata?: Record<string, unknown> },
++  ): Promise<Payment | null>
++}
++
++const toDomain = (doc: PaymentDocument): Payment => ({
++  id: doc._id.toString(),
++  orderId: (doc.orderId as Types.ObjectId).toString(),
++  provider: doc.provider,
++  providerReference: doc.providerReference ?? null,
++  merchantReference: doc.merchantReference,
++  amount: doc.amount,
++  currency: doc.currency,
++  status: doc.status,
++  paymentMethod: doc.paymentMethod ?? null,
++  initiatedAt: doc.initiatedAt,
++  paidAt: doc.paidAt ?? null,
++  failedAt: doc.failedAt ?? null,
++  metadata: doc.metadata ?? {},
++  createdAt: doc.createdAt,
++  updatedAt: doc.updatedAt,
++})
++
++export class MongoPaymentRepository implements PaymentRepository {
++  constructor(private readonly connection: Connection) {}
++
++  async getById(id: string): Promise<Payment | null> {
++    const Model = getPaymentModel(this.connection)
++    const doc = await Model.findById(id).lean<PaymentDocument>().exec()
++    return doc ? toDomain(doc as unknown as PaymentDocument) : null
++  }
++
++  async getByOrderId(orderId: string): Promise<Payment[]> {
++    const Model = getPaymentModel(this.connection)
++    const docs = await Model.find({ orderId }).lean<PaymentDocument[]>().exec()
++    return (docs as unknown as PaymentDocument[]).map(toDomain)
++  }
++
++  async getByMerchantReference(merchantReference: string): Promise<Payment | null> {
++    const Model = getPaymentModel(this.connection)
++    const doc = await Model.findOne({ merchantReference }).lean<PaymentDocument>().exec()
++    return doc ? toDomain(doc as unknown as PaymentDocument) : null
++  }
++
++  /** Relies on the unique index on `merchantReference` (see
++   * db/models/Payment.ts) to make duplicate-attempt creation fail loudly
++   * rather than silently double-record a payment. Callers (PaymentService)
++   * should catch the duplicate-key error and treat it as "attempt already
++   * exists" rather than a hard failure — that's the idempotency contract. */
++  async create(input: CreatePaymentInput): Promise<Payment> {
++    const Model = getPaymentModel(this.connection)
++    const doc = await Model.create({
++      orderId: input.orderId,
++      provider: input.provider,
++      merchantReference: input.merchantReference,
++      amount: input.amount,
++      currency: input.currency,
++      status: 'PENDING',
++      initiatedAt: new Date(),
++    })
++    return toDomain(doc.toObject() as PaymentDocument)
++  }
++
++  async updateStatus(
++    id: string,
++    status: PaymentStatus,
++    extra?: {
++      providerReference?: string
++      paymentMethod?: string
++      metadata?: Record<string, unknown>
++    },
++  ): Promise<Payment | null> {
++    const Model = getPaymentModel(this.connection)
++    const $set: Record<string, unknown> = { status }
++    if (extra?.providerReference) $set.providerReference = extra.providerReference
++    if (extra?.paymentMethod) $set.paymentMethod = extra.paymentMethod
++    if (extra?.metadata) $set.metadata = extra.metadata
++    if (status === 'PAID') $set.paidAt = new Date()
++    if (status === 'FAILED') $set.failedAt = new Date()
++
++    const doc = await Model.findByIdAndUpdate(id, { $set }, { new: true })
++      .lean<PaymentDocument>()
++      .exec()
++    return doc ? toDomain(doc as unknown as PaymentDocument) : null
++  }
++}
+diff --git a/src/lib/repositories/ProductRepository.ts b/src/lib/repositories/ProductRepository.ts
+new file mode 100644
+index 0000000..db26a2f
+--- /dev/null
++++ b/src/lib/repositories/ProductRepository.ts
+@@ -0,0 +1,127 @@
++// src/lib/repositories/ProductRepository.ts
++//
++// Repository interface + Mongo-backed implementation for Products.
++//
++// Services depend on the `ProductRepository` INTERFACE, never on
++// `MongoProductRepository` directly, and never on Mongoose types. This is
++// what makes ProductService (and friends) testable with an in-memory fake
++// — see tests/fakes/FakeProductRepository.ts — without a live database.
++
++import type { Connection, FilterQuery, Types } from 'mongoose'
++import type { Product, ProductListFilter } from '../domain/types'
++import { getProductModel, type ProductDocument } from '../db/models/Product'
++
++export interface ProductRepository {
++  getById(id: string): Promise<Product | null>
++  getBySlug(slug: string): Promise<Product | null>
++  list(filter?: ProductListFilter): Promise<Product[]>
++  /** Sets the authoritative native price. Distinct from generic `update`
++   * because pricing changes are a business-significant operation the
++   * service layer should route through deliberately, not something that
++   * accidentally happens as a side effect of an unrelated field edit. */
++  setPrice(
++    id: string,
++    price: { amount: number; currency: string; compareAtPrice?: number | null },
++  ): Promise<Product | null>
++  update(id: string, patch: Partial<Pick<Product, 'title' | 'slug' | 'enablePaywall'>>): Promise<
++    Product | null
++  >
++  delete(id: string): Promise<boolean>
++}
++
++const toDomain = (doc: ProductDocument): Product => ({
++  id: doc._id.toString(),
++  title: doc.title,
++  slug: doc.slug,
++  status: doc._status === 'published' ? 'published' : 'draft',
++  price: typeof doc.price === 'number' ? doc.price : null,
++  currency: doc.currency ?? null,
++  compareAtPrice: typeof doc.compareAtPrice === 'number' ? doc.compareAtPrice : null,
++  categories: (doc.categories ?? []).map((c: Types.ObjectId) => c.toString()),
++  relatedProducts: (doc.relatedProducts ?? []).map((p: Types.ObjectId) => p.toString()),
++  enablePaywall: Boolean(doc.enablePaywall),
++  legacyStripeProductId: doc.stripeProductID ?? null,
++  legacyPriceJSON: doc.priceJSON ?? null,
++  createdAt: doc.createdAt,
++  updatedAt: doc.updatedAt,
++})
++
++export class MongoProductRepository implements ProductRepository {
++  constructor(private readonly connection: Connection) {}
++
++  async getById(id: string): Promise<Product | null> {
++    const Model = getProductModel(this.connection)
++    const doc = await Model.findById(id).lean<ProductDocument>().exec()
++    return doc ? toDomain(doc as unknown as ProductDocument) : null
++  }
++
++  async getBySlug(slug: string): Promise<Product | null> {
++    const Model = getProductModel(this.connection)
++    const doc = await Model.findOne({ slug }).lean<ProductDocument>().exec()
++    return doc ? toDomain(doc as unknown as ProductDocument) : null
++  }
++
++  async list(filter: ProductListFilter = {}): Promise<Product[]> {
++    const Model = getProductModel(this.connection)
++    const query: FilterQuery<ProductDocument> = {}
++
++    if (filter.status) {
++      query._status = filter.status
++    }
++    if (filter.categoryId) {
++      query.categories = filter.categoryId
++    }
++    if (filter.ids?.length) {
++      query._id = { $in: filter.ids }
++    }
++
++    const limit = filter.limit ?? 50
++    const page = filter.page ?? 1
++
++    const docs = await Model.find(query)
++      .limit(limit)
++      .skip((page - 1) * limit)
++      .lean<ProductDocument[]>()
++      .exec()
++
++    return (docs as unknown as ProductDocument[]).map(toDomain)
++  }
++
++  async setPrice(
++    id: string,
++    price: { amount: number; currency: string; compareAtPrice?: number | null },
++  ): Promise<Product | null> {
++    const Model = getProductModel(this.connection)
++    const doc = await Model.findByIdAndUpdate(
++      id,
++      {
++        $set: {
++          price: price.amount,
++          currency: price.currency,
++          compareAtPrice: price.compareAtPrice ?? null,
++        },
++      },
++      { new: true },
++    )
++      .lean<ProductDocument>()
++      .exec()
++    return doc ? toDomain(doc as unknown as ProductDocument) : null
++  }
++
++  async update(
++    id: string,
++    patch: Partial<Pick<Product, 'title' | 'slug' | 'enablePaywall'>>,
++  ): Promise<Product | null> {
++    const Model = getProductModel(this.connection)
++    const doc = await Model.findByIdAndUpdate(id, { $set: patch }, { new: true })
++      .lean<ProductDocument>()
++      .exec()
++    return doc ? toDomain(doc as unknown as ProductDocument) : null
++  }
++
++  async delete(id: string): Promise<boolean> {
++    const Model = getProductModel(this.connection)
++    const res = await Model.findByIdAndDelete(id).exec()
++    return Boolean(res)
++  }
++}
+diff --git a/src/lib/repositories/UserRepository.ts b/src/lib/repositories/UserRepository.ts
+new file mode 100644
+index 0000000..848f122
+--- /dev/null
++++ b/src/lib/repositories/UserRepository.ts
+@@ -0,0 +1,70 @@
++// src/lib/repositories/UserRepository.ts
++import type { Connection, Types } from 'mongoose'
++import type { CartItem, User } from '../domain/types'
++import { getUserModel, type UserDocument } from '../db/models/User'
++
++export interface UserRepository {
++  getById(id: string): Promise<User | null>
++  getByEmail(email: string): Promise<User | null>
++  updateCart(id: string, items: CartItem[]): Promise<User | null>
++  appendPurchases(id: string, productIds: string[]): Promise<User | null>
++}
++
++const toDomain = (doc: UserDocument): User => ({
++  id: doc._id.toString(),
++  name: doc.name ?? null,
++  email: doc.email,
++  roles: (doc.roles ?? ['customer']) as User['roles'],
++  purchases: (doc.purchases ?? []).map((p: Types.ObjectId) => p.toString()),
++  cart: (doc.cart?.items ?? []).map(item => ({
++    productId: item.product?.toString(),
++    quantity: item.quantity ?? 0,
++  })),
++  legacyStripeCustomerId: doc.stripeCustomerID ?? null,
++  createdAt: doc.createdAt,
++  updatedAt: doc.updatedAt,
++})
++
++export class MongoUserRepository implements UserRepository {
++  constructor(private readonly connection: Connection) {}
++
++  async getById(id: string): Promise<User | null> {
++    const Model = getUserModel(this.connection)
++    const doc = await Model.findById(id).lean<UserDocument>().exec()
++    return doc ? toDomain(doc as unknown as UserDocument) : null
++  }
++
++  async getByEmail(email: string): Promise<User | null> {
++    const Model = getUserModel(this.connection)
++    const doc = await Model.findOne({ email }).lean<UserDocument>().exec()
++    return doc ? toDomain(doc as unknown as UserDocument) : null
++  }
++
++  async updateCart(id: string, items: CartItem[]): Promise<User | null> {
++    const Model = getUserModel(this.connection)
++    const doc = await Model.findByIdAndUpdate(
++      id,
++      {
++        $set: {
++          'cart.items': items.map(i => ({ product: i.productId, quantity: i.quantity })),
++        },
++      },
++      { new: true },
++    )
++      .lean<UserDocument>()
++      .exec()
++    return doc ? toDomain(doc as unknown as UserDocument) : null
++  }
++
++  async appendPurchases(id: string, productIds: string[]): Promise<User | null> {
++    const Model = getUserModel(this.connection)
++    const doc = await Model.findByIdAndUpdate(
++      id,
++      { $addToSet: { purchases: { $each: productIds } } },
++      { new: true },
++    )
++      .lean<UserDocument>()
++      .exec()
++    return doc ? toDomain(doc as unknown as UserDocument) : null
++  }
++}
+diff --git a/src/lib/services/CartService.ts b/src/lib/services/CartService.ts
+new file mode 100644
+index 0000000..f98a240
+--- /dev/null
++++ b/src/lib/services/CartService.ts
+@@ -0,0 +1,90 @@
++// src/lib/services/CartService.ts
++import type { CartItem, Money, OrderItem, Product } from '../domain/types'
++import type { ProductRepository } from '../repositories/ProductRepository'
++import { computeSubtotal, productsToMap } from './pricing'
++
++export interface CartValidationResult {
++  /** Items that are currently purchasable, priced from the database. */
++  validItems: OrderItem[]
++  /** Product ids that were in the cart but are no longer purchasable
++   * (deleted, unpublished, or missing a price) — the caller (typically a
++   * cart API route) is responsible for deciding how to surface this to
++   * the customer (e.g. "these items were removed from your cart"). */
++  unavailableProductIds: string[]
++  /** `null` when validItems is empty (nothing to sum) or when the valid
++   * items span more than one currency, which the store does not
++   * currently support — in that case ALL items end up in
++   * unavailableProductIds rather than silently summing across
++   * currencies. */
++  subtotal: Money | null
++}
++
++export class CartService {
++  constructor(private readonly productRepository: ProductRepository) {}
++
++  /** This is the single place cart totals are computed server-side. The
++   * client-computed cart total (see the audit's Cart Audit) remains fine
++   * for display purposes, but nothing downstream — checkout in
++   * particular — should ever trust it. Always call this immediately
++   * before initiating checkout. */
++  async validateCart(cartItems: CartItem[]): Promise<CartValidationResult> {
++    if (cartItems.length === 0) {
++      return { validItems: [], unavailableProductIds: [], subtotal: null }
++    }
++
++    const products = await Promise.all(
++      cartItems.map(item => this.productRepository.getById(item.productId)),
++    )
++
++    const productsById = productsToMap(
++      products.filter((p): p is Product => p !== null),
++    )
++
++    const validItems: OrderItem[] = []
++    const unavailableProductIds: string[] = []
++
++    for (const item of cartItems) {
++      const product = productsById.get(item.productId)
++      const isPurchasable =
++        product !== undefined &&
++        product.status === 'published' &&
++        product.price !== null &&
++        product.currency !== null &&
++        Number.isInteger(item.quantity) &&
++        item.quantity > 0
++
++      if (!isPurchasable || !product || product.price === null || product.currency === null) {
++        unavailableProductIds.push(item.productId)
++        continue
++      }
++
++      validItems.push({
++        productId: product.id,
++        title: product.title,
++        unitPrice: product.price,
++        currency: product.currency,
++        quantity: item.quantity,
++      })
++    }
++
++    if (validItems.length === 0) {
++      return { validItems: [], unavailableProductIds, subtotal: null }
++    }
++
++    const currencies = new Set(validItems.map(i => i.currency))
++    if (currencies.size > 1) {
++      // Store does not currently support mixed-currency carts. Fail safe:
++      // report everything as unavailable rather than guessing which
++      // currency should "win".
++      return {
++        validItems: [],
++        unavailableProductIds: cartItems.map(i => i.productId),
++        subtotal: null,
++      }
++    }
++
++    const subtotal = computeSubtotal(validItems, validItems[0].currency)
++
++    return { validItems, unavailableProductIds, subtotal }
++  }
++}
+diff --git a/src/lib/services/OrderService.ts b/src/lib/services/OrderService.ts
+new file mode 100644
+index 0000000..b4da2ef
+--- /dev/null
++++ b/src/lib/services/OrderService.ts
+@@ -0,0 +1,83 @@
++// src/lib/services/OrderService.ts
++import type { CartItem, Order, OrderStatus } from '../domain/types'
++import type { OrderRepository } from '../repositories/OrderRepository'
++import type { ProductRepository } from '../repositories/ProductRepository'
++import {
++  computeSubtotal,
++  computeTotal,
++  generateOrderNumber,
++  productsToMap,
++  resolveOrderItems,
++} from './pricing'
++import { assertValidOrderTransition } from './orderStateMachine'
++
++export class OrderNotFoundError extends Error {
++  constructor(orderId: string) {
++    super(`Order not found: ${orderId}`)
++    this.name = 'OrderNotFoundError'
++  }
++}
++
++export class OrderService {
++  constructor(
++    private readonly orderRepository: OrderRepository,
++    private readonly productRepository: ProductRepository,
++  ) {}
++
++  /** Creates a new order from a customer's cart. This is the ONLY code
++   * path in the native architecture allowed to construct order line
++   * items and totals — it always re-fetches products fresh from the
++   * repository and prices every item from that, ignoring anything the
++   * caller may have supplied about price. See pricing.ts for the
++   * enforcement of that rule and the audit's Order Domain findings for
++   * why this matters. */
++  async createOrderFromCart(customerId: string, cartItems: CartItem[]): Promise<Order> {
++    const products = await Promise.all(
++      cartItems.map(item => this.productRepository.getById(item.productId)),
++    )
++    const productsById = productsToMap(products.filter((p): p is NonNullable<typeof p> => p !== null))
++
++    const items = resolveOrderItems(cartItems, productsById)
++    const currency = items[0].currency
++    const subtotal = computeSubtotal(items, currency)
++    const total = computeTotal(subtotal)
++
++    const orderNumber = generateOrderNumber()
++
++    return this.orderRepository.create({
++      orderNumber,
++      customerId,
++      items,
++      subtotal: subtotal.amount,
++      total: total.amount,
++      currency,
++      status: 'PENDING_PAYMENT',
++    })
++  }
++
++  async getById(orderId: string): Promise<Order | null> {
++    return this.orderRepository.getById(orderId)
++  }
++
++  async getByCustomer(customerId: string): Promise<Order[]> {
++    return this.orderRepository.getByCustomer(customerId)
++  }
++
++  /** Validates the transition against the order state machine BEFORE
++   * writing anything. Throws InvalidOrderTransitionError rather than
++   * silently clamping/ignoring an illegal transition. */
++  async transitionStatus(orderId: string, nextStatus: OrderStatus): Promise<Order> {
++    const order = await this.orderRepository.getById(orderId)
++    if (!order) {
++      throw new OrderNotFoundError(orderId)
++    }
++
++    assertValidOrderTransition(order.status, nextStatus)
++
++    const updated = await this.orderRepository.updateStatus(orderId, nextStatus)
++    if (!updated) {
++      throw new OrderNotFoundError(orderId)
++    }
++    return updated
++  }
++}
+diff --git a/src/lib/services/PaymentService.ts b/src/lib/services/PaymentService.ts
+new file mode 100644
+index 0000000..063dec3
+--- /dev/null
++++ b/src/lib/services/PaymentService.ts
+@@ -0,0 +1,143 @@
++// src/lib/services/PaymentService.ts
++import type { Order, Payment } from '../domain/types'
++import type { PaymentRepository } from '../repositories/PaymentRepository'
++import type { PaymentProvider } from '../payments/PaymentProvider'
++import { generateMerchantReference } from './pricing'
++import { assertValidPaymentTransition } from './orderStateMachine'
++
++export class PaymentInitiationError extends Error {
++  constructor(message: string, public readonly raw?: unknown) {
++    super(message)
++    this.name = 'PaymentInitiationError'
++  }
++}
++
++export class UnsupportedCurrencyError extends Error {
++  constructor(provider: string, currency: string) {
++    super(`Payment provider "${provider}" does not support currency "${currency}"`)
++    this.name = 'UnsupportedCurrencyError'
++  }
++}
++
++export class PaymentNotFoundError extends Error {
++  constructor(reference: string) {
++    super(`Payment not found for merchant reference: ${reference}`)
++    this.name = 'PaymentNotFoundError'
++  }
++}
++
++export interface InitiatePaymentOptions {
++  customerEmail?: string
++  customerPhone?: string
++  returnUrl?: string
++  resultUrl?: string
++}
++
++export class PaymentService {
++  constructor(
++    private readonly paymentRepository: PaymentRepository,
++    private readonly provider: PaymentProvider,
++  ) {}
++
++  /** Idempotent: calling this twice for the same order (same order
++   * number => same merchant reference) returns the existing Payment
++   * record on the second call rather than creating a duplicate or
++   * calling the provider a second time. This is the mechanism that
++   * satisfies the brief's "merchant references must support uniqueness"
++   * requirement at the service level, backed by the unique DB index on
++   * Payment.merchantReference (see db/models/Payment.ts). */
++  async initiatePaymentForOrder(order: Order, options: InitiatePaymentOptions = {}): Promise<Payment> {
++    if (!this.provider.supports(order.currency)) {
++      throw new UnsupportedCurrencyError(this.provider.name, order.currency)
++    }
++
++    const merchantReference = generateMerchantReference(order.orderNumber)
++
++    const existing = await this.paymentRepository.getByMerchantReference(merchantReference)
++    if (existing) {
++      return existing
++    }
++
++    let payment: Payment
++    try {
++      payment = await this.paymentRepository.create({
++        orderId: order.id,
++        provider: this.provider.name,
++        merchantReference,
++        amount: order.total,
++        currency: order.currency,
++      })
++    } catch (err) {
++      // Duplicate-key race: another concurrent request created the
++      // Payment between our check and our create. Treat it as success,
++      // not a failure — this IS the idempotency guarantee working.
++      const racedExisting = await this.paymentRepository.getByMerchantReference(merchantReference)
++      if (racedExisting) {
++        return racedExisting
++      }
++      throw err
++    }
++
++    const result = await this.provider.createPayment({
++      merchantReference,
++      orderId: order.id,
++      amount: order.total,
++      currency: order.currency,
++      customerEmail: options.customerEmail,
++      customerPhone: options.customerPhone,
++      returnUrl: options.returnUrl,
++      resultUrl: options.resultUrl,
++    })
++
++    if (!result.success) {
++      await this.paymentRepository.updateStatus(payment.id, 'FAILED', {
++        metadata: { errorMessage: result.errorMessage, raw: result.raw },
++      })
++      throw new PaymentInitiationError(
++        result.errorMessage ?? 'Payment initiation failed',
++        result.raw,
++      )
++    }
++
++    const updated = await this.paymentRepository.updateStatus(payment.id, 'PENDING', {
++      providerReference: result.providerReference,
++      metadata: {
++        redirectUrl: result.redirectUrl,
++        pollUrl: result.pollUrl,
++        instructions: result.instructions,
++      },
++    })
++
++    return updated ?? payment
++  }
++
++  /** Processes a validated provider callback. Relies on
++   * `provider.handleCallback` to have already thrown on an invalid
++   * signature — this method never trusts a raw payload's status
++   * directly. Re-delivery of the same callback (Paynow may retry) is
++   * idempotent: if the payment is already in the reported status, this
++   * is a no-op rather than a re-processing/duplicate side effect. */
++  async handleProviderCallback(rawPayload: unknown): Promise<Payment> {
++    const result = await this.provider.handleCallback(rawPayload)
++
++    const payment = await this.paymentRepository.getByMerchantReference(result.merchantReference)
++    if (!payment) {
++      throw new PaymentNotFoundError(result.merchantReference)
++    }
++
++    if (payment.status === result.status) {
++      // Duplicate/redelivered callback reporting a status we've already
++      // recorded — idempotent no-op, per the brief's §19 requirement.
++      return payment
++    }
++
++    assertValidPaymentTransition(payment.status, result.status)
++
++    const updated = await this.paymentRepository.updateStatus(payment.id, result.status, {
++      providerReference: result.providerReference ?? payment.providerReference ?? undefined,
++      metadata: { ...payment.metadata, lastCallbackRaw: result.raw },
++    })
++
++    return updated ?? payment
++  }
++}
+diff --git a/src/lib/services/ProductService.ts b/src/lib/services/ProductService.ts
+new file mode 100644
+index 0000000..ce89bc5
+--- /dev/null
++++ b/src/lib/services/ProductService.ts
+@@ -0,0 +1,40 @@
++// src/lib/services/ProductService.ts
++import type { Money, Product, ProductListFilter } from '../domain/types'
++import type { ProductRepository } from '../repositories/ProductRepository'
++
++export class ProductService {
++  constructor(private readonly productRepository: ProductRepository) {}
++
++  async getBySlug(slug: string): Promise<Product | null> {
++    return this.productRepository.getBySlug(slug)
++  }
++
++  async listPublished(filter: Omit<ProductListFilter, 'status'> = {}): Promise<Product[]> {
++    return this.productRepository.list({ ...filter, status: 'published' })
++  }
++
++  /** The single sanctioned way to read a product's current authoritative
++   * price. Returns `null` if the product has no native price set yet
++   * (e.g. not yet backfilled — see scripts/migrations/backfillProductPrices.ts)
++   * rather than falling back to any legacy/Stripe value. Callers (cart,
++   * checkout) must treat `null` as "not currently purchasable". */
++  async getAuthoritativePrice(productId: string): Promise<Money | null> {
++    const product = await this.productRepository.getById(productId)
++    if (!product || product.price === null || product.currency === null) {
++      return null
++    }
++    return { amount: product.price, currency: product.currency }
++  }
++
++  async setPrice(
++    productId: string,
++    price: { amount: number; currency: string; compareAtPrice?: number | null },
++  ): Promise<Product | null> {
++    if (!Number.isInteger(price.amount) || price.amount < 0) {
++      throw new Error(
++        `ProductService.setPrice: amount must be a non-negative integer (minor units), got ${price.amount}`,
++      )
++    }
++    return this.productRepository.setPrice(productId, price)
++  }
++}
+diff --git a/src/lib/services/orderStateMachine.ts b/src/lib/services/orderStateMachine.ts
+new file mode 100644
+index 0000000..d182577
+--- /dev/null
++++ b/src/lib/services/orderStateMachine.ts
+@@ -0,0 +1,42 @@
++// src/lib/services/orderStateMachine.ts
++//
++// Pure validators for Order/Payment status transitions. No I/O. Services
++// call these before ever writing a new status to the database — a
++// repository's `updateStatus` method intentionally does NOT validate the
++// transition itself (repositories stay dumb/infrastructure-only), so
++// skipping this check would let an invalid transition reach the DB.
++
++import { ORDER_STATUS_TRANSITIONS, PAYMENT_STATUS_TRANSITIONS } from '../domain/types'
++import type { OrderStatus, PaymentStatus } from '../domain/types'
++
++export class InvalidOrderTransitionError extends Error {
++  constructor(public readonly from: OrderStatus, public readonly to: OrderStatus) {
++    super(`Invalid order status transition: ${from} -> ${to}`)
++    this.name = 'InvalidOrderTransitionError'
++  }
++}
++
++export class InvalidPaymentTransitionError extends Error {
++  constructor(public readonly from: PaymentStatus, public readonly to: PaymentStatus) {
++    super(`Invalid payment status transition: ${from} -> ${to}`)
++    this.name = 'InvalidPaymentTransitionError'
++  }
++}
++
++export const isValidOrderTransition = (from: OrderStatus, to: OrderStatus): boolean =>
++  from === to || ORDER_STATUS_TRANSITIONS[from]?.includes(to) === true
++
++export const assertValidOrderTransition = (from: OrderStatus, to: OrderStatus): void => {
++  if (!isValidOrderTransition(from, to)) {
++    throw new InvalidOrderTransitionError(from, to)
++  }
++}
++
++export const isValidPaymentTransition = (from: PaymentStatus, to: PaymentStatus): boolean =>
++  from === to || PAYMENT_STATUS_TRANSITIONS[from]?.includes(to) === true
++
++export const assertValidPaymentTransition = (from: PaymentStatus, to: PaymentStatus): void => {
++  if (!isValidPaymentTransition(from, to)) {
++    throw new InvalidPaymentTransitionError(from, to)
++  }
++}
+diff --git a/src/lib/services/pricing.ts b/src/lib/services/pricing.ts
+new file mode 100644
+index 0000000..5baae65
+--- /dev/null
++++ b/src/lib/services/pricing.ts
+@@ -0,0 +1,124 @@
++// src/lib/services/pricing.ts
++//
++// Pure functions only — no repository/DB access, no I/O. This is what
++// lets OrderService's core pricing logic be unit tested without a
++// database (see tests/pricing.test.ts).
++//
++// The central rule enforced here: an OrderItem's price NEVER comes from
++// anything the caller supplies. It comes exclusively from the resolved
++// `Product` passed in (which the service layer is responsible for having
++// fetched fresh from ProductRepository). This is the direct fix for the
++// audit's "client-submitted total/price" finding.
++
++import { addMoney, multiplyMoney, sumMoney, zeroMoney } from '../domain/money'
++import type { CartItem, CurrencyCode, Money, Order, OrderItem, Product } from '../domain/types'
++
++export class ProductNotPurchasableError extends Error {
++  constructor(public readonly productId: string, public readonly reason: string) {
++    super(`Product ${productId} is not purchasable: ${reason}`)
++    this.name = 'ProductNotPurchasableError'
++  }
++}
++
++export class EmptyCartError extends Error {
++  constructor() {
++    super('Cannot create an order from an empty cart')
++    this.name = 'EmptyCartError'
++  }
++}
++
++export class MixedCurrencyCartError extends Error {
++  constructor() {
++    super('Cart contains products priced in more than one currency')
++    this.name = 'MixedCurrencyCartError'
++  }
++}
++
++/** Resolves cart line items against a map of freshly-fetched, authoritative
++ * Product records. Throws if a requested product is unpurchasable
++ * (unpublished, price not set, or quantity <= 0) rather than silently
++ * dropping it — callers that want "drop unavailable items and continue"
++ * behavior (e.g. CartService) should catch per-item and decide, this
++ * function itself is strict by design since OrderService's checkout path
++ * must fail loudly on unpurchasable items rather than charge for a
++ * different set of items than the customer saw. */
++export const resolveOrderItems = (
++  cartItems: CartItem[],
++  productsById: Map<string, Product>,
++): OrderItem[] => {
++  if (cartItems.length === 0) {
++    throw new EmptyCartError()
++  }
++
++  return cartItems.map(item => {
++    const product = productsById.get(item.productId)
++
++    if (!product) {
++      throw new ProductNotPurchasableError(item.productId, 'product not found')
++    }
++    if (product.status !== 'published') {
++      throw new ProductNotPurchasableError(item.productId, 'product is not published')
++    }
++    if (product.price === null || product.currency === null) {
++      throw new ProductNotPurchasableError(item.productId, 'product has no authoritative price set')
++    }
++    if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
++      throw new ProductNotPurchasableError(item.productId, `invalid quantity: ${item.quantity}`)
++    }
++
++    return {
++      productId: product.id,
++      title: product.title,
++      // Authoritative price, read from the resolved Product — NEVER from
++      // the incoming cart item, which may carry a stale or tampered value.
++      unitPrice: product.price,
++      currency: product.currency,
++      quantity: item.quantity,
++    }
++  })
++}
++
++export const computeSubtotal = (items: OrderItem[], currency: CurrencyCode): Money => {
++  const currencies = new Set(items.map(i => i.currency))
++  if (currencies.size > 1) {
++    throw new MixedCurrencyCartError()
++  }
++  const lineTotals = items.map(item =>
++    multiplyMoney({ amount: item.unitPrice, currency: item.currency }, item.quantity),
++  )
++  return sumMoney(lineTotals, currency)
++}
++
++/** Total = subtotal for this phase (no tax/shipping/discount logic yet).
++ * Kept as a distinct function so those concerns have an obvious place to
++ * be added later without callers needing to change. */
++export const computeTotal = (subtotal: Money): Money => addMoney(subtotal, zeroMoney(subtotal.currency))
++
++/** Human-and-machine-friendly order number. Also doubles as the default
++ * merchant reference handed to a payment provider (see PaymentService).
++ * Format: ORD-<yymmdd>-<8 uppercase hex chars>. Not cryptographically
++ * secure by itself — uniqueness is enforced at the database layer via
++ * the sparse-unique index on Order.orderNumber (see db/models/Order.ts),
++ * this function only needs to make collisions rare, not impossible. */
++export const generateOrderNumber = (now: Date = new Date()): string => {
++  const yy = String(now.getUTCFullYear()).slice(2)
++  const mm = String(now.getUTCMonth() + 1).padStart(2, '0')
++  const dd = String(now.getUTCDate()).padStart(2, '0')
++  const random = Array.from({ length: 8 }, () =>
++    '0123456789ABCDEF'[Math.floor(Math.random() * 16)],
++  ).join('')
++  return `ORD-${yy}${mm}${dd}-${random}`
++}
++
++/** Merchant reference sent to the payment provider. Kept as a distinct
++ * function from generateOrderNumber (even though it currently just
++ * reuses the order number) so a future requirement like "one order, N
++ * retry attempts, each needs its own provider-facing reference" has an
++ * obvious seam. */
++export const generateMerchantReference = (orderNumber: string, attempt = 1): string =>
++  attempt <= 1 ? orderNumber : `${orderNumber}-R${attempt}`
++
++export const productsToMap = (products: Product[]): Map<string, Product> =>
++  new Map(products.map(p => [p.id, p]))
++
++export type { Order }
+diff --git a/tests/auth.test.ts b/tests/auth.test.ts
+new file mode 100644
+index 0000000..42c39b0
+--- /dev/null
++++ b/tests/auth.test.ts
+@@ -0,0 +1,81 @@
++// tests/auth.test.ts
++import { beforeAll, describe, expect, it } from 'vitest'
++import { hashPassword, verifyPassword } from '../src/lib/auth/password'
++import {
++  createSessionToken,
++  InvalidSessionTokenError,
++  verifySessionToken,
++} from '../src/lib/auth/session'
++import { assertHasRole, hasAnyRole, isAdmin, isCustomer } from '../src/lib/auth/roles'
++
++describe('password hashing', () => {
++  it('hashes and verifies a correct password', async () => {
++    const hash = await hashPassword('correct-horse-battery-staple')
++    expect(await verifyPassword('correct-horse-battery-staple', hash)).toBe(true)
++  })
++
++  it('rejects an incorrect password', async () => {
++    const hash = await hashPassword('correct-horse-battery-staple')
++    expect(await verifyPassword('wrong-password', hash)).toBe(false)
++  })
++
++  it('produces a different hash each time (random salt)', async () => {
++    const a = await hashPassword('same-password-123')
++    const b = await hashPassword('same-password-123')
++    expect(a).not.toBe(b)
++  })
++
++  it('rejects passwords under 8 characters', async () => {
++    await expect(hashPassword('short')).rejects.toThrow()
++  })
++
++  it('never throws on a malformed stored hash, just returns false', async () => {
++    expect(await verifyPassword('anything', 'not-a-valid-hash')).toBe(false)
++  })
++})
++
++describe('session tokens', () => {
++  beforeAll(() => {
++    process.env.SESSION_SECRET = 'test-secret-not-for-production'
++  })
++
++  it('creates and verifies a valid token', () => {
++    const token = createSessionToken({ userId: 'u1', roles: ['customer'] })
++    const payload = verifySessionToken(token)
++    expect(payload.userId).toBe('u1')
++    expect(payload.roles).toEqual(['customer'])
++  })
++
++  it('rejects a tampered token', () => {
++    const token = createSessionToken({ userId: 'u1', roles: ['customer'] })
++    const tampered = token.slice(0, -1) + (token.endsWith('A') ? 'B' : 'A')
++    expect(() => verifySessionToken(tampered)).toThrow(InvalidSessionTokenError)
++  })
++
++  it('rejects an expired token', () => {
++    const token = createSessionToken({ userId: 'u1', roles: ['customer'] }, -1)
++    expect(() => verifySessionToken(token)).toThrow(InvalidSessionTokenError)
++  })
++
++  it('rejects a malformed token', () => {
++    expect(() => verifySessionToken('not-a-real-token')).toThrow(InvalidSessionTokenError)
++  })
++})
++
++describe('roles', () => {
++  it('identifies admin and customer roles', () => {
++    expect(isAdmin(['admin'])).toBe(true)
++    expect(isAdmin(['customer'])).toBe(false)
++    expect(isCustomer(['customer'])).toBe(true)
++  })
++
++  it('hasAnyRole matches on overlap', () => {
++    expect(hasAnyRole(['customer'], ['admin', 'customer'])).toBe(true)
++    expect(hasAnyRole(['customer'], ['admin'])).toBe(false)
++  })
++
++  it('assertHasRole throws when the role is missing', () => {
++    expect(() => assertHasRole(['customer'], ['admin'])).toThrow()
++    expect(() => assertHasRole(['admin'], ['admin'])).not.toThrow()
++  })
++})
+diff --git a/tests/cartService.test.ts b/tests/cartService.test.ts
+new file mode 100644
+index 0000000..03d9bcc
+--- /dev/null
++++ b/tests/cartService.test.ts
+@@ -0,0 +1,76 @@
++// tests/cartService.test.ts
++import { beforeEach, describe, expect, it } from 'vitest'
++import { CartService } from '../src/lib/services/CartService'
++import { FakeProductRepository, buildTestProduct } from './fakes/FakeProductRepository'
++
++describe('CartService.validateCart', () => {
++  let productRepo: FakeProductRepository
++  let service: CartService
++
++  beforeEach(() => {
++    productRepo = new FakeProductRepository()
++    service = new CartService(productRepo)
++  })
++
++  it('returns an empty result for an empty cart', async () => {
++    const result = await service.validateCart([])
++    expect(result.validItems).toEqual([])
++    expect(result.subtotal).toBeNull()
++  })
++
++  it('prices valid items from the database, not from anything the caller supplies', async () => {
++    productRepo.seed(buildTestProduct({ id: 'p1', price: 500, currency: 'USD' }))
++
++    const result = await service.validateCart([{ productId: 'p1', quantity: 3 }])
++
++    expect(result.validItems).toHaveLength(1)
++    expect(result.validItems[0].unitPrice).toBe(500)
++    expect(result.subtotal).toEqual({ amount: 1500, currency: 'USD' })
++    expect(result.unavailableProductIds).toEqual([])
++  })
++
++  it('drops products that no longer exist and reports them as unavailable', async () => {
++    const result = await service.validateCart([{ productId: 'missing', quantity: 1 }])
++    expect(result.validItems).toEqual([])
++    expect(result.unavailableProductIds).toEqual(['missing'])
++  })
++
++  it('drops unpublished products', async () => {
++    productRepo.seed(buildTestProduct({ id: 'p1', status: 'draft' }))
++    const result = await service.validateCart([{ productId: 'p1', quantity: 1 }])
++    expect(result.unavailableProductIds).toEqual(['p1'])
++  })
++
++  it('drops products with no authoritative price set', async () => {
++    productRepo.seed(buildTestProduct({ id: 'p1', price: null, currency: null }))
++    const result = await service.validateCart([{ productId: 'p1', quantity: 1 }])
++    expect(result.unavailableProductIds).toEqual(['p1'])
++  })
++
++  it('keeps valid items even when some other item in the cart is unavailable', async () => {
++    productRepo.seed(buildTestProduct({ id: 'p1', price: 1000, currency: 'USD' }))
++
++    const result = await service.validateCart([
++      { productId: 'p1', quantity: 1 },
++      { productId: 'missing', quantity: 1 },
++    ])
++
++    expect(result.validItems).toHaveLength(1)
++    expect(result.unavailableProductIds).toEqual(['missing'])
++    expect(result.subtotal).toEqual({ amount: 1000, currency: 'USD' })
++  })
++
++  it('fails safe on a mixed-currency cart: reports everything as unavailable rather than guessing', async () => {
++    productRepo.seed(buildTestProduct({ id: 'p1', price: 1000, currency: 'USD' }))
++    productRepo.seed(buildTestProduct({ id: 'p2', price: 1000, currency: 'ZWL' }))
++
++    const result = await service.validateCart([
++      { productId: 'p1', quantity: 1 },
++      { productId: 'p2', quantity: 1 },
++    ])
++
++    expect(result.validItems).toEqual([])
++    expect(result.subtotal).toBeNull()
++    expect(result.unavailableProductIds.sort()).toEqual(['p1', 'p2'])
++  })
++})
+diff --git a/tests/fakes/FakeOrderRepository.ts b/tests/fakes/FakeOrderRepository.ts
+new file mode 100644
+index 0000000..df2f308
+--- /dev/null
++++ b/tests/fakes/FakeOrderRepository.ts
+@@ -0,0 +1,48 @@
++// tests/fakes/FakeOrderRepository.ts
++import type { CreateOrderInput, OrderRepository } from '../../src/lib/repositories/OrderRepository'
++import type { Order, OrderStatus } from '../../src/lib/domain/types'
++
++let counter = 0
++
++export class FakeOrderRepository implements OrderRepository {
++  private orders = new Map<string, Order>()
++
++  async getById(id: string): Promise<Order | null> {
++    return this.orders.get(id) ?? null
++  }
++
++  async getByOrderNumber(orderNumber: string): Promise<Order | null> {
++    return [...this.orders.values()].find(o => o.orderNumber === orderNumber) ?? null
++  }
++
++  async getByCustomer(customerId: string): Promise<Order[]> {
++    return [...this.orders.values()].filter(o => o.customerId === customerId)
++  }
++
++  async create(input: CreateOrderInput): Promise<Order> {
++    const id = `order_${++counter}`
++    const order: Order = {
++      id,
++      orderNumber: input.orderNumber,
++      customerId: input.customerId,
++      items: input.items,
++      subtotal: input.subtotal,
++      total: input.total,
++      currency: input.currency,
++      status: input.status,
++      legacyStripePaymentIntentId: null,
++      createdAt: new Date(),
++      updatedAt: new Date(),
++    }
++    this.orders.set(id, order)
++    return order
++  }
++
++  async updateStatus(id: string, status: OrderStatus): Promise<Order | null> {
++    const order = this.orders.get(id)
++    if (!order) return null
++    const updated = { ...order, status, updatedAt: new Date() }
++    this.orders.set(id, updated)
++    return updated
++  }
++}
+diff --git a/tests/fakes/FakePaymentProvider.ts b/tests/fakes/FakePaymentProvider.ts
+new file mode 100644
+index 0000000..fe49d6d
+--- /dev/null
++++ b/tests/fakes/FakePaymentProvider.ts
+@@ -0,0 +1,76 @@
++// tests/fakes/FakePaymentProvider.ts
++import type {
++  CallbackHandlingResult,
++  CreatePaymentInput,
++  CreatePaymentResult,
++  PaymentProvider,
++  PaymentStatusResult,
++} from '../../src/lib/payments/PaymentProvider'
++import type { PaymentStatus } from '../../src/lib/domain/types'
++
++/** Always succeeds at initiation. Callback behavior is configurable per
++ * test via `nextCallbackStatus`. Deliberately does NOT simulate real
++ * Paynow behavior in any detail — it exists purely to exercise
++ * PaymentService's orchestration logic (idempotency, state transitions),
++ * not to stand in for Paynow's actual API contract. */
++export class FakePaymentProvider implements PaymentProvider {
++  readonly name = 'paynow' as const
++  readonly supportsRefunds = false
++
++  public createPaymentCallCount = 0
++  public nextCallbackStatus: PaymentStatus = 'PAID'
++  public supportedCurrencies = new Set(['USD'])
++
++  supports(currency: string): boolean {
++    return this.supportedCurrencies.has(currency.toUpperCase())
++  }
++
++  async createPayment(input: CreatePaymentInput): Promise<CreatePaymentResult> {
++    this.createPaymentCallCount += 1
++    return {
++      success: true,
++      redirectUrl: `https://fake-paynow.test/pay/${input.merchantReference}`,
++      pollUrl: `https://fake-paynow.test/poll/${input.merchantReference}`,
++      providerReference: `fake-ref-${input.merchantReference}`,
++    }
++  }
++
++  async getPaymentStatus(): Promise<PaymentStatusResult> {
++    return { status: this.nextCallbackStatus }
++  }
++
++  async handleCallback(rawPayload: unknown): Promise<CallbackHandlingResult> {
++    const payload = rawPayload as { merchantReference: string; valid?: boolean }
++    if (payload.valid === false) {
++      throw new Error('Invalid callback signature')
++    }
++    return {
++      merchantReference: payload.merchantReference,
++      status: this.nextCallbackStatus,
++      providerReference: `fake-ref-${payload.merchantReference}`,
++    }
++  }
++}
++
++/** Always fails at initiation — for testing PaymentService's failure
++ * path (Payment gets marked FAILED, PaymentInitiationError is thrown). */
++export class FailingFakePaymentProvider implements PaymentProvider {
++  readonly name = 'paynow' as const
++  readonly supportsRefunds = false
++
++  supports(): boolean {
++    return true
++  }
++
++  async createPayment(): Promise<CreatePaymentResult> {
++    return { success: false, errorMessage: 'Simulated provider failure' }
++  }
++
++  async getPaymentStatus(): Promise<PaymentStatusResult> {
++    return { status: 'FAILED' }
++  }
++
++  async handleCallback(): Promise<CallbackHandlingResult> {
++    throw new Error('not used in failure-path tests')
++  }
++}
+diff --git a/tests/fakes/FakePaymentRepository.ts b/tests/fakes/FakePaymentRepository.ts
+new file mode 100644
+index 0000000..8984c06
+--- /dev/null
++++ b/tests/fakes/FakePaymentRepository.ts
+@@ -0,0 +1,74 @@
++// tests/fakes/FakePaymentRepository.ts
++import type { CreatePaymentInput, PaymentRepository } from '../../src/lib/repositories/PaymentRepository'
++import type { Payment, PaymentStatus } from '../../src/lib/domain/types'
++
++let counter = 0
++
++export class FakePaymentRepository implements PaymentRepository {
++  private payments = new Map<string, Payment>()
++
++  async getById(id: string): Promise<Payment | null> {
++    return this.payments.get(id) ?? null
++  }
++
++  async getByOrderId(orderId: string): Promise<Payment[]> {
++    return [...this.payments.values()].filter(p => p.orderId === orderId)
++  }
++
++  async getByMerchantReference(merchantReference: string): Promise<Payment | null> {
++    return [...this.payments.values()].find(p => p.merchantReference === merchantReference) ?? null
++  }
++
++  /** Mirrors the real repository's unique-index behavior: creating a
++   * second payment with a merchant reference that already exists throws,
++   * so PaymentService's race-handling path is exercised the same way it
++   * would be against real MongoDB. */
++  async create(input: CreatePaymentInput): Promise<Payment> {
++    const existing = await this.getByMerchantReference(input.merchantReference)
++    if (existing) {
++      throw new Error('E11000 duplicate key error: merchantReference must be unique')
++    }
++
++    const id = `payment_${++counter}`
++    const payment: Payment = {
++      id,
++      orderId: input.orderId,
++      provider: input.provider,
++      providerReference: null,
++      merchantReference: input.merchantReference,
++      amount: input.amount,
++      currency: input.currency,
++      status: 'PENDING',
++      paymentMethod: null,
++      initiatedAt: new Date(),
++      paidAt: null,
++      failedAt: null,
++      metadata: {},
++      createdAt: new Date(),
++      updatedAt: new Date(),
++    }
++    this.payments.set(id, payment)
++    return payment
++  }
++
++  async updateStatus(
++    id: string,
++    status: PaymentStatus,
++    extra?: { providerReference?: string; paymentMethod?: string; metadata?: Record<string, unknown> },
++  ): Promise<Payment | null> {
++    const payment = this.payments.get(id)
++    if (!payment) return null
++    const updated: Payment = {
++      ...payment,
++      status,
++      providerReference: extra?.providerReference ?? payment.providerReference,
++      paymentMethod: extra?.paymentMethod ?? payment.paymentMethod,
++      metadata: extra?.metadata ?? payment.metadata,
++      paidAt: status === 'PAID' ? new Date() : payment.paidAt,
++      failedAt: status === 'FAILED' ? new Date() : payment.failedAt,
++      updatedAt: new Date(),
++    }
++    this.payments.set(id, updated)
++    return updated
++  }
++}
+diff --git a/tests/fakes/FakeProductRepository.ts b/tests/fakes/FakeProductRepository.ts
+new file mode 100644
+index 0000000..b5830a2
+--- /dev/null
++++ b/tests/fakes/FakeProductRepository.ts
+@@ -0,0 +1,76 @@
++// tests/fakes/FakeProductRepository.ts
++import type { ProductRepository } from '../../src/lib/repositories/ProductRepository'
++import type { Product, ProductListFilter } from '../../src/lib/domain/types'
++
++export class FakeProductRepository implements ProductRepository {
++  private products = new Map<string, Product>()
++
++  seed(product: Product): void {
++    this.products.set(product.id, product)
++  }
++
++  async getById(id: string): Promise<Product | null> {
++    return this.products.get(id) ?? null
++  }
++
++  async getBySlug(slug: string): Promise<Product | null> {
++    return [...this.products.values()].find(p => p.slug === slug) ?? null
++  }
++
++  async list(filter: ProductListFilter = {}): Promise<Product[]> {
++    let results = [...this.products.values()]
++    if (filter.status) results = results.filter(p => p.status === filter.status)
++    if (filter.categoryId) results = results.filter(p => p.categories.includes(filter.categoryId!))
++    if (filter.ids) results = results.filter(p => filter.ids!.includes(p.id))
++    return results
++  }
++
++  async setPrice(
++    id: string,
++    price: { amount: number; currency: string; compareAtPrice?: number | null },
++  ): Promise<Product | null> {
++    const product = this.products.get(id)
++    if (!product) return null
++    const updated: Product = {
++      ...product,
++      price: price.amount,
++      currency: price.currency,
++      compareAtPrice: price.compareAtPrice ?? null,
++    }
++    this.products.set(id, updated)
++    return updated
++  }
++
++  async update(
++    id: string,
++    patch: Partial<Pick<Product, 'title' | 'slug' | 'enablePaywall'>>,
++  ): Promise<Product | null> {
++    const product = this.products.get(id)
++    if (!product) return null
++    const updated = { ...product, ...patch }
++    this.products.set(id, updated)
++    return updated
++  }
++
++  async delete(id: string): Promise<boolean> {
++    return this.products.delete(id)
++  }
++}
++
++export const buildTestProduct = (overrides: Partial<Product> = {}): Product => ({
++  id: overrides.id ?? Math.random().toString(36).slice(2),
++  title: 'Test Product',
++  slug: 'test-product',
++  status: 'published',
++  price: 1999,
++  currency: 'USD',
++  compareAtPrice: null,
++  categories: [],
++  relatedProducts: [],
++  enablePaywall: false,
++  legacyStripeProductId: null,
++  legacyPriceJSON: null,
++  createdAt: new Date(),
++  updatedAt: new Date(),
++  ...overrides,
++})
+diff --git a/tests/money.test.ts b/tests/money.test.ts
+new file mode 100644
+index 0000000..8bb346a
+--- /dev/null
++++ b/tests/money.test.ts
+@@ -0,0 +1,70 @@
++// tests/money.test.ts
++import { describe, expect, it } from 'vitest'
++import {
++  addMoney,
++  CurrencyMismatchError,
++  formatMoney,
++  multiplyMoney,
++  sumMoney,
++  toMajorUnits,
++  toMinorUnits,
++} from '../src/lib/domain/money'
++
++describe('money conversion', () => {
++  it('converts major units to minor units without floating point drift', () => {
++    expect(toMinorUnits(12.5, 'USD')).toBe(1250)
++    expect(toMinorUnits(0.1, 'USD')).toBe(10)
++    expect(toMinorUnits(19.99, 'USD')).toBe(1999)
++  })
++
++  it('converts minor units back to major units', () => {
++    expect(toMajorUnits(1250, 'USD')).toBe(12.5)
++    expect(toMajorUnits(1999, 'USD')).toBeCloseTo(19.99)
++  })
++
++  it('throws on non-finite input rather than silently coercing', () => {
++    expect(() => toMinorUnits(NaN, 'USD')).toThrow()
++    expect(() => toMinorUnits(Infinity, 'USD')).toThrow()
++  })
++
++  it('formats money for display', () => {
++    expect(formatMoney({ amount: 1999, currency: 'USD' })).toBe('$19.99')
++  })
++})
++
++describe('money arithmetic', () => {
++  it('adds two amounts in the same currency', () => {
++    const result = addMoney({ amount: 1000, currency: 'USD' }, { amount: 500, currency: 'USD' })
++    expect(result).toEqual({ amount: 1500, currency: 'USD' })
++  })
++
++  it('refuses to add amounts in different currencies', () => {
++    expect(() =>
++      addMoney({ amount: 1000, currency: 'USD' }, { amount: 500, currency: 'ZWL' }),
++    ).toThrow(CurrencyMismatchError)
++  })
++
++  it('multiplies an amount by an integer quantity', () => {
++    expect(multiplyMoney({ amount: 1999, currency: 'USD' }, 3)).toEqual({
++      amount: 5997,
++      currency: 'USD',
++    })
++  })
++
++  it('rejects a non-integer or negative quantity', () => {
++    expect(() => multiplyMoney({ amount: 1000, currency: 'USD' }, 1.5)).toThrow()
++    expect(() => multiplyMoney({ amount: 1000, currency: 'USD' }, -1)).toThrow()
++  })
++
++  it('sums a list of amounts', () => {
++    const total = sumMoney(
++      [
++        { amount: 1000, currency: 'USD' },
++        { amount: 2000, currency: 'USD' },
++        { amount: 500, currency: 'USD' },
++      ],
++      'USD',
++    )
++    expect(total.amount).toBe(3500)
++  })
++})
+diff --git a/tests/orderService.test.ts b/tests/orderService.test.ts
+new file mode 100644
+index 0000000..3440b33
+--- /dev/null
++++ b/tests/orderService.test.ts
+@@ -0,0 +1,80 @@
++// tests/orderService.test.ts
++import { beforeEach, describe, expect, it } from 'vitest'
++import { OrderService, OrderNotFoundError } from '../src/lib/services/OrderService'
++import { InvalidOrderTransitionError } from '../src/lib/services/orderStateMachine'
++import { FakeOrderRepository } from './fakes/FakeOrderRepository'
++import { FakeProductRepository, buildTestProduct } from './fakes/FakeProductRepository'
++
++describe('OrderService.createOrderFromCart', () => {
++  let productRepo: FakeProductRepository
++  let orderRepo: FakeOrderRepository
++  let service: OrderService
++
++  beforeEach(() => {
++    productRepo = new FakeProductRepository()
++    orderRepo = new FakeOrderRepository()
++    service = new OrderService(orderRepo, productRepo)
++
++    productRepo.seed(buildTestProduct({ id: 'p1', title: 'Widget', price: 1500, currency: 'USD' }))
++    productRepo.seed(buildTestProduct({ id: 'p2', title: 'Gadget', price: 3000, currency: 'USD' }))
++  })
++
++  it('creates an order priced entirely from the product repository, in PENDING_PAYMENT status', async () => {
++    const order = await service.createOrderFromCart('customer1', [
++      { productId: 'p1', quantity: 2 },
++      { productId: 'p2', quantity: 1 },
++    ])
++
++    expect(order.status).toBe('PENDING_PAYMENT')
++    expect(order.currency).toBe('USD')
++    expect(order.subtotal).toBe(2 * 1500 + 3000)
++    expect(order.total).toBe(order.subtotal)
++    expect(order.items).toHaveLength(2)
++    expect(order.items[0].unitPrice).toBe(1500)
++    expect(order.orderNumber).toMatch(/^ORD-/)
++  })
++
++  it('rejects an order containing a product with no price set', async () => {
++    productRepo.seed(buildTestProduct({ id: 'p3', price: null, currency: null }))
++
++    await expect(
++      service.createOrderFromCart('customer1', [{ productId: 'p3', quantity: 1 }]),
++    ).rejects.toThrow()
++  })
++})
++
++describe('OrderService.transitionStatus', () => {
++  let productRepo: FakeProductRepository
++  let orderRepo: FakeOrderRepository
++  let service: OrderService
++
++  beforeEach(() => {
++    productRepo = new FakeProductRepository()
++    orderRepo = new FakeOrderRepository()
++    service = new OrderService(orderRepo, productRepo)
++    productRepo.seed(buildTestProduct({ id: 'p1', price: 1000, currency: 'USD' }))
++  })
++
++  it('applies a valid transition', async () => {
++    const order = await service.createOrderFromCart('customer1', [{ productId: 'p1', quantity: 1 }])
++    const updated = await service.transitionStatus(order.id, 'PAID')
++    expect(updated.status).toBe('PAID')
++  })
++
++  it('rejects an invalid transition and leaves the order unchanged', async () => {
++    const order = await service.createOrderFromCart('customer1', [{ productId: 'p1', quantity: 1 }])
++
++    await expect(service.transitionStatus(order.id, 'FULFILLED')).rejects.toThrow(
++      InvalidOrderTransitionError,
++    )
++
++    const stillPending = await service.getById(order.id)
++    expect(stillPending?.status).toBe('PENDING_PAYMENT')
++  })
++
++  it('throws OrderNotFoundError for an unknown order id', async () => {
++    await expect(service.transitionStatus('does-not-exist', 'PAID')).rejects.toThrow(
++      OrderNotFoundError,
++    )
++  })
++})
+diff --git a/tests/paymentService.test.ts b/tests/paymentService.test.ts
+new file mode 100644
+index 0000000..2e6e55a
+--- /dev/null
++++ b/tests/paymentService.test.ts
+@@ -0,0 +1,128 @@
++// tests/paymentService.test.ts
++import { beforeEach, describe, expect, it } from 'vitest'
++import { PaymentInitiationError, PaymentService, UnsupportedCurrencyError } from '../src/lib/services/PaymentService'
++import { FakePaymentRepository } from './fakes/FakePaymentRepository'
++import { FailingFakePaymentProvider, FakePaymentProvider } from './fakes/FakePaymentProvider'
++import type { Order } from '../src/lib/domain/types'
++
++const buildTestOrder = (overrides: Partial<Order> = {}): Order => ({
++  id: 'order1',
++  orderNumber: 'ORD-260816-AAAA1111',
++  customerId: 'customer1',
++  items: [{ productId: 'p1', title: 'Widget', unitPrice: 1000, currency: 'USD', quantity: 1 }],
++  subtotal: 1000,
++  total: 1000,
++  currency: 'USD',
++  status: 'PENDING_PAYMENT',
++  legacyStripePaymentIntentId: null,
++  createdAt: new Date(),
++  updatedAt: new Date(),
++  ...overrides,
++})
++
++describe('PaymentService.initiatePaymentForOrder', () => {
++  let paymentRepo: FakePaymentRepository
++  let provider: FakePaymentProvider
++  let service: PaymentService
++
++  beforeEach(() => {
++    paymentRepo = new FakePaymentRepository()
++    provider = new FakePaymentProvider()
++    service = new PaymentService(paymentRepo, provider)
++  })
++
++  it('creates a Payment and calls the provider exactly once', async () => {
++    const order = buildTestOrder()
++    const payment = await service.initiatePaymentForOrder(order)
++
++    expect(payment.merchantReference).toBe(order.orderNumber)
++    expect(payment.status).toBe('PENDING')
++    expect(payment.providerReference).toBe(`fake-ref-${order.orderNumber}`)
++    expect(provider.createPaymentCallCount).toBe(1)
++  })
++
++  it('IDEMPOTENCY: calling initiatePaymentForOrder twice for the same order does not create a second Payment or call the provider twice', async () => {
++    const order = buildTestOrder()
++
++    const first = await service.initiatePaymentForOrder(order)
++    const second = await service.initiatePaymentForOrder(order)
++
++    expect(second.id).toBe(first.id)
++    expect(provider.createPaymentCallCount).toBe(1)
++
++    const allPaymentsForOrder = await paymentRepo.getByOrderId(order.id)
++    expect(allPaymentsForOrder).toHaveLength(1)
++  })
++
++  it('rejects a currency the provider does not support', async () => {
++    const order = buildTestOrder({ currency: 'EUR', total: 1000 })
++    await expect(service.initiatePaymentForOrder(order)).rejects.toThrow(UnsupportedCurrencyError)
++  })
++
++  it('marks the Payment FAILED and throws when the provider rejects initiation', async () => {
++    const failingProvider = new FailingFakePaymentProvider()
++    const failingService = new PaymentService(paymentRepo, failingProvider)
++    const order = buildTestOrder()
++
++    await expect(failingService.initiatePaymentForOrder(order)).rejects.toThrow(
++      PaymentInitiationError,
++    )
++
++    const payment = await paymentRepo.getByMerchantReference(order.orderNumber)
++    expect(payment?.status).toBe('FAILED')
++  })
++})
++
++describe('PaymentService.handleProviderCallback', () => {
++  let paymentRepo: FakePaymentRepository
++  let provider: FakePaymentProvider
++  let service: PaymentService
++
++  beforeEach(() => {
++    paymentRepo = new FakePaymentRepository()
++    provider = new FakePaymentProvider()
++    service = new PaymentService(paymentRepo, provider)
++  })
++
++  it('transitions the Payment to PAID on a valid callback', async () => {
++    const order = buildTestOrder()
++    await service.initiatePaymentForOrder(order)
++
++    provider.nextCallbackStatus = 'PAID'
++    const result = await service.handleProviderCallback({ merchantReference: order.orderNumber })
++
++    expect(result.status).toBe('PAID')
++    expect(result.paidAt).not.toBeNull()
++  })
++
++  it('IDEMPOTENCY: redelivering the same callback twice does not error and does not double-process', async () => {
++    const order = buildTestOrder()
++    await service.initiatePaymentForOrder(order)
++
++    provider.nextCallbackStatus = 'PAID'
++    const first = await service.handleProviderCallback({ merchantReference: order.orderNumber })
++    const second = await service.handleProviderCallback({ merchantReference: order.orderNumber })
++
++    expect(first.status).toBe('PAID')
++    expect(second.status).toBe('PAID')
++    expect(second.updatedAt.getTime()).toBe(first.updatedAt.getTime()) // no-op, not re-written
++  })
++
++  it('rejects a callback with an invalid signature rather than trusting it', async () => {
++    const order = buildTestOrder()
++    await service.initiatePaymentForOrder(order)
++
++    await expect(
++      service.handleProviderCallback({ merchantReference: order.orderNumber, valid: false }),
++    ).rejects.toThrow('Invalid callback signature')
++
++    const payment = await paymentRepo.getByMerchantReference(order.orderNumber)
++    expect(payment?.status).toBe('PENDING') // unchanged
++  })
++
++  it('throws if the callback references a merchant reference with no matching Payment', async () => {
++    await expect(
++      service.handleProviderCallback({ merchantReference: 'does-not-exist' }),
++    ).rejects.toThrow()
++  })
++})
+diff --git a/tests/pricing.test.ts b/tests/pricing.test.ts
+new file mode 100644
+index 0000000..8f25e98
+--- /dev/null
++++ b/tests/pricing.test.ts
+@@ -0,0 +1,128 @@
++// tests/pricing.test.ts
++import { describe, expect, it } from 'vitest'
++import {
++  computeSubtotal,
++  computeTotal,
++  EmptyCartError,
++  generateMerchantReference,
++  generateOrderNumber,
++  ProductNotPurchasableError,
++  productsToMap,
++  resolveOrderItems,
++} from '../src/lib/services/pricing'
++import { buildTestProduct } from './fakes/FakeProductRepository'
++
++describe('resolveOrderItems — server-authoritative pricing', () => {
++  it('CLIENT PRICE != AUTHORITATIVE DATABASE PRICE: the resolved order item always uses the product repository price, never any price supplied alongside the cart item', () => {
++    const product = buildTestProduct({ id: 'p1', price: 1999, currency: 'USD' })
++    const productsById = productsToMap([product])
++
++    // Note: CartItem has no `price` field at all in the domain model —
++    // this test's intent is that even if a caller tried to smuggle a
++    // tampered total through some other channel, resolveOrderItems has
++    // no code path that would ever read it. The only source of truth is
++    // the resolved Product.
++    const items = resolveOrderItems([{ productId: 'p1', quantity: 2 }], productsById)
++
++    expect(items).toHaveLength(1)
++    expect(items[0].unitPrice).toBe(1999) // the DB price, not something the client sent
++    expect(items[0].currency).toBe('USD')
++    expect(items[0].quantity).toBe(2)
++  })
++
++  it('throws EmptyCartError for an empty cart', () => {
++    expect(() => resolveOrderItems([], new Map())).toThrow(EmptyCartError)
++  })
++
++  it('throws ProductNotPurchasableError for a product with no authoritative price set', () => {
++    const product = buildTestProduct({ id: 'p1', price: null, currency: null })
++    const productsById = productsToMap([product])
++
++    expect(() => resolveOrderItems([{ productId: 'p1', quantity: 1 }], productsById)).toThrow(
++      ProductNotPurchasableError,
++    )
++  })
++
++  it('throws ProductNotPurchasableError for an unpublished (draft) product', () => {
++    const product = buildTestProduct({ id: 'p1', status: 'draft' })
++    const productsById = productsToMap([product])
++
++    expect(() => resolveOrderItems([{ productId: 'p1', quantity: 1 }], productsById)).toThrow(
++      ProductNotPurchasableError,
++    )
++  })
++
++  it('throws ProductNotPurchasableError for a product not found in the resolved map', () => {
++    expect(() =>
++      resolveOrderItems([{ productId: 'missing', quantity: 1 }], new Map()),
++    ).toThrow(ProductNotPurchasableError)
++  })
++
++  it('throws ProductNotPurchasableError for an invalid (zero/negative/non-integer) quantity', () => {
++    const product = buildTestProduct({ id: 'p1' })
++    const productsById = productsToMap([product])
++
++    expect(() =>
++      resolveOrderItems([{ productId: 'p1', quantity: 0 }], productsById),
++    ).toThrow(ProductNotPurchasableError)
++    expect(() =>
++      resolveOrderItems([{ productId: 'p1', quantity: 1.5 }], productsById),
++    ).toThrow(ProductNotPurchasableError)
++  })
++})
++
++describe('computeSubtotal / computeTotal', () => {
++  it('sums line items correctly', () => {
++    const items = resolveOrderItems(
++      [
++        { productId: 'p1', quantity: 2 },
++        { productId: 'p2', quantity: 1 },
++      ],
++      productsToMap([
++        buildTestProduct({ id: 'p1', price: 1000, currency: 'USD' }),
++        buildTestProduct({ id: 'p2', price: 2500, currency: 'USD' }),
++      ]),
++    )
++
++    const subtotal = computeSubtotal(items, 'USD')
++    expect(subtotal.amount).toBe(2 * 1000 + 2500)
++
++    const total = computeTotal(subtotal)
++    expect(total.amount).toBe(subtotal.amount)
++  })
++
++  it('rejects a cart mixing currencies', () => {
++    const items = resolveOrderItems(
++      [
++        { productId: 'p1', quantity: 1 },
++        { productId: 'p2', quantity: 1 },
++      ],
++      productsToMap([
++        buildTestProduct({ id: 'p1', price: 1000, currency: 'USD' }),
++        buildTestProduct({ id: 'p2', price: 1000, currency: 'ZWL' }),
++      ]),
++    )
++
++    expect(() => computeSubtotal(items, 'USD')).toThrow()
++  })
++})
++
++describe('generateOrderNumber / generateMerchantReference', () => {
++  it('produces a stable, parseable order number format', () => {
++    const orderNumber = generateOrderNumber(new Date('2026-08-16T00:00:00Z'))
++    expect(orderNumber).toMatch(/^ORD-260816-[0-9A-F]{8}$/)
++  })
++
++  it('generates distinct order numbers across calls (collision rarity, not a hard guarantee — DB enforces uniqueness)', () => {
++    const numbers = new Set(Array.from({ length: 50 }, () => generateOrderNumber()))
++    expect(numbers.size).toBe(50)
++  })
++
++  it('merchant reference equals the order number for the first attempt', () => {
++    expect(generateMerchantReference('ORD-260816-ABCD1234')).toBe('ORD-260816-ABCD1234')
++  })
++
++  it('merchant reference is distinct for retry attempts', () => {
++    expect(generateMerchantReference('ORD-260816-ABCD1234', 2)).toBe('ORD-260816-ABCD1234-R2')
++  })
++})
+diff --git a/tests/productService.test.ts b/tests/productService.test.ts
+new file mode 100644
+index 0000000..3a63be6
+--- /dev/null
++++ b/tests/productService.test.ts
+@@ -0,0 +1,56 @@
++// tests/productService.test.ts
++import { beforeEach, describe, expect, it } from 'vitest'
++import { ProductService } from '../src/lib/services/ProductService'
++import { FakeProductRepository, buildTestProduct } from './fakes/FakeProductRepository'
++
++describe('ProductService.getAuthoritativePrice', () => {
++  let productRepo: FakeProductRepository
++  let service: ProductService
++
++  beforeEach(() => {
++    productRepo = new FakeProductRepository()
++    service = new ProductService(productRepo)
++  })
++
++  it('returns the native price/currency when set', async () => {
++    productRepo.seed(buildTestProduct({ id: 'p1', price: 2500, currency: 'USD' }))
++    const price = await service.getAuthoritativePrice('p1')
++    expect(price).toEqual({ amount: 2500, currency: 'USD' })
++  })
++
++  it('returns null (never a legacy fallback) when price has not been backfilled yet', async () => {
++    productRepo.seed(buildTestProduct({ id: 'p1', price: null, currency: null, legacyPriceJSON: '{"data":[{"unit_amount":999}]}' }))
++    const price = await service.getAuthoritativePrice('p1')
++    expect(price).toBeNull()
++  })
++
++  it('returns null for a non-existent product', async () => {
++    const price = await service.getAuthoritativePrice('missing')
++    expect(price).toBeNull()
++  })
++})
++
++describe('ProductService.setPrice', () => {
++  let productRepo: FakeProductRepository
++  let service: ProductService
++
++  beforeEach(() => {
++    productRepo = new FakeProductRepository()
++    service = new ProductService(productRepo)
++    productRepo.seed(buildTestProduct({ id: 'p1', price: null, currency: null }))
++  })
++
++  it('sets the price in minor units', async () => {
++    const updated = await service.setPrice('p1', { amount: 1999, currency: 'USD' })
++    expect(updated?.price).toBe(1999)
++    expect(updated?.currency).toBe('USD')
++  })
++
++  it('rejects a non-integer amount (would indicate a major-units float leaking through)', async () => {
++    await expect(service.setPrice('p1', { amount: 19.99, currency: 'USD' })).rejects.toThrow()
++  })
++
++  it('rejects a negative amount', async () => {
++    await expect(service.setPrice('p1', { amount: -100, currency: 'USD' })).rejects.toThrow()
++  })
++})
+diff --git a/tests/stateMachine.test.ts b/tests/stateMachine.test.ts
+new file mode 100644
+index 0000000..96b011d
+--- /dev/null
++++ b/tests/stateMachine.test.ts
+@@ -0,0 +1,63 @@
++// tests/stateMachine.test.ts
++import { describe, expect, it } from 'vitest'
++import {
++  assertValidOrderTransition,
++  assertValidPaymentTransition,
++  InvalidOrderTransitionError,
++  InvalidPaymentTransitionError,
++  isValidOrderTransition,
++  isValidPaymentTransition,
++} from '../src/lib/services/orderStateMachine'
++
++describe('order status transitions', () => {
++  it('allows the standard happy path', () => {
++    expect(() => {
++      assertValidOrderTransition('PENDING_PAYMENT', 'PAID')
++      assertValidOrderTransition('PAID', 'PROCESSING')
++      assertValidOrderTransition('PROCESSING', 'FULFILLED')
++    }).not.toThrow()
++  })
++
++  it('allows the standard failure paths', () => {
++    expect(isValidOrderTransition('PENDING_PAYMENT', 'PAYMENT_FAILED')).toBe(true)
++    expect(isValidOrderTransition('PENDING_PAYMENT', 'PAYMENT_CANCELLED')).toBe(true)
++    expect(isValidOrderTransition('PAID', 'REFUNDED')).toBe(true)
++  })
++
++  it('rejects skipping straight from PENDING_PAYMENT to FULFILLED', () => {
++    expect(() => assertValidOrderTransition('PENDING_PAYMENT', 'FULFILLED')).toThrow(
++      InvalidOrderTransitionError,
++    )
++  })
++
++  it('rejects any transition out of a terminal state', () => {
++    expect(isValidOrderTransition('CANCELLED', 'PENDING_PAYMENT')).toBe(false)
++    expect(isValidOrderTransition('REFUNDED', 'PAID')).toBe(false)
++  })
++
++  it('treats a same-state "transition" as a no-op, not an error', () => {
++    expect(isValidOrderTransition('PAID', 'PAID')).toBe(true)
++  })
++})
++
++describe('payment status transitions', () => {
++  it('allows PENDING -> PAID and PENDING -> FAILED', () => {
++    expect(isValidPaymentTransition('PENDING', 'PAID')).toBe(true)
++    expect(isValidPaymentTransition('PENDING', 'FAILED')).toBe(true)
++  })
++
++  it('rejects PAID -> FAILED (cannot un-succeed a payment)', () => {
++    expect(() => assertValidPaymentTransition('PAID', 'FAILED')).toThrow(
++      InvalidPaymentTransitionError,
++    )
++  })
++
++  it('allows a fresh attempt after FAILED or CANCELLED', () => {
++    expect(isValidPaymentTransition('FAILED', 'PENDING')).toBe(true)
++    expect(isValidPaymentTransition('CANCELLED', 'PENDING')).toBe(true)
++  })
++
++  it('allows PAID -> REFUNDED', () => {
++    expect(isValidPaymentTransition('PAID', 'REFUNDED')).toBe(true)
++  })
++})
+diff --git a/vitest.config.ts b/vitest.config.ts
+new file mode 100644
+index 0000000..14ac0fb
+--- /dev/null
++++ b/vitest.config.ts
+@@ -0,0 +1,9 @@
++// vitest.config.ts
++import { defineConfig } from 'vitest/config'
++
++export default defineConfig({
++  test: {
++    include: ['tests/**/*.test.ts'],
++    environment: 'node',
++  },
++})

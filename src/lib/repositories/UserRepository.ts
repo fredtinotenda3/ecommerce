@@ -1,7 +1,8 @@
 // src/lib/repositories/UserRepository.ts
 import type { Connection, Types } from 'mongoose'
-import type { CartItem, User } from '../domain/types'
+
 import { getUserModel, type UserDocument } from '../db/models/User'
+import type { CartItem, User } from '../domain/types'
 
 export interface UserRepository {
   getById(id: string): Promise<User | null>

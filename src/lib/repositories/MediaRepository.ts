@@ -1,7 +1,8 @@
 // src/lib/repositories/MediaRepository.ts
 import type { Connection } from 'mongoose'
-import type { Media } from '../domain/types'
+
 import { getMediaModel, type MediaDocument } from '../db/models/Media'
+import type { Media } from '../domain/types'
 
 export interface MediaRepository {
   getById(id: string): Promise<Media | null>
