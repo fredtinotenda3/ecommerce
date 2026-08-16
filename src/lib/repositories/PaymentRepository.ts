@@ -47,7 +47,11 @@ const toDomain = (doc: PaymentDocument): Payment => ({
 })
 
 export class MongoPaymentRepository implements PaymentRepository {
-  constructor(private readonly connection: Connection) {}
+  private readonly connection: Connection
+
+  constructor(connection: Connection) {
+    this.connection = connection
+  }
 
   async getById(id: string): Promise<Payment | null> {
     const Model = getPaymentModel(this.connection)

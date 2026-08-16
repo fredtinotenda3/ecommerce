@@ -3,6 +3,7 @@
 // many derived fields (sizes, focalPoint, etc.) at write time — left as
 // passthrough via `strict: false` since this phase only needs to read
 // alt/url/dimensions for display.
+import type { Model } from 'mongoose'
 import { type Connection, type Document, Schema, type Types } from 'mongoose'
 
 import { getOrCreateModel } from './getOrCreateModel'
@@ -37,5 +38,5 @@ const MediaSchema = new Schema<MediaDocument>(
   },
 )
 
-export const getMediaModel = (connection: Connection) =>
+export const getMediaModel = (connection: Connection): Model<MediaDocument> =>
   getOrCreateModel<MediaDocument>(connection, 'NativeMedia', MediaSchema, 'media')

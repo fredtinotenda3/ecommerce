@@ -27,7 +27,11 @@ const toDomain = (doc: UserDocument): User => ({
 })
 
 export class MongoUserRepository implements UserRepository {
-  constructor(private readonly connection: Connection) {}
+  private readonly connection: Connection
+
+  constructor(connection: Connection) {
+    this.connection = connection
+  }
 
   async getById(id: string): Promise<User | null> {
     const Model = getUserModel(this.connection)

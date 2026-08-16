@@ -19,10 +19,13 @@ export class OrderNotFoundError extends Error {
 }
 
 export class OrderService {
-  constructor(
-    private readonly orderRepository: OrderRepository,
-    private readonly productRepository: ProductRepository,
-  ) {}
+  private readonly orderRepository: OrderRepository
+  private readonly productRepository: ProductRepository
+
+  constructor(orderRepository: OrderRepository, productRepository: ProductRepository) {
+    this.orderRepository = orderRepository
+    this.productRepository = productRepository
+  }
 
   /** Creates a new order from a customer's cart. This is the ONLY code
    * path in the native architecture allowed to construct order line

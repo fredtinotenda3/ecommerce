@@ -14,11 +14,11 @@ export class FakeProductRepository implements ProductRepository {
   }
 
   async getBySlug(slug: string): Promise<Product | null> {
-    return [...this.products.values()].find(p => p.slug === slug) ?? null
+    return Array.from(this.products.values()).find(p => p.slug === slug) ?? null
   }
 
   async list(filter: ProductListFilter = {}): Promise<Product[]> {
-    let results = [...this.products.values()]
+    let results = Array.from(this.products.values())
     if (filter.status) results = results.filter(p => p.status === filter.status)
     if (filter.categoryId) results = results.filter(p => p.categories.includes(filter.categoryId!))
     if (filter.ids) results = results.filter(p => filter.ids!.includes(p.id))

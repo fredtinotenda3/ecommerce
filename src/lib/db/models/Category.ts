@@ -1,5 +1,6 @@
 // src/lib/db/models/Category.ts
 // Maps onto the existing `categories` collection.
+import type { Model } from 'mongoose'
 import { type Connection, type Document, Schema, type Types } from 'mongoose'
 
 import { getOrCreateModel } from './getOrCreateModel'
@@ -29,5 +30,5 @@ const CategorySchema = new Schema<CategoryDocument>(
   },
 )
 
-export const getCategoryModel = (connection: Connection) =>
+export const getCategoryModel = (connection: Connection): Model<CategoryDocument> =>
   getOrCreateModel<CategoryDocument>(connection, 'NativeCategory', CategorySchema, 'categories')

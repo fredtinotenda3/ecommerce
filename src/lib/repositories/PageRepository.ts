@@ -27,7 +27,11 @@ const toDomain = (doc: PageDocument): Page => ({
 })
 
 export class MongoPageRepository implements PageRepository {
-  constructor(private readonly connection: Connection) {}
+  private readonly connection: Connection
+
+  constructor(connection: Connection) {
+    this.connection = connection
+  }
 
   async getById(id: string): Promise<Page | null> {
     const Model = getPageModel(this.connection)

@@ -8,6 +8,7 @@
 // (not-yet-wired) native auth foundation, which will define its own
 // explicit hash field when it's actually activated in a later phase.
 
+import type { Model } from 'mongoose'
 import { type Connection, type Document, Schema, type Types } from 'mongoose'
 
 import { getOrCreateModel } from './getOrCreateModel'
@@ -58,5 +59,5 @@ const UserSchema = new Schema<UserDocument>(
 
 UserSchema.index({ email: 1 })
 
-export const getUserModel = (connection: Connection) =>
+export const getUserModel = (connection: Connection): Model<UserDocument> =>
   getOrCreateModel<UserDocument>(connection, 'NativeUser', UserSchema, 'users')

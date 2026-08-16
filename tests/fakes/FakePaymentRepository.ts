@@ -12,11 +12,11 @@ export class FakePaymentRepository implements PaymentRepository {
   }
 
   async getByOrderId(orderId: string): Promise<Payment[]> {
-    return [...this.payments.values()].filter(p => p.orderId === orderId)
+    return Array.from(this.payments.values()).filter(p => p.orderId === orderId)
   }
 
   async getByMerchantReference(merchantReference: string): Promise<Payment | null> {
-    return [...this.payments.values()].find(p => p.merchantReference === merchantReference) ?? null
+    return Array.from(this.payments.values()).find(p => p.merchantReference === merchantReference) ?? null
   }
 
   /** Mirrors the real repository's unique-index behavior: creating a

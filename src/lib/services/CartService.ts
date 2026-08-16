@@ -20,7 +20,11 @@ export interface CartValidationResult {
 }
 
 export class CartService {
-  constructor(private readonly productRepository: ProductRepository) {}
+  private readonly productRepository: ProductRepository
+
+  constructor(productRepository: ProductRepository) {
+    this.productRepository = productRepository
+  }
 
   /** This is the single place cart totals are computed server-side. The
    * client-computed cart total (see the audit's Cart Audit) remains fine

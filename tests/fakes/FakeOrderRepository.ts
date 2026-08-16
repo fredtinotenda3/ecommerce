@@ -12,11 +12,11 @@ export class FakeOrderRepository implements OrderRepository {
   }
 
   async getByOrderNumber(orderNumber: string): Promise<Order | null> {
-    return [...this.orders.values()].find(o => o.orderNumber === orderNumber) ?? null
+    return Array.from(this.orders.values()).find(o => o.orderNumber === orderNumber) ?? null
   }
 
   async getByCustomer(customerId: string): Promise<Order[]> {
-    return [...this.orders.values()].filter(o => o.customerId === customerId)
+    return Array.from(this.orders.values()).filter(o => o.customerId === customerId)
   }
 
   async create(input: CreateOrderInput): Promise<Order> {

@@ -12,6 +12,7 @@
 // later phase (see the audit's Data Migration Plan) — this phase only
 // defines the shape.
 
+import type { Model } from 'mongoose'
 import { type Connection, type Document, Schema, type Types } from 'mongoose'
 
 import type { OrderStatus } from '../../domain/types'
@@ -77,5 +78,5 @@ const OrderSchema = new Schema<OrderDocument>(
 // so existing orders (orderNumber == null) never collide with each other.
 OrderSchema.index({ orderNumber: 1 }, { unique: true, sparse: true })
 
-export const getOrderModel = (connection: Connection) =>
+export const getOrderModel = (connection: Connection): Model<OrderDocument> =>
   getOrCreateModel<OrderDocument>(connection, 'NativeOrder', OrderSchema, 'orders')

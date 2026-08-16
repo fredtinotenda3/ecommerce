@@ -10,15 +10,25 @@ import type { OrderStatus, PaymentStatus } from '../domain/types'
 import { ORDER_STATUS_TRANSITIONS, PAYMENT_STATUS_TRANSITIONS } from '../domain/types'
 
 export class InvalidOrderTransitionError extends Error {
-  constructor(readonly from: OrderStatus, readonly to: OrderStatus) {
+  readonly from: OrderStatus
+  readonly to: OrderStatus
+
+  constructor(from: OrderStatus, to: OrderStatus) {
     super(`Invalid order status transition: ${from} -> ${to}`)
+    this.from = from
+    this.to = to
     this.name = 'InvalidOrderTransitionError'
   }
 }
 
 export class InvalidPaymentTransitionError extends Error {
-  constructor(readonly from: PaymentStatus, readonly to: PaymentStatus) {
+  readonly from: PaymentStatus
+  readonly to: PaymentStatus
+
+  constructor(from: PaymentStatus, to: PaymentStatus) {
     super(`Invalid payment status transition: ${from} -> ${to}`)
+    this.from = from
+    this.to = to
     this.name = 'InvalidPaymentTransitionError'
   }
 }

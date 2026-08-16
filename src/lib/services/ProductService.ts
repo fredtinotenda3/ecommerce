@@ -3,7 +3,11 @@ import type { Money, Product, ProductListFilter } from '../domain/types'
 import type { ProductRepository } from '../repositories/ProductRepository'
 
 export class ProductService {
-  constructor(private readonly productRepository: ProductRepository) {}
+  private readonly productRepository: ProductRepository
+
+  constructor(productRepository: ProductRepository) {
+    this.productRepository = productRepository
+  }
 
   async getBySlug(slug: string): Promise<Product | null> {
     return this.productRepository.getBySlug(slug)

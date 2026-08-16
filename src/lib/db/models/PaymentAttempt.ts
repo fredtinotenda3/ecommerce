@@ -7,6 +7,7 @@
 // Paynow for this order, and what did it say?" without relying on
 // application logs.
 
+import type { Model } from 'mongoose'
 import { type Connection, type Document, Schema, type Types } from 'mongoose'
 
 import type { PaymentAttemptStatus, PaymentProviderName } from '../../domain/types'
@@ -45,7 +46,7 @@ const PaymentAttemptSchema = new Schema<PaymentAttemptDocument>(
 PaymentAttemptSchema.index({ orderId: 1 })
 PaymentAttemptSchema.index({ merchantReference: 1 })
 
-export const getPaymentAttemptModel = (connection: Connection) =>
+export const getPaymentAttemptModel = (connection: Connection): Model<PaymentAttemptDocument> =>
   getOrCreateModel<PaymentAttemptDocument>(
     connection,
     'NativePaymentAttempt',

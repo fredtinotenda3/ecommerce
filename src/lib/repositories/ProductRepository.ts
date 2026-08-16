@@ -49,7 +49,11 @@ const toDomain = (doc: ProductDocument): Product => ({
 })
 
 export class MongoProductRepository implements ProductRepository {
-  constructor(private readonly connection: Connection) {}
+  private readonly connection: Connection
+
+  constructor(connection: Connection) {
+    this.connection = connection
+  }
 
   async getById(id: string): Promise<Product | null> {
     const Model = getProductModel(this.connection)

@@ -6,6 +6,7 @@
 // that a single order can (in principle) have more than one payment
 // attempt across its lifetime without overloading the Order document.
 
+import type { Model } from 'mongoose'
 import { type Connection, type Document, Schema, type Types } from 'mongoose'
 
 import type { PaymentProviderName, PaymentStatus } from '../../domain/types'
@@ -55,5 +56,5 @@ PaymentSchema.index({ merchantReference: 1 }, { unique: true })
 PaymentSchema.index({ orderId: 1 })
 PaymentSchema.index({ providerReference: 1 })
 
-export const getPaymentModel = (connection: Connection) =>
+export const getPaymentModel = (connection: Connection): Model<PaymentDocument> =>
   getOrCreateModel<PaymentDocument>(connection, 'NativePayment', PaymentSchema, 'payments')

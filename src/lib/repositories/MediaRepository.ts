@@ -23,7 +23,11 @@ const toDomain = (doc: MediaDocument): Media => ({
 })
 
 export class MongoMediaRepository implements MediaRepository {
-  constructor(private readonly connection: Connection) {}
+  private readonly connection: Connection
+
+  constructor(connection: Connection) {
+    this.connection = connection
+  }
 
   async getById(id: string): Promise<Media | null> {
     const Model = getMediaModel(this.connection)

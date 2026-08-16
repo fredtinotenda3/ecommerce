@@ -14,8 +14,13 @@ import { addMoney, multiplyMoney, sumMoney, zeroMoney } from '../domain/money'
 import type { CartItem, CurrencyCode, Money, Order, OrderItem, Product } from '../domain/types'
 
 export class ProductNotPurchasableError extends Error {
-  constructor(readonly productId: string, readonly reason: string) {
+  readonly productId: string
+  readonly reason: string
+
+  constructor(productId: string, reason: string) {
     super(`Product ${productId} is not purchasable: ${reason}`)
+    this.productId = productId
+    this.reason = reason
     this.name = 'ProductNotPurchasableError'
   }
 }
@@ -83,9 +88,9 @@ export const computeSubtotal = (items: OrderItem[], currency: CurrencyCode): Mon
   if (currencies.size > 1) {
     throw new MixedCurrencyCartError()
   }
-  const lineTotals = items.map(item =>
-    multiplyMoney({ amount: item.unitPrice, currency: item.currency }, item.quantity),
-  )
+  const lineTotals = items.map(item => {
+    return multiplyMoney({ amount: item.unitPrice, currency: item.currency }, item.quantity)
+  })
   return sumMoney(lineTotals, currency)
 }
 

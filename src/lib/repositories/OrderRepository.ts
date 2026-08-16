@@ -43,7 +43,11 @@ const toDomain = (doc: OrderDocument): Order => ({
 })
 
 export class MongoOrderRepository implements OrderRepository {
-  constructor(private readonly connection: Connection) {}
+  private readonly connection: Connection
+
+  constructor(connection: Connection) {
+    this.connection = connection
+  }
 
   async getById(id: string): Promise<Order | null> {
     const Model = getOrderModel(this.connection)

@@ -3,6 +3,7 @@
 // left as Mixed/passthrough — block and SEO schema ownership stays with
 // the CMS/render layer for this phase; only structural fields needed for
 // listing/lookup are declared explicitly.
+import type { Model } from 'mongoose'
 import { type Connection, type Document, Schema, type Types } from 'mongoose'
 
 import { getOrCreateModel } from './getOrCreateModel'
@@ -41,5 +42,5 @@ const PageSchema = new Schema<PageDocument>(
 
 PageSchema.index({ slug: 1 })
 
-export const getPageModel = (connection: Connection) =>
+export const getPageModel = (connection: Connection): Model<PageDocument> =>
   getOrCreateModel<PageDocument>(connection, 'NativePage', PageSchema, 'pages')

@@ -29,7 +29,11 @@ const toDomain = (doc: CategoryDocument): Category => ({
 })
 
 export class MongoCategoryRepository implements CategoryRepository {
-  constructor(private readonly connection: Connection) {}
+  private readonly connection: Connection
+
+  constructor(connection: Connection) {
+    this.connection = connection
+  }
 
   async getById(id: string): Promise<Category | null> {
     const Model = getCategoryModel(this.connection)

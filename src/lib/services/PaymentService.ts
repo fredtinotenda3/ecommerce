@@ -6,8 +6,11 @@ import { assertValidPaymentTransition } from './orderStateMachine'
 import { generateMerchantReference } from './pricing'
 
 export class PaymentInitiationError extends Error {
-  constructor(message: string, readonly raw?: unknown) {
+  readonly raw?: unknown
+
+  constructor(message: string, raw?: unknown) {
     super(message)
+    this.raw = raw
     this.name = 'PaymentInitiationError'
   }
 }
@@ -34,10 +37,13 @@ export interface InitiatePaymentOptions {
 }
 
 export class PaymentService {
-  constructor(
-    private readonly paymentRepository: PaymentRepository,
-    private readonly provider: PaymentProvider,
-  ) {}
+  private readonly paymentRepository: PaymentRepository
+  private readonly provider: PaymentProvider
+
+  constructor(paymentRepository: PaymentRepository, provider: PaymentProvider) {
+    this.paymentRepository = paymentRepository
+    this.provider = provider
+  }
 
   /** Idempotent: calling this twice for the same order (same order
    * number => same merchant reference) returns the existing Payment
@@ -70,7 +76,7 @@ export class PaymentService {
         amount: order.total,
         currency: order.currency,
       })
-    } catch (err) {
+    } catch (err: unknown) {
       // Duplicate-key race: another concurrent request created the
       // Payment between our check and our create. Treat it as success,
       // not a failure — this IS the idempotency guarantee working.

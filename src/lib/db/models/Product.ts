@@ -18,6 +18,7 @@
 // legacyStripeProductId) are optional/nullable so that documents written
 // before the backfill migration runs remain perfectly valid.
 
+import type { Model } from 'mongoose'
 import { type Connection, type Document, Schema, type Types } from 'mongoose'
 
 import { getOrCreateModel } from './getOrCreateModel'
@@ -71,5 +72,5 @@ const ProductSchema = new Schema<ProductDocument>(
 
 ProductSchema.index({ slug: 1 })
 
-export const getProductModel = (connection: Connection) =>
+export const getProductModel = (connection: Connection): Model<ProductDocument> =>
   getOrCreateModel<ProductDocument>(connection, 'NativeProduct', ProductSchema, 'products')
