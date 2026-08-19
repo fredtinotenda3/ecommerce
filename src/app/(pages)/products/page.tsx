@@ -3,6 +3,8 @@ import React from 'react'
 import { draftMode } from 'next/headers'
 
 import { Category, Page } from '../../../payload/payload-types'
+import { isNativeRepositoryEnabled } from '../../_api/dataSource'
+import { fetchCategoriesNative } from '../../_api/fetchCategoriesNative'
 import { fetchDoc } from '../../_api/fetchDoc'
 import { fetchDocs } from '../../_api/fetchDocs'
 import { Blocks } from '../../_components/Blocks'
@@ -25,7 +27,9 @@ const Products = async () => {
       draft: isDraftMode,
     })
 
-    categories = await fetchDocs<Category>('categories')
+    categories = isNativeRepositoryEnabled()
+      ? await fetchCategoriesNative()
+      : await fetchDocs<Category>('categories')
   } catch (error) {
     console.log(error)
   }
