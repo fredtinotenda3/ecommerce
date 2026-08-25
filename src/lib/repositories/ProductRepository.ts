@@ -14,7 +14,11 @@ import type { Product, ProductListFilter } from '../domain/types'
 
 export interface ProductRepository {
   getById(id: string): Promise<Product | null>
-  getBySlug(slug: string): Promise<Product | null>
+  /** `status` mirrors PageRepository.getBySlug's optional status filter —
+   * added in Phase 3 so the native Product detail fetch helper can
+   * replicate the same draft/published distinction `fetchDoc`'s `draft`
+   * flag gives the existing GraphQL path (unfiltered when omitted). */
+  getBySlug(slug: string, status?: 'draft' | 'published'): Promise<Product | null>
   list(filter?: ProductListFilter): Promise<Product[]>
   /** Sets the authoritative native price. Distinct from generic `update`
    * because pricing changes are a business-significant operation the
@@ -44,6 +48,12 @@ const toDomain = (doc: ProductDocument): Product => ({
   enablePaywall: Boolean(doc.enablePaywall),
   legacyStripeProductId: doc.stripeProductID ?? null,
   legacyPriceJSON: doc.priceJSON ?? null,
+  layout: doc.layout ?? [],
+  meta: {
+    title: doc.meta?.title,
+    description: doc.meta?.description,
+    imageId: doc.meta?.image ? doc.meta.image.toString() : null,
+  },
   createdAt: doc.createdAt,
   updatedAt: doc.updatedAt,
 })
@@ -61,9 +71,11 @@ export class MongoProductRepository implements ProductRepository {
     return doc ? toDomain(doc as unknown as ProductDocument) : null
   }
 
-  async getBySlug(slug: string): Promise<Product | null> {
+  async getBySlug(slug: string, status?: 'draft' | 'published'): Promise<Product | null> {
     const Model = getProductModel(this.connection)
-    const doc = await Model.findOne({ slug }).lean<ProductDocument>().exec()
+    const query: FilterQuery<ProductDocument> = { slug }
+    if (status) query._status = status
+    const doc = await Model.findOne(query).lean<ProductDocument>().exec()
     return doc ? toDomain(doc as unknown as ProductDocument) : null
   }
 

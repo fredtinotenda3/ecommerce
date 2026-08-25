@@ -4,8 +4,10 @@ import { draftMode } from 'next/headers'
 import { notFound } from 'next/navigation'
 
 import { Product, Product as ProductType } from '../../../../payload/payload-types'
+import { isNativeRepositoryEnabled } from '../../../_api/dataSource'
 import { fetchDoc } from '../../../_api/fetchDoc'
 import { fetchDocs } from '../../../_api/fetchDocs'
+import { fetchProductNative } from '../../../_api/fetchProductNative'
 import { Blocks } from '../../../_components/Blocks'
 import { PaywallBlocks } from '../../../_components/PaywallBlocks'
 import { ProductHero } from '../../../_heros/Product'
@@ -21,11 +23,13 @@ export default async function Product({ params: { slug } }) {
   let product: Product | null = null
 
   try {
-    product = await fetchDoc<Product>({
-      collection: 'products',
-      slug,
-      draft: isDraftMode,
-    })
+    product = isNativeRepositoryEnabled()
+      ? await fetchProductNative(slug, isDraftMode ? undefined : 'published')
+      : await fetchDoc<Product>({
+          collection: 'products',
+          slug,
+          draft: isDraftMode,
+        })
   } catch (error) {
     console.error(error) // eslint-disable-line no-console
   }
@@ -80,11 +84,13 @@ export async function generateMetadata({ params: { slug } }): Promise<Metadata> 
   let product: Product | null = null
 
   try {
-    product = await fetchDoc<Product>({
-      collection: 'products',
-      slug,
-      draft: isDraftMode,
-    })
+    product = isNativeRepositoryEnabled()
+      ? await fetchProductNative(slug, isDraftMode ? undefined : 'published')
+      : await fetchDoc<Product>({
+          collection: 'products',
+          slug,
+          draft: isDraftMode,
+        })
   } catch (error) {}
 
   return generateMeta({ doc: product })

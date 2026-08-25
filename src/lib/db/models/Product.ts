@@ -17,6 +17,15 @@
 // NEW fields added by this phase (price, currency, compareAtPrice,
 // legacyStripeProductId) are optional/nullable so that documents written
 // before the backfill migration runs remain perfectly valid.
+//
+// PHASE 3 addition: `layout` and `meta` are declared here (as Mixed
+// passthrough, same treatment as Page.ts) purely so this model's TS
+// interface documents their presence — `strict: false` already let
+// Mongoose read them without a declaration, but declaring them keeps
+// ProductRepository's `toDomain` mapping type-safe instead of reaching
+// into an untyped document. The `paywall` field is deliberately NOT
+// declared/read here: it stays entirely on the existing client-side
+// GraphQL fetch (see PaywallBlocks), which Phase 3 does not touch.
 
 import type { Model } from 'mongoose'
 import { type Connection, type Document, Schema, type Types } from 'mongoose'
@@ -42,6 +51,14 @@ export interface ProductDocument extends Document {
   relatedProducts?: Types.ObjectId[]
   enablePaywall?: boolean
 
+  // --- Product detail rendering (Phase 3) ---
+  layout?: unknown[]
+  meta?: {
+    title?: string
+    description?: string
+    image?: Types.ObjectId | null
+  }
+
   createdAt: Date
   updatedAt: Date
 }
@@ -62,6 +79,9 @@ const ProductSchema = new Schema<ProductDocument>(
     categories: [{ type: Schema.Types.ObjectId, ref: 'categories' }],
     relatedProducts: [{ type: Schema.Types.ObjectId, ref: 'products' }],
     enablePaywall: { type: Boolean },
+
+    layout: { type: Schema.Types.Mixed },
+    meta: { type: Schema.Types.Mixed },
   },
   {
     strict: false,

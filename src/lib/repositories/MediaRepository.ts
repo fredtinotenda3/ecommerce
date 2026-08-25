@@ -18,6 +18,7 @@ const toDomain = (doc: MediaDocument): Media => ({
   filesize: doc.filesize ?? null,
   width: doc.width ?? null,
   height: doc.height ?? null,
+  caption: doc.caption ?? null,
   createdAt: doc.createdAt,
   updatedAt: doc.updatedAt,
 })

@@ -27,6 +27,7 @@ export const buildTestMedia = (overrides: Partial<Media> = {}): Media => ({
   filesize: 1024,
   width: 800,
   height: 600,
+  caption: null,
   createdAt: new Date(),
   updatedAt: new Date(),
   ...overrides,

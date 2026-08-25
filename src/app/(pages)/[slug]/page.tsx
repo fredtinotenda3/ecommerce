@@ -10,6 +10,7 @@ import { isNativeRepositoryEnabled } from '../../_api/dataSource'
 import { fetchCategoriesNative } from '../../_api/fetchCategoriesNative'
 import { fetchDoc } from '../../_api/fetchDoc'
 import { fetchDocs } from '../../_api/fetchDocs'
+import { fetchPageNative } from '../../_api/fetchPageNative'
 import { Blocks } from '../../_components/Blocks'
 import { Gutter } from '../../_components/Gutter'
 import { Hero } from '../../_components/Hero'
@@ -29,11 +30,13 @@ export default async function Page({ params: { slug = 'home' } }) {
   let categories: Category[] | null = null
 
   try {
-    page = await fetchDoc<Page>({
-      collection: 'pages',
-      slug,
-      draft: isDraftMode,
-    })
+    page = isNativeRepositoryEnabled()
+      ? await fetchPageNative(slug, isDraftMode ? undefined : 'published')
+      : await fetchDoc<Page>({
+          collection: 'pages',
+          slug,
+          draft: isDraftMode,
+        })
 
     categories = isNativeRepositoryEnabled()
       ? await fetchCategoriesNative()
@@ -92,11 +95,13 @@ export async function generateMetadata({ params: { slug = 'home' } }): Promise<M
   let page: Page | null = null
 
   try {
-    page = await fetchDoc<Page>({
-      collection: 'pages',
-      slug,
-      draft: isDraftMode,
-    })
+    page = isNativeRepositoryEnabled()
+      ? await fetchPageNative(slug, isDraftMode ? undefined : 'published')
+      : await fetchDoc<Page>({
+          collection: 'pages',
+          slug,
+          draft: isDraftMode,
+        })
   } catch (error) {
     // swallow
   }

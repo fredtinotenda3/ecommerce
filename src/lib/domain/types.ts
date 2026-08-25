@@ -52,6 +52,19 @@ export interface Product {
   legacyStripeProductId: string | null
   legacyPriceJSON: string | null
 
+  /** Flexible block-based layout for the Product detail page — same
+   * "intentionally untyped, owned by the CMS/render layer" treatment as
+   * `Page.layout` (see below). Added in Phase 3 so the native Product
+   * detail path can reproduce the current `Blocks` renderer output
+   * (cta/content/mediaBlock/archive blocks). */
+  layout: unknown[]
+
+  meta: {
+    title?: string
+    description?: string
+    imageId: string | null
+  }
+
   createdAt: Date
   updatedAt: Date
 }
@@ -113,6 +126,12 @@ export interface Media {
   filesize: number | null
   width: number | null
   height: number | null
+  /** Rich text, same "untyped at this layer" treatment as `Page.layout` —
+   * only read by the storefront's MediaBlock/Hero components to render an
+   * optional caption beneath an image. Added in Phase 3 because the
+   * Product detail / CMS Page media blocks require it; not read anywhere
+   * for admin or write paths. */
+  caption: unknown
   createdAt: Date
   updatedAt: Date
 }

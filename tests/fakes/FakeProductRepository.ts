@@ -13,8 +13,12 @@ export class FakeProductRepository implements ProductRepository {
     return this.products.get(id) ?? null
   }
 
-  async getBySlug(slug: string): Promise<Product | null> {
-    return Array.from(this.products.values()).find(p => p.slug === slug) ?? null
+  async getBySlug(slug: string, status?: 'draft' | 'published'): Promise<Product | null> {
+    return (
+      Array.from(this.products.values()).find(
+        p => p.slug === slug && (!status || p.status === status),
+      ) ?? null
+    )
   }
 
   async list(filter: ProductListFilter = {}): Promise<Product[]> {
@@ -70,6 +74,8 @@ export const buildTestProduct = (overrides: Partial<Product> = {}): Product => (
   enablePaywall: false,
   legacyStripeProductId: null,
   legacyPriceJSON: null,
+  layout: [],
+  meta: { title: undefined, description: undefined, imageId: null },
   createdAt: new Date(),
   updatedAt: new Date(),
   ...overrides,

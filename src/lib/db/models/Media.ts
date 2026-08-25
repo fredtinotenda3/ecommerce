@@ -17,6 +17,9 @@ export interface MediaDocument extends Document {
   filesize?: number | null
   width?: number | null
   height?: number | null
+  /** Rich text caption — declared here (Phase 3) as Mixed passthrough so
+   * MediaRepository can read it for MediaBlock/Hero rendering. */
+  caption?: unknown
   createdAt: Date
   updatedAt: Date
 }
@@ -30,6 +33,7 @@ const MediaSchema = new Schema<MediaDocument>(
     filesize: { type: Number },
     width: { type: Number },
     height: { type: Number },
+    caption: { type: Schema.Types.Mixed },
   },
   {
     strict: false,
