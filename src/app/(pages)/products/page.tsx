@@ -7,6 +7,7 @@ import { isNativeRepositoryEnabled } from '../../_api/dataSource'
 import { fetchCategoriesNative } from '../../_api/fetchCategoriesNative'
 import { fetchDoc } from '../../_api/fetchDoc'
 import { fetchDocs } from '../../_api/fetchDocs'
+import { fetchPageNative } from '../../_api/fetchPageNative'
 import { Blocks } from '../../_components/Blocks'
 import { Gutter } from '../../_components/Gutter'
 import { HR } from '../../_components/HR'
@@ -21,11 +22,13 @@ const Products = async () => {
   let categories: Category[] | null = null
 
   try {
-    page = await fetchDoc<Page>({
-      collection: 'pages',
-      slug: 'products',
-      draft: isDraftMode,
-    })
+    page = isNativeRepositoryEnabled()
+      ? await fetchPageNative('products', isDraftMode ? undefined : 'published')
+      : await fetchDoc<Page>({
+          collection: 'pages',
+          slug: 'products',
+          draft: isDraftMode,
+        })
 
     categories = isNativeRepositoryEnabled()
       ? await fetchCategoriesNative()
