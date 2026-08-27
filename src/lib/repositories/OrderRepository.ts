@@ -1,5 +1,5 @@
 // src/lib/repositories/OrderRepository.ts
-import type { Connection, Types } from 'mongoose'
+import type { Connection, FilterQuery, Types } from 'mongoose'
 
 import { getOrderModel, type OrderDocument } from '../db/models/Order'
 import type { Order, OrderItem, OrderStatus } from '../domain/types'
@@ -14,10 +14,21 @@ export interface CreateOrderInput {
   status: OrderStatus
 }
 
+export interface OrderListFilter {
+  status?: OrderStatus
+  limit?: number
+  page?: number
+}
+
 export interface OrderRepository {
   getById(id: string): Promise<Order | null>
   getByOrderNumber(orderNumber: string): Promise<Order | null>
   getByCustomer(customerId: string): Promise<Order[]>
+  /** PHASE 6 — read-only admin listing across ALL customers (unlike
+   * `getByCustomer`, which is scoped to one). Added for the native admin
+   * orders list; not used by any storefront/checkout code path. Sorted
+   * newest-first, same convention as `getByCustomer`. */
+  list(filter?: OrderListFilter): Promise<Order[]>
   create(input: CreateOrderInput): Promise<Order>
   updateStatus(id: string, status: OrderStatus): Promise<Order | null>
 }
@@ -67,6 +78,24 @@ export class MongoOrderRepository implements OrderRepository {
       .sort({ createdAt: -1 })
       .lean<OrderDocument[]>()
       .exec()
+    return (docs as unknown as OrderDocument[]).map(toDomain)
+  }
+
+  async list(filter: OrderListFilter = {}): Promise<Order[]> {
+    const Model = getOrderModel(this.connection)
+    const query: FilterQuery<OrderDocument> = {}
+    if (filter.status) query.status = filter.status
+
+    const limit = filter.limit ?? 50
+    const page = filter.page ?? 1
+
+    const docs = await Model.find(query)
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .skip((page - 1) * limit)
+      .lean<OrderDocument[]>()
+      .exec()
+
     return (docs as unknown as OrderDocument[]).map(toDomain)
   }
 

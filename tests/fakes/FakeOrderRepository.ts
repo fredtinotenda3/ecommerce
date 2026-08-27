@@ -1,11 +1,22 @@
 // tests/fakes/FakeOrderRepository.ts
-import type { CreateOrderInput, OrderRepository } from '../../src/lib/repositories/OrderRepository'
+import type {
+  CreateOrderInput,
+  OrderListFilter,
+  OrderRepository,
+} from '../../src/lib/repositories/OrderRepository'
 import type { Order, OrderStatus } from '../../src/lib/domain/types'
 
 let counter = 0
 
 export class FakeOrderRepository implements OrderRepository {
   private orders = new Map<string, Order>()
+
+  /** Test helper — seeds an order directly (mirrors FakeCategoryRepository's
+   * `seed`), for tests that need to assert against a known set of orders
+   * without going through `create`. */
+  seed(order: Order): void {
+    this.orders.set(order.id, order)
+  }
 
   async getById(id: string): Promise<Order | null> {
     return this.orders.get(id) ?? null
@@ -17,6 +28,16 @@ export class FakeOrderRepository implements OrderRepository {
 
   async getByCustomer(customerId: string): Promise<Order[]> {
     return Array.from(this.orders.values()).filter(o => o.customerId === customerId)
+  }
+
+  async list(filter: OrderListFilter = {}): Promise<Order[]> {
+    let results = Array.from(this.orders.values()).sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+    )
+    if (filter.status) results = results.filter(o => o.status === filter.status)
+    const limit = filter.limit ?? 50
+    const page = filter.page ?? 1
+    return results.slice((page - 1) * limit, (page - 1) * limit + limit)
   }
 
   async create(input: CreateOrderInput): Promise<Order> {
