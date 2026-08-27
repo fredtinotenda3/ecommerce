@@ -1,0 +1,25 @@
+PHASE 7 — Paynow Provider — File Manifest
+(all paths relative to repository root)
+
+MODIFIED (1 file):
+  .env.example
+
+CREATED (9 files):
+  src/lib/payments/PaynowProvider.ts
+  src/lib/payments/paynow/paynowConfig.ts
+  src/lib/payments/paynow/paynowSignature.ts
+  src/lib/payments/paynow/PaynowHttpClient.ts
+  src/lib/payments/paynow/paynowStatusMap.ts
+  tests/fakes/FakePaynowHttpClient.ts
+  tests/PaynowProvider.test.ts
+  tests/paynowConfig.test.ts
+  tests/paynowSignature.test.ts
+
+DELETED:
+  (none)
+
+package.json: UNCHANGED — no new runtime dependency was added (see
+Phase 7 report, "Dependencies/Configuration Added").
+
+Verified via `diff -rq` against the original uploaded repository that
+no other file in the tree was touched.
