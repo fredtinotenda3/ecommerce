@@ -1,12 +1,19 @@
 // src/lib/db/models/User.ts
 //
 // Maps onto the existing `users` collection. Payload's `auth: true`
-// option adds its own authentication fields at write time (password hash
-// under a Payload-internal field name, salt, login attempt tracking,
-// etc.) — those are intentionally left untouched/passthrough here.
-// This model does NOT implement authentication; see src/lib/auth for the
-// (not-yet-wired) native auth foundation, which will define its own
-// explicit hash field when it's actually activated in a later phase.
+// option adds its own authentication fields at write time: `hash`,
+// `salt`, `loginAttempts`, `lockUntil`, `resetPasswordToken`,
+// `resetPasswordExpiration` (see
+// node_modules/payload/dist/auth/baseFields/*.js). Phase 1 through 4 left
+// these as untouched passthrough fields (via `strict: false`) since
+// nothing native read/wrote them yet.
+//
+// PHASE 5: the native auth service (src/lib/services/AuthService.ts, via
+// src/lib/repositories/AuthUserRepository.ts) now reads and writes these
+// fields directly, so they're declared explicitly below rather than left
+// implicit. `strict: false` is kept so any other Payload-internal auth
+// field not listed here (present or future) still round-trips safely
+// instead of being silently dropped.
 
 import type { Model } from 'mongoose'
 import { type Connection, type Document, Schema, type Types } from 'mongoose'
@@ -29,6 +36,14 @@ export interface UserDocument extends Document {
   // --- Legacy Stripe field (untouched, read-only from this layer) ---
   stripeCustomerID?: string | null
 
+  // --- Payload auth fields (PHASE 5: read/written by native auth) ---
+  hash?: string | null
+  salt?: string | null
+  loginAttempts?: number | null
+  lockUntil?: Date | null
+  resetPasswordToken?: string | null
+  resetPasswordExpiration?: Date | null
+
   createdAt: Date
   updatedAt: Date
 }
@@ -49,6 +64,14 @@ const UserSchema = new Schema<UserDocument>(
       ],
     },
     stripeCustomerID: { type: String },
+
+    // --- Payload auth fields (PHASE 5) ---
+    hash: { type: String },
+    salt: { type: String },
+    loginAttempts: { type: Number, default: 0 },
+    lockUntil: { type: Date },
+    resetPasswordToken: { type: String },
+    resetPasswordExpiration: { type: Date },
   },
   {
     strict: false,
