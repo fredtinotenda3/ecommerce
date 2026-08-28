@@ -1,0 +1,21 @@
+@import '../../../_css/common';
+
+.paynow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--base);
+}
+
+.heading {
+  margin-bottom: 0;
+}
+
+.description {
+  color: var(--theme-elevation-600);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--base);
+}

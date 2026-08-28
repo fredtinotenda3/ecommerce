@@ -3,6 +3,7 @@ import { Metadata } from 'next'
 
 import { Settings } from '../../../payload/payload-types'
 import { fetchSettings } from '../../_api/fetchGlobals'
+import { isPaynowCheckoutEnabled } from '../../_api/paynowCheckoutFlag'
 import { Gutter } from '../../_components/Gutter'
 import { Message } from '../../_components/Message'
 import { LowImpactHero } from '../../_heros/LowImpact'
@@ -31,7 +32,7 @@ export default async function Checkout() {
   return (
     <div className={classes.checkout}>
       <Gutter>
-        <CheckoutPage settings={settings} />
+        <CheckoutPage settings={settings} paynowCheckoutEnabled={isPaynowCheckoutEnabled()} />
       </Gutter>
     </div>
   )

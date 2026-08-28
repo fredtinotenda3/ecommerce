@@ -15,6 +15,7 @@ import { useTheme } from '../../../_providers/Theme'
 import cssVariables from '../../../cssVariables'
 import { CheckoutForm } from '../CheckoutForm'
 import { CheckoutItem } from '../CheckoutItem'
+import { PaynowCheckoutButton } from '../PaynowCheckoutButton'
 
 import classes from './index.module.scss'
 
@@ -23,9 +24,18 @@ const stripe = loadStripe(apiKey)
 
 export const CheckoutPage: React.FC<{
   settings: Settings
+  /** PHASE 9 — server-resolved USE_PAYNOW_CHECKOUT flag (see
+   * ../../../_api/paynowCheckoutFlag.ts), passed down from the server
+   * component in page.tsx. When true, this component renders the
+   * Paynow flow (PaynowCheckoutButton) instead of Stripe Elements, and
+   * skips creating a Stripe PaymentIntent entirely. When false/omitted
+   * (the default), behavior is IDENTICAL to before Phase 9 — the
+   * existing Stripe checkout is untouched. */
+  paynowCheckoutEnabled?: boolean
 }> = props => {
   const {
     settings: { productsPage },
+    paynowCheckoutEnabled = false,
   } = props
 
   const { user } = useAuth()
@@ -44,6 +54,12 @@ export const CheckoutPage: React.FC<{
   }, [router, user, cartIsEmpty])
 
   useEffect(() => {
+    // The Paynow flow initiates payment on demand (see
+    // PaynowCheckoutButton) rather than up front — no PaymentIntent (or
+    // Paynow equivalent) needs to exist before the customer clicks
+    // "Pay with Paynow", so this effect is a pure no-op in that case.
+    if (paynowCheckoutEnabled) return
+
     if (user && cart && hasMadePaymentIntent.current === false) {
       hasMadePaymentIntent.current = true
 
@@ -72,9 +88,10 @@ export const CheckoutPage: React.FC<{
 
       makeIntent()
     }
-  }, [cart, user])
+  }, [cart, user, paynowCheckoutEnabled])
 
-  if (!user || !stripe) return null
+  if (!user) return null
+  if (!paynowCheckoutEnabled && !stripe) return null
 
   return (
     <Fragment>
@@ -136,48 +153,63 @@ export const CheckoutPage: React.FC<{
           </ul>
         </div>
       )}
-      {!clientSecret && !error && (
-        <div className={classes.loading}>
-          <LoadingShimmer number={2} />
-        </div>
-      )}
-      {!clientSecret && error && (
-        <div className={classes.error}>
-          <p>{`Error: ${error}`}</p>
-          <Button label="Back to cart" href="/cart" appearance="secondary" />
-        </div>
-      )}
-      {clientSecret && (
+      {paynowCheckoutEnabled ? (
+        // PHASE 9 — Paynow flow. No PaymentIntent/clientSecret concept
+        // applies here; PaynowCheckoutButton calls
+        // /api/checkout/paynow/initiate itself, on demand, and handles
+        // its own loading/error state. Nothing renders here at all
+        // while the cart is empty (mirrors the Stripe branch below,
+        // which never got this far in that case either since
+        // `cartIsEmpty` redirects to `/cart` — this additional guard is
+        // just belt-and-suspenders against a render before that
+        // redirect takes effect).
+        !cartIsEmpty && <PaynowCheckoutButton />
+      ) : (
         <Fragment>
-          <h3 className={classes.payment}>Payment Details</h3>
-          {error && <p>{`Error: ${error}`}</p>}
-          <Elements
-            stripe={stripe}
-            options={{
-              clientSecret,
-              appearance: {
-                theme: 'stripe',
-                variables: {
-                  colorText:
-                    theme === 'dark' ? cssVariables.colors.base0 : cssVariables.colors.base1000,
-                  fontSizeBase: '16px',
-                  fontWeightNormal: '500',
-                  fontWeightBold: '600',
-                  colorBackground:
-                    theme === 'dark' ? cssVariables.colors.base850 : cssVariables.colors.base0,
-                  fontFamily: 'Inter, sans-serif',
-                  colorTextPlaceholder: cssVariables.colors.base500,
-                  colorIcon:
-                    theme === 'dark' ? cssVariables.colors.base0 : cssVariables.colors.base1000,
-                  borderRadius: '0px',
-                  colorDanger: cssVariables.colors.error500,
-                  colorDangerText: cssVariables.colors.error500,
-                },
-              },
-            }}
-          >
-            <CheckoutForm />
-          </Elements>
+          {!clientSecret && !error && (
+            <div className={classes.loading}>
+              <LoadingShimmer number={2} />
+            </div>
+          )}
+          {!clientSecret && error && (
+            <div className={classes.error}>
+              <p>{`Error: ${error}`}</p>
+              <Button label="Back to cart" href="/cart" appearance="secondary" />
+            </div>
+          )}
+          {clientSecret && (
+            <Fragment>
+              <h3 className={classes.payment}>Payment Details</h3>
+              {error && <p>{`Error: ${error}`}</p>}
+              <Elements
+                stripe={stripe}
+                options={{
+                  clientSecret,
+                  appearance: {
+                    theme: 'stripe',
+                    variables: {
+                      colorText:
+                        theme === 'dark' ? cssVariables.colors.base0 : cssVariables.colors.base1000,
+                      fontSizeBase: '16px',
+                      fontWeightNormal: '500',
+                      fontWeightBold: '600',
+                      colorBackground:
+                        theme === 'dark' ? cssVariables.colors.base850 : cssVariables.colors.base0,
+                      fontFamily: 'Inter, sans-serif',
+                      colorTextPlaceholder: cssVariables.colors.base500,
+                      colorIcon:
+                        theme === 'dark' ? cssVariables.colors.base0 : cssVariables.colors.base1000,
+                      borderRadius: '0px',
+                      colorDanger: cssVariables.colors.error500,
+                      colorDangerText: cssVariables.colors.error500,
+                    },
+                  },
+                }}
+              >
+                <CheckoutForm />
+              </Elements>
+            </Fragment>
+          )}
         </Fragment>
       )}
     </Fragment>
