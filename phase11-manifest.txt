@@ -1,0 +1,14 @@
+PHASE 11 — Files included in phase11-changes.zip
+(paths relative to repository root)
+
+NEW FILES:
+  tests/authFlag.test.ts
+  tests/paynowCheckoutFlag.test.ts
+  scripts/validation/checkFlags.ts
+  docs/parallel-validation.md
+
+MODIFIED FILES:
+  package.json          (added "validate:flags" script)
+  .env.example           (documented the four migration flags)
+
+Nothing else was created, modified, or deleted.
