@@ -1,0 +1,11 @@
+{
+  "migrationName": "backfill-orders",
+  "dryRun": true,
+  "startedAt": "2026-08-29T09:53:55.232Z",
+  "finishedAt": "2026-08-29T09:53:56.679Z",
+  "totalConsidered": 0,
+  "migrated": 0,
+  "skipped": 0,
+  "errors": 0,
+  "records": []
+}

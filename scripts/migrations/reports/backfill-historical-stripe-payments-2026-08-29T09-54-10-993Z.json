@@ -1,0 +1,11 @@
+{
+  "migrationName": "backfill-historical-stripe-payments",
+  "dryRun": true,
+  "startedAt": "2026-08-29T09:54:10.993Z",
+  "finishedAt": "2026-08-29T09:54:12.234Z",
+  "totalConsidered": 0,
+  "migrated": 0,
+  "skipped": 0,
+  "errors": 0,
+  "records": []
+}

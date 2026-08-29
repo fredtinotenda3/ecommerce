@@ -1,0 +1,43 @@
+{
+  "migrationName": "backfill-product-prices",
+  "dryRun": true,
+  "startedAt": "2026-08-29T09:51:32.669Z",
+  "finishedAt": "2026-08-29T09:51:34.677Z",
+  "totalConsidered": 3,
+  "migrated": 2,
+  "skipped": 1,
+  "errors": 0,
+  "records": [
+    {
+      "id": "6a8d5dfeca87e6975a6743e8",
+      "action": "skipped",
+      "reason": "no legacy priceJSON to migrate from"
+    },
+    {
+      "id": "6a8d5dffca87e6975a6743f0",
+      "action": "migrated",
+      "before": {
+        "price": null,
+        "currency": null
+      },
+      "after": {
+        "price": 2999,
+        "currency": "USD"
+      },
+      "reason": "would set price/currency from legacy priceJSON"
+    },
+    {
+      "id": "6a8d5e06ca87e6975a6743f8",
+      "action": "migrated",
+      "before": {
+        "price": null,
+        "currency": null
+      },
+      "after": {
+        "price": 4999,
+        "currency": "USD"
+      },
+      "reason": "would set price/currency from legacy priceJSON"
+    }
+  ]
+}

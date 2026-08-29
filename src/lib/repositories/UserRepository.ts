@@ -33,7 +33,11 @@ const toDomain = (doc: UserDocument): User => ({
     productId: item.product?.toString(),
     quantity: item.quantity ?? 0,
   })),
-  legacyStripeCustomerId: doc.stripeCustomerID ?? null,
+  // Phase 10: prefer the migration-owned `legacyStripeCustomerId` field once
+  // it's been backfilled (see scripts/migrations/preserveUserLegacyStripeId.ts);
+  // fall back to the still-present `stripeCustomerID` for any document the
+  // backfill hasn't reached yet.
+  legacyStripeCustomerId: doc.legacyStripeCustomerId ?? doc.stripeCustomerID ?? null,
   createdAt: doc.createdAt,
   updatedAt: doc.updatedAt,
 })

@@ -1,0 +1,36 @@
+{
+  "migrationName": "preserve-product-legacy-stripe-id",
+  "dryRun": true,
+  "startedAt": "2026-08-29T09:53:31.398Z",
+  "finishedAt": "2026-08-29T09:53:33.891Z",
+  "totalConsidered": 3,
+  "migrated": 0,
+  "skipped": 3,
+  "errors": 0,
+  "records": [
+    {
+      "id": "6a8d5dfeca87e6975a6743e8",
+      "action": "skipped",
+      "reason": "no legacy source value to preserve",
+      "before": {
+        "legacyStripeProductId": null
+      }
+    },
+    {
+      "id": "6a8d5dffca87e6975a6743f0",
+      "action": "skipped",
+      "reason": "no legacy source value to preserve",
+      "before": {
+        "legacyStripeProductId": null
+      }
+    },
+    {
+      "id": "6a8d5e06ca87e6975a6743f8",
+      "action": "skipped",
+      "reason": "no legacy source value to preserve",
+      "before": {
+        "legacyStripeProductId": null
+      }
+    }
+  ]
+}

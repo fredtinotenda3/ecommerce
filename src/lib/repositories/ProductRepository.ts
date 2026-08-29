@@ -46,7 +46,12 @@ const toDomain = (doc: ProductDocument): Product => ({
   categories: (doc.categories ?? []).map((c: Types.ObjectId) => c.toString()),
   relatedProducts: (doc.relatedProducts ?? []).map((p: Types.ObjectId) => p.toString()),
   enablePaywall: Boolean(doc.enablePaywall),
-  legacyStripeProductId: doc.stripeProductID ?? null,
+  // Phase 10: prefer the migration-owned `legacyStripeProductId` field once
+  // it's been backfilled (see scripts/migrations/preserveProductLegacyStripeId.ts);
+  // fall back to the still-present `stripeProductID` for any document the
+  // backfill hasn't reached yet, so this mapping is correct before, during,
+  // and after that migration runs.
+  legacyStripeProductId: doc.legacyStripeProductId ?? doc.stripeProductID ?? null,
   legacyPriceJSON: doc.priceJSON ?? null,
   layout: doc.layout ?? [],
   meta: {

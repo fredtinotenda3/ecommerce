@@ -1,0 +1,20 @@
+{
+  "migrationName": "preserve-user-legacy-stripe-id",
+  "dryRun": false,
+  "startedAt": "2026-08-29T09:56:32.614Z",
+  "finishedAt": "2026-08-29T09:56:33.900Z",
+  "totalConsidered": 1,
+  "migrated": 0,
+  "skipped": 1,
+  "errors": 0,
+  "records": [
+    {
+      "id": "6a7da011e7b529ac37a93477",
+      "action": "skipped",
+      "reason": "no legacy source value to preserve",
+      "before": {
+        "legacyStripeCustomerId": null
+      }
+    }
+  ]
+}

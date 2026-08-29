@@ -22,7 +22,11 @@
     "payload": "cross-env PAYLOAD_CONFIG_PATH=src/payload/payload.config.ts payload",
     "test": "vitest run",
     "test:watch": "vitest",
-    "migration:products:prices": "ts-node -T scripts/migrations/backfillProductPrices.ts"
+    "migration:products:prices": "ts-node -T scripts/migrations/backfillProductPrices.ts",
+    "migration:products:legacy-stripe-id": "ts-node -T scripts/migrations/preserveProductLegacyStripeId.ts",
+    "migration:users:legacy-stripe-id": "ts-node -T scripts/migrations/preserveUserLegacyStripeId.ts",
+    "migration:orders:backfill": "ts-node -T scripts/migrations/backfillOrders.ts",
+    "migration:payments:backfill-historical-stripe": "ts-node -T scripts/migrations/backfillHistoricalStripePayments.ts"
   },
   "dependencies": {
     "@payloadcms/bundler-webpack": "^1.0.0",

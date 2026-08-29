@@ -47,6 +47,13 @@ export interface ProductDocument extends Document {
   stripeProductID?: string | null
   priceJSON?: string | null
 
+  // --- Phase 10: preserved copy of stripeProductID, written by
+  // scripts/migrations/preserveProductLegacyStripeId.ts. `stripeProductID`
+  // itself is NOT removed by that migration (a later phase does that) —
+  // this field exists so ProductRepository can start reading from a
+  // stable, migration-owned name ahead of that removal. ---
+  legacyStripeProductId?: string | null
+
   categories?: Types.ObjectId[]
   relatedProducts?: Types.ObjectId[]
   enablePaywall?: boolean
@@ -75,6 +82,7 @@ const ProductSchema = new Schema<ProductDocument>(
 
     stripeProductID: { type: String },
     priceJSON: { type: String },
+    legacyStripeProductId: { type: String, default: null },
 
     categories: [{ type: Schema.Types.ObjectId, ref: 'categories' }],
     relatedProducts: [{ type: Schema.Types.ObjectId, ref: 'products' }],

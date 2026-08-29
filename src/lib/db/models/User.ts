@@ -36,6 +36,12 @@ export interface UserDocument extends Document {
   // --- Legacy Stripe field (untouched, read-only from this layer) ---
   stripeCustomerID?: string | null
 
+  // --- Phase 10: preserved copy of stripeCustomerID, written by
+  // scripts/migrations/preserveUserLegacyStripeId.ts. `stripeCustomerID`
+  // itself is NOT removed by that migration — see the parallel comment on
+  // ProductDocument.legacyStripeProductId. ---
+  legacyStripeCustomerId?: string | null
+
   // --- Payload auth fields (PHASE 5: read/written by native auth) ---
   hash?: string | null
   salt?: string | null
@@ -64,6 +70,7 @@ const UserSchema = new Schema<UserDocument>(
       ],
     },
     stripeCustomerID: { type: String },
+    legacyStripeCustomerId: { type: String, default: null },
 
     // --- Payload auth fields (PHASE 5) ---
     hash: { type: String },
