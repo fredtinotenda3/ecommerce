@@ -1,0 +1,5 @@
+docs/production-cutover-runbook.md
+package.json
+scripts/validation/checkDatabaseConnectivity.ts
+scripts/validation/checkPaynowConfig.ts
+scripts/validation/checkStripeConfig.ts

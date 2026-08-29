@@ -27,7 +27,10 @@
     "migration:users:legacy-stripe-id": "ts-node -T scripts/migrations/preserveUserLegacyStripeId.ts",
     "migration:orders:backfill": "ts-node -T scripts/migrations/backfillOrders.ts",
     "migration:payments:backfill-historical-stripe": "ts-node -T scripts/migrations/backfillHistoricalStripePayments.ts",
-    "validate:flags": "ts-node -T scripts/validation/checkFlags.ts"
+    "validate:flags": "ts-node -T scripts/validation/checkFlags.ts",
+    "validate:db": "ts-node -T scripts/validation/checkDatabaseConnectivity.ts",
+    "validate:paynow": "ts-node -T scripts/validation/checkPaynowConfig.ts",
+    "validate:stripe": "ts-node -T scripts/validation/checkStripeConfig.ts"
   },
   "dependencies": {
     "@payloadcms/bundler-webpack": "^1.0.0",
