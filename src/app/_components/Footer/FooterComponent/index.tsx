@@ -12,7 +12,12 @@ import { Gutter } from '../../Gutter'
 
 import classes from './index.module.scss'
 
-const FooterComponent = ({ footer }: { footer: Footer }) => {
+const FooterComponent = ({ footer }: { footer: Footer | null }) => {
+  // PHASE 13D: see the matching comment in
+  // src/app/_components/Header/HeaderComponent/index.tsx — `usePathname`
+  // is called unconditionally here (react-hooks/rules-of-hooks); a
+  // render-phase crash inside it is guarded against one level up by an
+  // `ErrorBoundary` (see src/app/_components/Footer/index.tsx).
   const pathname = usePathname()
   const navItems = footer?.navItems || []
 

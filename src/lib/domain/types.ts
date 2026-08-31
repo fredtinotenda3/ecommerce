@@ -286,3 +286,59 @@ export interface PaymentAttempt {
   errorMessage: string | null
   createdAt: Date
 }
+
+// ---------------------------------------------------------------------------
+// Site globals (Header / Footer / Settings)
+// ---------------------------------------------------------------------------
+//
+// PHASE 13D — mirrors the shape of Payload's Header/Footer/Settings globals
+// (see src/payload/globals/{Header,Footer,Settings}.ts and the shared `link`
+// field builder at src/payload/fields/link.ts) closely enough for a
+// repository to map a Mongo `globals` document onto them without semantic
+// loss. Only the fields the storefront actually reads are modelled — same
+// "intentionally narrow" treatment as the rest of this file.
+
+export interface NavLink {
+  type?: 'reference' | 'custom'
+  newTab?: boolean
+  label?: string | null
+  /** Only meaningful when `type === 'custom'`. */
+  url?: string | null
+  /** Id of the linked Page. Only meaningful when `type === 'reference'`;
+   * resolution to a slug happens in the storefront-read orchestrator
+   * (see fetchGlobalsNative.ts), not here. */
+  referencePageId?: string | null
+  /** Mirrors Payload's polymorphic `reference.relationTo` — always 'pages'
+   * today (the `link` field only ever declares `relationTo: ['pages']`). */
+  referenceRelationTo?: 'pages' | null
+  /** Id of the optional icon Media doc. Resolved to a URL by the caller. */
+  iconMediaId?: string | null
+}
+
+export interface NavItem {
+  link: NavLink
+}
+
+export interface Header {
+  id: string
+  navItems: NavItem[]
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface Footer {
+  id: string
+  copyright: string | null
+  navItems: NavItem[]
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface Settings {
+  id: string
+  /** Id of the linked "products" Page. Resolution to a slug happens in the
+   * storefront-read orchestrator (see fetchGlobalsNative.ts). */
+  productsPageId: string | null
+  createdAt: Date
+  updatedAt: Date
+}

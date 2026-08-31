@@ -1,6 +1,14 @@
 // src/app/_api/fetchGlobals.ts
+//
+// PHASE 13D: branches on `isNativeRepositoryEnabled()` (see ./dataSource.ts)
+// to read Header/Footer/Settings from the native repository path
+// (./fetchGlobalsNative.ts) instead of Payload GraphQL, when
+// USE_NATIVE_REPOSITORY=true. Default (flag unset/false): the GraphQL path
+// below is unchanged from before this phase.
 import type { Footer, Header, Settings } from '../../payload/payload-types'
 import { FOOTER_QUERY, HEADER_QUERY, SETTINGS_QUERY } from '../_graphql/globals'
+import { isNativeRepositoryEnabled } from './dataSource'
+import { fetchFooterNative, fetchHeaderNative, fetchSettingsNative } from './fetchGlobalsNative'
 import { GRAPHQL_API_URL } from './shared'
 
 async function graphqlFetch(query: string): Promise<Record<string, unknown>> {
@@ -36,16 +44,25 @@ async function graphqlFetch(query: string): Promise<Record<string, unknown>> {
 }
 
 export async function fetchSettings(): Promise<Settings> {
+  if (isNativeRepositoryEnabled()) {
+    return (await fetchSettingsNative()) as Settings
+  }
   const json = await graphqlFetch(SETTINGS_QUERY)
   return (json.data as Record<string, Settings>)?.Settings
 }
 
 export async function fetchHeader(): Promise<Header> {
+  if (isNativeRepositoryEnabled()) {
+    return (await fetchHeaderNative()) as Header
+  }
   const json = await graphqlFetch(HEADER_QUERY)
   return (json.data as Record<string, Header>)?.Header
 }
 
 export async function fetchFooter(): Promise<Footer> {
+  if (isNativeRepositoryEnabled()) {
+    return (await fetchFooterNative()) as Footer
+  }
   const json = await graphqlFetch(FOOTER_QUERY)
   return (json.data as Record<string, Footer>)?.Footer
 }

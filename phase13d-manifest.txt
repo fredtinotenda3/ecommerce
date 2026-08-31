@@ -1,0 +1,96 @@
+PHASE 13D — FILE MANIFEST
+=========================
+Archive: phase13d-changes.zip
+All paths relative to repository root. Contains ONLY files created or
+modified in this phase (no node_modules, .next, .git, build output,
+reports, or env files).
+
+CREATED (8)
+-----------
+src/lib/db/models/Global.ts
+  Native Mongoose model mapping onto Payload's existing `globals`
+  MongoDB collection (discriminated by `globalType`).
+
+src/lib/repositories/GlobalsRepository.ts
+  `GlobalsRepository` interface + `MongoGlobalsRepository` — read-only
+  native repository for Header/Footer/Settings.
+
+src/lib/repositories/adapters/globalsStorefrontAdapter.ts
+  Pure functions mapping native Header/Footer/Settings + resolved nav
+  relations onto the exact payload-types.ts shapes the storefront reads.
+
+src/app/_api/fetchGlobalsNative.ts
+  Testable orchestration (buildStorefrontHeader/Footer/Settings) plus
+  DB-wired fetchHeaderNative/fetchFooterNative/fetchSettingsNative/
+  fetchGlobalsNative, mirroring fetchCategoriesNative.ts's pattern.
+
+src/app/_components/ErrorBoundary/index.tsx
+  Minimal client-side React error boundary. Wraps HeaderComponent /
+  FooterComponent so a render-phase crash inside them degrades to
+  rendering nothing instead of crashing the whole page.
+
+tests/fakes/FakeGlobalsRepository.ts
+  In-memory fake implementing GlobalsRepository, plus
+  buildTestHeader/Footer/Settings builders, for DB-free unit tests.
+
+tests/globalsStorefrontAdapter.test.ts
+  10 tests covering toStorefrontHeader/Footer/Settings (reference links,
+  custom-url links, missing/unresolvable page or media references, null
+  copyright, empty navItems).
+
+tests/fetchGlobalsNative.test.ts
+  8 tests covering buildStorefrontHeader/Footer/Settings orchestration
+  against fake repositories: successful resolution, "no global exists
+  yet" -> null (not a throw), and dangling page/media references.
+
+MODIFIED (7)
+------------
+src/lib/domain/types.ts
+  Added NavLink/NavItem/Header/Footer/Settings domain types (additive
+  only — no existing types changed).
+
+src/app/_api/fetchGlobals.ts
+  fetchSettings/fetchHeader/fetchFooter now branch on
+  isNativeRepositoryEnabled(): native path when true, otherwise the
+  pre-existing GraphQL path (byte-for-byte unchanged). fetchGlobals()
+  itself is untouched (already calls the three functions above).
+
+src/app/_components/Header/index.tsx
+  Wrapped <HeaderComponent> in the new <ErrorBoundary>. No other
+  behavior change.
+
+src/app/_components/Header/HeaderComponent/index.tsx
+  `header` prop type widened from `Header` to `Header | null` (it was
+  already being called with a possibly-null value). Added a comment
+  documenting the ErrorBoundary-based crash mitigation. `usePathname()`
+  call itself is unchanged (still unconditional, per
+  react-hooks/rules-of-hooks).
+
+src/app/_components/Header/Nav/index.tsx
+  `header` prop type on HeaderNav widened from `HeaderType` to
+  `HeaderType | null`, to match HeaderComponent's now-nullable prop.
+  No behavior change (already used `header?.navItems`).
+
+src/app/_components/Footer/index.tsx
+  Wrapped <FooterComponent> in the new <ErrorBoundary>. No other
+  behavior change.
+
+src/app/_components/Footer/FooterComponent/index.tsx
+  `footer` prop type widened from `Footer` to `Footer | null` (already
+  called with a possibly-null value). Added a comment documenting the
+  ErrorBoundary-based crash mitigation. `usePathname()` call itself is
+  unchanged.
+
+DELETED
+-------
+(none)
+
+NEW DEPENDENCIES
+----------------
+(none)
+
+FILES EXPLICITLY NOT TOUCHED
+-----------------------------
+src/payload/** — untouched, per Phase 13D instructions.
+Nothing under scripts/migrations/**, src/lib/payments/**, checkout/
+auth/admin code paths.
