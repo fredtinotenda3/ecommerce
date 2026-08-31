@@ -22,7 +22,7 @@ type FormData = {
 const CreateAccountForm: React.FC = () => {
   const searchParams = useSearchParams()
   const allParams = searchParams.toString() ? `?${searchParams.toString()}` : ''
-  const { login } = useAuth()
+  const { login, create, nativeAuthEnabled } = useAuth()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -39,6 +39,36 @@ const CreateAccountForm: React.FC = () => {
 
   const onSubmit = useCallback(
     async (data: FormData) => {
+      const redirect = searchParams.get('redirect')
+
+      // PHASE 13B: when native auth is enabled, account creation and
+      // login-after-create both go through `create()` (see AuthProvider),
+      // which calls POST /api/auth-native/register — that route already
+      // issues a session in the same request, so there is no separate
+      // Payload-style create-then-login round trip here.
+      if (nativeAuthEnabled) {
+        const timer = setTimeout(() => {
+          setLoading(true)
+        }, 1000)
+
+        try {
+          await create({
+            email: data.email,
+            password: data.password,
+            passwordConfirm: data.passwordConfirm,
+            name: data.name,
+          })
+          clearTimeout(timer)
+          if (redirect) router.push(redirect as string)
+          else router.push(`/`)
+          window.location.href = '/'
+        } catch (_) {
+          clearTimeout(timer)
+          setError('There was an error with the credentials provided. Please try again.')
+        }
+        return
+      }
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/users`, {
         method: 'POST',
         body: JSON.stringify(data),
@@ -52,8 +82,6 @@ const CreateAccountForm: React.FC = () => {
         setError(message)
         return
       }
-
-      const redirect = searchParams.get('redirect')
 
       const timer = setTimeout(() => {
         setLoading(true)
@@ -70,7 +98,7 @@ const CreateAccountForm: React.FC = () => {
         setError('There was an error with the credentials provided. Please try again.')
       }
     },
-    [login, router, searchParams],
+    [create, login, nativeAuthEnabled, router, searchParams],
   )
 
   return (

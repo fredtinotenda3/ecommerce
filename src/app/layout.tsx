@@ -3,6 +3,7 @@ import { Metadata } from 'next'
 import { Jost } from 'next/font/google'
 
 import { isNativeAdminEnabled } from './_api/adminFlag'
+import { resolveAuthMode } from './_api/authMode'
 import { AdminBar } from './_components/AdminBar'
 import { Footer } from './_components/Footer'
 import { Header } from './_components/Header'
@@ -27,7 +28,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </head>
       <body className={jost.variable}>
-        <Providers>
+        {/* PHASE 13B: nativeAuthEnabled is resolved server-side here
+            (resolveAuthMode() reads USE_NATIVE_AUTH via authFlag.ts, not
+            NEXT_PUBLIC_-prefixed) and passed down as a plain boolean
+            prop — AuthProvider itself is a client component and has no
+            other way to see this flag. Default off, so this line is a
+            no-op change for the flag-off path. */}
+        <Providers nativeAuthEnabled={resolveAuthMode() === 'native'}>
           {/* PHASE 13A: nativeAdminEnabled is resolved server-side here
               (isNativeAdminEnabled() reads USE_NATIVE_ADMIN, not
               NEXT_PUBLIC_-prefixed) and passed down as a plain boolean

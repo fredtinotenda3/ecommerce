@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { Button } from '../../../_components/Button'
 import { Input } from '../../../_components/Input'
 import { Message } from '../../../_components/Message'
+import { useAuth } from '../../../_providers/Auth'
 
 import classes from './index.module.scss'
 
@@ -17,6 +18,7 @@ type FormData = {
 export const RecoverPasswordForm: React.FC = () => {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const { forgotPassword, nativeAuthEnabled } = useAuth()
 
   const {
     register,
@@ -24,27 +26,46 @@ export const RecoverPasswordForm: React.FC = () => {
     formState: { errors },
   } = useForm<FormData>()
 
-  const onSubmit = useCallback(async (data: FormData) => {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/forgot-password`,
-      {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      },
-    )
+  const onSubmit = useCallback(
+    async (data: FormData) => {
+      // PHASE 13B: native mode goes through AuthProvider's
+      // `forgotPassword` (POST /api/auth-native/forgot-password). Default
+      // (flag off) path below is unchanged.
+      if (nativeAuthEnabled) {
+        try {
+          await forgotPassword(data)
+          setSuccess(true)
+          setError('')
+        } catch (_) {
+          setError(
+            'There was a problem while attempting to send you a password reset email. Please try again.',
+          )
+        }
+        return
+      }
 
-    if (response.ok) {
-      setSuccess(true)
-      setError('')
-    } else {
-      setError(
-        'There was a problem while attempting to send you a password reset email. Please try again.',
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/forgot-password`,
+        {
+          method: 'POST',
+          body: JSON.stringify(data),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
       )
-    }
-  }, [])
+
+      if (response.ok) {
+        setSuccess(true)
+        setError('')
+      } else {
+        setError(
+          'There was a problem while attempting to send you a password reset email. Please try again.',
+        )
+      }
+    },
+    [forgotPassword, nativeAuthEnabled],
+  )
 
   return (
     <Fragment>

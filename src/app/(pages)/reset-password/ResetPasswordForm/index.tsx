@@ -18,7 +18,7 @@ type FormData = {
 
 export const ResetPasswordForm: React.FC = () => {
   const [error, setError] = useState('')
-  const { login } = useAuth()
+  const { login, resetPassword, nativeAuthEnabled } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
@@ -32,6 +32,22 @@ export const ResetPasswordForm: React.FC = () => {
 
   const onSubmit = useCallback(
     async (data: FormData) => {
+      // PHASE 13B: native mode goes through AuthProvider's
+      // `resetPassword` (POST /api/auth-native/reset-password), which —
+      // like Payload's own reset-password — issues a fresh session and
+      // logs the user in as part of the same request, so no separate
+      // `login()` call is needed here. Default (flag off) path below is
+      // unchanged.
+      if (nativeAuthEnabled) {
+        try {
+          await resetPassword({ password: data.password, token: data.token })
+          router.push('/account?success=Password reset successfully.')
+        } catch (_) {
+          setError('There was a problem while resetting your password. Please try again later.')
+        }
+        return
+      }
+
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/reset-password`,
         {
@@ -55,7 +71,7 @@ export const ResetPasswordForm: React.FC = () => {
         setError('There was a problem while resetting your password. Please try again later.')
       }
     },
-    [router, login],
+    [router, login, resetPassword, nativeAuthEnabled],
   )
 
   // when Next.js populates token within router,

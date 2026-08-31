@@ -1,0 +1,36 @@
+PHASE 13B MANIFEST
+==================
+Generated: 2026-08-31
+
+Files created:
+  src/app/_api/authMode.ts
+  src/app/_providers/Auth/nativeAuthUser.ts
+  tests/authMode.test.ts
+  tests/nativeAuthUser.test.ts
+
+Files modified:
+  src/app/_providers/Auth/index.tsx
+  src/app/_providers/index.tsx
+  src/app/layout.tsx
+  src/app/(pages)/create-account/CreateAccountForm/index.tsx
+  src/app/(pages)/recover-password/RecoverPasswordForm/index.tsx
+  src/app/(pages)/reset-password/ResetPasswordForm/index.tsx
+
+Files deleted:
+  (none)
+
+Files NOT changed but relevant/inspected (already existed from Phase 13a/5):
+  src/app/api/auth-native/login/route.ts
+  src/app/api/auth-native/register/route.ts
+  src/app/api/auth-native/logout/route.ts
+  src/app/api/auth-native/me/route.ts
+  src/app/api/auth-native/forgot-password/route.ts
+  src/app/api/auth-native/reset-password/route.ts
+  src/app/api/auth-native/_shared/respond.ts
+  src/app/_api/authFlag.ts
+  src/app/_api/authNative.ts
+  src/lib/services/AuthService.ts
+  src/app/(pages)/login/LoginForm/index.tsx (already routed through useAuth() — no change needed)
+  src/app/(pages)/logout/LogoutPage/index.tsx (already routed through useAuth() — no change needed)
+
+Excluded from zip: node_modules, .next, .git, build output, reports, env files.
