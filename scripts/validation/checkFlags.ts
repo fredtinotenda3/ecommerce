@@ -28,6 +28,7 @@ import { isNativeAdminEnabled } from '../../src/app/_api/adminFlag'
 import { isNativeAuthEnabled } from '../../src/app/_api/authFlag'
 import { isNativeRepositoryEnabled } from '../../src/app/_api/dataSource'
 import { isPaynowCheckoutEnabled } from '../../src/app/_api/paynowCheckoutFlag'
+import { isNativeServerEnabled } from '../../src/app/_api/serverFlag'
 
 interface FlagStatus {
   envVar: string
@@ -60,6 +61,13 @@ const flags: FlagStatus[] = [
     enabled: isPaynowCheckoutEnabled(),
     whenOn: 'Checkout page renders the Paynow flow; /api/checkout/paynow/* and /api/payments/paynow/* are live.',
     whenOff: 'Checkout page renders the existing Stripe flow (default). Paynow routes all respond 404.',
+  },
+  {
+    envVar: 'USE_NATIVE_SERVER',
+    enabled: isNativeServerEnabled(),
+    whenOn: 'PHASE 13A: src/server.ts boots via src/server.native.ts — Payload is never initialized. ' +
+      'Only meaningful in practice alongside USE_NATIVE_REPOSITORY=true (see server.native.ts).',
+    whenOff: 'src/server.ts boots via src/server.payload.ts — the existing Payload+Express+Next.js path (default).',
   },
 ]
 

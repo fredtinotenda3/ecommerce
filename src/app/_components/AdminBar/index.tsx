@@ -6,6 +6,7 @@ import { PayloadAdminBar, PayloadAdminBarProps } from 'payload-admin-bar'
 
 import { useAuth } from '../../_providers/Auth'
 import { Gutter } from '../Gutter'
+import { shouldShowAdminBar } from './shouldShowAdminBar'
 
 import classes from './index.module.scss'
 
@@ -13,8 +14,15 @@ const Title: React.FC = () => <span>Dashboard</span>
 
 export const AdminBar: React.FC<{
   adminBarProps?: PayloadAdminBarProps
+  /** PHASE 13A: when true (USE_NATIVE_ADMIN=true, resolved server-side
+   * in layout.tsx and passed down as a prop, since this is a client
+   * component and the flag itself is not NEXT_PUBLIC_-prefixed), this
+   * always hides the bar — see shouldShowAdminBar.ts for why "hide" was
+   * chosen over "repoint". Defaults to false, so omitting this prop
+   * preserves the exact pre-Phase-13a behavior. */
+  nativeAdminEnabled?: boolean
 }> = props => {
-  const { adminBarProps } = props || {}
+  const { adminBarProps, nativeAdminEnabled = false } = props || {}
   const segments = useSelectedLayoutSegments()
   const collection = segments?.[1] === 'products' ? 'products' : 'pages'
   const [show, setShow] = React.useState(false)
@@ -27,9 +35,9 @@ export const AdminBar: React.FC<{
     }
   }, [user])
 
-  const isAdmin = user?.roles?.includes('admin')
+  const isAdmin = Boolean(user?.roles?.includes('admin'))
 
-  if (!isAdmin) return null
+  if (!shouldShowAdminBar({ nativeAdminEnabled, isAdmin })) return null
 
   return (
     <div className={[classes.adminBar, show && classes.show].filter(Boolean).join(' ')}>

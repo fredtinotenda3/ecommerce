@@ -8,8 +8,7 @@
 //
 // This schema is intentionally `strict: false`: Payload documents contain
 // many fields this native layer does not yet need to understand in detail
-// (e.g. the full `layout` block tree, `paywall` blocks, versioning
-// metadata). `strict: false` lets Mongoose read and pass through fields
+// (e.g. versioning metadata). `strict: false` lets Mongoose read and pass through fields
 // not declared here without validating or stripping them, so this model
 // is safe to use for the additive fields (price/currency/etc.) without
 // requiring a full re-implementation of the block schema in this phase.
@@ -23,9 +22,15 @@
 // interface documents their presence — `strict: false` already let
 // Mongoose read them without a declaration, but declaring them keeps
 // ProductRepository's `toDomain` mapping type-safe instead of reaching
-// into an untyped document. The `paywall` field is deliberately NOT
-// declared/read here: it stays entirely on the existing client-side
-// GraphQL fetch (see PaywallBlocks), which Phase 3 does not touch.
+// into an untyped document.
+//
+// PHASE 13A addition: `paywall` is now declared/read here too (same
+// Mixed-passthrough treatment as `layout`), closing the gap the Phase 3
+// comment above used to describe — see fetchPaywallNative.ts and
+// src/app/api/paywall/route.ts for the flag-gated (USE_NATIVE_REPOSITORY)
+// native read path that uses it, and
+// src/payload/collections/Products/access/checkUserPurchases.ts for the
+// Payload-side access control this reproduces.
 
 import type { Model } from 'mongoose'
 import { type Connection, type Document, Schema, type Types } from 'mongoose'
@@ -66,6 +71,9 @@ export interface ProductDocument extends Document {
     image?: Types.ObjectId | null
   }
 
+  // --- Paywall-gated content (Phase 13A) ---
+  paywall?: unknown[]
+
   createdAt: Date
   updatedAt: Date
 }
@@ -90,6 +98,7 @@ const ProductSchema = new Schema<ProductDocument>(
 
     layout: { type: Schema.Types.Mixed },
     meta: { type: Schema.Types.Mixed },
+    paywall: { type: Schema.Types.Mixed },
   },
   {
     strict: false,

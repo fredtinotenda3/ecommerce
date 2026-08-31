@@ -59,6 +59,16 @@ export interface Product {
    * (cta/content/mediaBlock/archive blocks). */
   layout: unknown[]
 
+  /** Flexible block-based content gated behind the paywall — same
+   * "intentionally untyped, owned by the CMS/render layer" treatment as
+   * `layout` above. Added in Phase 13A so the native product read path
+   * can resolve this (see fetchPaywallNative.ts); it deliberately mirrors
+   * Payload's own field-level access control
+   * (src/payload/collections/Products/access/checkUserPurchases.ts)
+   * rather than being exposed unconditionally like `layout` is — see
+   * fetchPaywallNative.ts for the authorization check. */
+  paywall: unknown[]
+
   meta: {
     title?: string
     description?: string

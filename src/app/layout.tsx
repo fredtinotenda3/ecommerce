@@ -2,6 +2,7 @@ import React from 'react'
 import { Metadata } from 'next'
 import { Jost } from 'next/font/google'
 
+import { isNativeAdminEnabled } from './_api/adminFlag'
 import { AdminBar } from './_components/AdminBar'
 import { Footer } from './_components/Footer'
 import { Header } from './_components/Header'
@@ -27,7 +28,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className={jost.variable}>
         <Providers>
-          <AdminBar />
+          {/* PHASE 13A: nativeAdminEnabled is resolved server-side here
+              (isNativeAdminEnabled() reads USE_NATIVE_ADMIN, not
+              NEXT_PUBLIC_-prefixed) and passed down as a plain boolean
+              prop — AdminBar itself is a client component and has no
+              other way to see this flag. Default off, so this line is a
+              no-op change for the flag-off path. */}
+          <AdminBar nativeAdminEnabled={isNativeAdminEnabled()} />
           {/* @ts-expect-error */}
           <Header />
           <main className="main">{children}</main>

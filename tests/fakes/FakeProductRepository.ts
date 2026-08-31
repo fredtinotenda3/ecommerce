@@ -75,6 +75,7 @@ export const buildTestProduct = (overrides: Partial<Product> = {}): Product => (
   legacyStripeProductId: null,
   legacyPriceJSON: null,
   layout: [],
+  paywall: [],
   meta: { title: undefined, description: undefined, imageId: null },
   createdAt: new Date(),
   updatedAt: new Date(),
