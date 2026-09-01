@@ -1,0 +1,39 @@
+PHASE 13E MANIFEST
+==================
+Generated: 2026-08-31
+
+Files created:
+  src/lib/services/StripeCheckoutService.ts
+  src/lib/services/StripeWebhookService.ts
+  src/app/_api/nativeStripeCheckoutFlag.ts
+  src/app/_api/stripeCheckoutNative.ts
+  src/app/api/checkout/stripe/create-payment-intent/route.ts
+  src/app/api/payments/stripe/webhook/route.ts
+  tests/stripeCheckoutService.test.ts
+  tests/stripeWebhookService.test.ts
+
+Files modified:
+  src/app/(pages)/checkout/page.tsx
+  src/app/(pages)/checkout/CheckoutPage/index.tsx
+  scripts/validation/checkFlags.ts
+
+Files deleted:
+  (none)
+
+Files inspected but NOT changed (existing Payload/Stripe code, kept
+present per the phase's DO NOT list):
+  src/payload/endpoints/create-payment-intent.ts
+  src/payload/stripe/webhooks/priceUpdated.ts
+  src/payload/stripe/webhooks/productUpdated.ts
+  src/payload/payload.config.ts (plugin-stripe registration, endpoints array)
+  src/app/(pages)/checkout/CheckoutForm/index.tsx (order creation via
+    POST /api/orders — still Payload; out of this phase's named scope,
+    see report's "Remaining Blockers")
+
+Files audited for payload-types.ts imports (task 2) — 68 files outside
+src/payload found importing from payload-types.ts; zero replaced. Full
+reasoning and per-category breakdown in the Phase 13E report's
+"payload-types Imports Replaced" section — this is a documented, no-op
+outcome, not an oversight.
+
+Excluded from zip: node_modules, .next, .git, build output, reports, env files.

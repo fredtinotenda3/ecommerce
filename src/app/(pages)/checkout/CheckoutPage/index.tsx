@@ -32,10 +32,21 @@ export const CheckoutPage: React.FC<{
    * (the default), behavior is IDENTICAL to before Phase 9 — the
    * existing Stripe checkout is untouched. */
   paynowCheckoutEnabled?: boolean
+  /** PHASE 13E — server-resolved USE_NATIVE_STRIPE_CHECKOUT flag (see
+   * ../../../_api/nativeStripeCheckoutFlag.ts). Only consulted when
+   * `paynowCheckoutEnabled` is false. When true, the PaymentIntent is
+   * requested from the new native route
+   * (`/api/checkout/stripe/create-payment-intent`) instead of Payload's
+   * `/api/create-payment-intent`. Everything else about this Stripe
+   * Elements flow — the UI, `CheckoutForm`, the `client_secret` handling
+   * below — is unchanged; only the URL differs. When false/omitted (the
+   * default), behavior is IDENTICAL to before Phase 13E. */
+  nativeStripeCheckoutEnabled?: boolean
 }> = props => {
   const {
     settings: { productsPage },
     paynowCheckoutEnabled = false,
+    nativeStripeCheckoutEnabled = false,
   } = props
 
   const { user } = useAuth()
@@ -65,13 +76,18 @@ export const CheckoutPage: React.FC<{
 
       const makeIntent = async () => {
         try {
-          const paymentReq = await fetch(
-            `${process.env.NEXT_PUBLIC_SERVER_URL}/api/create-payment-intent`,
-            {
-              method: 'POST',
-              credentials: 'include',
-            },
-          )
+          // PHASE 13E: same request (POST, credentials included, no
+          // body — pricing is always re-derived server-side from the
+          // authenticated user's cart), just a different URL when the
+          // native flag is on. Default path (flag off) is unchanged.
+          const url = nativeStripeCheckoutEnabled
+            ? `${process.env.NEXT_PUBLIC_SERVER_URL}/api/checkout/stripe/create-payment-intent`
+            : `${process.env.NEXT_PUBLIC_SERVER_URL}/api/create-payment-intent`
+
+          const paymentReq = await fetch(url, {
+            method: 'POST',
+            credentials: 'include',
+          })
 
           const res = await paymentReq.json()
 
@@ -88,7 +104,7 @@ export const CheckoutPage: React.FC<{
 
       makeIntent()
     }
-  }, [cart, user, paynowCheckoutEnabled])
+  }, [cart, user, paynowCheckoutEnabled, nativeStripeCheckoutEnabled])
 
   if (!user) return null
   if (!paynowCheckoutEnabled && !stripe) return null

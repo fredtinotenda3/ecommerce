@@ -27,6 +27,7 @@
 import { isNativeAdminEnabled } from '../../src/app/_api/adminFlag'
 import { isNativeAuthEnabled } from '../../src/app/_api/authFlag'
 import { isNativeRepositoryEnabled } from '../../src/app/_api/dataSource'
+import { isNativeStripeCheckoutEnabled } from '../../src/app/_api/nativeStripeCheckoutFlag'
 import { isPaynowCheckoutEnabled } from '../../src/app/_api/paynowCheckoutFlag'
 import { isNativeServerEnabled } from '../../src/app/_api/serverFlag'
 
@@ -61,6 +62,14 @@ const flags: FlagStatus[] = [
     enabled: isPaynowCheckoutEnabled(),
     whenOn: 'Checkout page renders the Paynow flow; /api/checkout/paynow/* and /api/payments/paynow/* are live.',
     whenOff: 'Checkout page renders the existing Stripe flow (default). Paynow routes all respond 404.',
+  },
+  {
+    envVar: 'USE_NATIVE_STRIPE_CHECKOUT',
+    enabled: isNativeStripeCheckoutEnabled(),
+    whenOn: 'PHASE 13E: Stripe checkout requests a PaymentIntent from /api/checkout/stripe/create-payment-intent ' +
+      'instead of Payload; /api/payments/stripe/webhook is live. Payload is never used for Stripe.',
+    whenOff: 'Stripe checkout uses the existing Payload endpoint (/api/create-payment-intent) and ' +
+      "@payloadcms/plugin-stripe's webhook handling (default). New native Stripe routes respond 404.",
   },
   {
     envVar: 'USE_NATIVE_SERVER',
