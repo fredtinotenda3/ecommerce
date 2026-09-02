@@ -1,6 +1,7 @@
 import React from 'react'
 
-import { Page } from '../../../payload/payload-types'
+import { Media as MediaType } from '../../../payload/payload-types'
+import { StorefrontHeroLinksContent } from '../../_types/storefront'
 import { Gutter } from '../../_components/Gutter'
 import { CMSLink } from '../../_components/Link'
 import { Media } from '../../_components/Media'
@@ -8,7 +9,15 @@ import RichText from '../../_components/RichText'
 
 import classes from './index.module.scss'
 
-export const MediumImpactHero: React.FC<Page['hero']> = props => {
+// PHASE 13L: previously `Page['hero']` (from `payload-types.ts`) in full;
+// now `richText`/`links` come from the shared `StorefrontHeroLinksContent`
+// view model (`src/app/_types/storefront.ts`) — same reasoning as
+// `HighImpactHero`. `media` stays typed directly against
+// `payload-types.ts`'s `Media` because it's passed straight through to
+// `<Media resource={media} />` below, which needs the full shape.
+type Props = StorefrontHeroLinksContent & { media: string | MediaType }
+
+export const MediumImpactHero: React.FC<Props> = props => {
   const { richText, media, links } = props
 
   return (

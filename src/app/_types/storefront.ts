@@ -95,6 +95,112 @@ export interface StorefrontFooter {
   navItems?: StorefrontNavItem[]
 }
 
+// ---------------------------------------------------------------------------
+// PHASE 13L — CMS block/hero view models
+// ---------------------------------------------------------------------------
+//
+// The types below extend the Phase 13K `StorefrontCMSLink` chain to the
+// CMS block/hero components that consume `links`/`link` props
+// (`CallToActionBlock`, `ContentBlock`, `HighImpactHero`, `MediumImpactHero`,
+// `CustomHero`, `LowImpactHero`). Same derivation pattern as Phase 13K:
+// each is a structural subset of both the real `payload-types.ts` `Page`
+// shape (`Page['layout'][number]` for the block variants, `Page['hero']`
+// for the hero variants) AND the matching native domain type
+// (`NativeCallToActionBlock`/`NativeContentBlock`/`NativeHero` in
+// `src/lib/domain/types.ts`), with `NativeCMSLink` swapped for
+// `StorefrontCMSLink` throughout (same reasoning as `StorefrontNavItem`
+// above — every real caller only ever populates `reference.value` with
+// `{ slug }` and `icon` with `{ url }`, never a full domain `Page`/`Media`).
+//
+// `media` is deliberately NOT included in any hero type here.
+// `HighImpactHero`/`MediumImpactHero` pass their hero's `media` field
+// straight through to the `<Media resource={...} />` display component,
+// which requires the FULL `payload-types.ts` `Media` shape (specifically
+// `.sizes`, for its responsive `srcset` logic — see `Media/types.ts`,
+// which Phase 13L does not touch, same as every prior phase). Narrowing
+// `media` the way `icon`/`reference.value` are narrowed elsewhere would
+// make it unsafe to pass to `<Media />`. Those two hero components keep
+// `media` typed directly against `payload-types.ts`'s `Media` in their own
+// local prop type instead of through a shared view model here — see
+// `src/app/_heros/HighImpact/index.tsx` / `MediumImpact/index.tsx`.
+// `CustomHero` never passes `media` to the `Media` component (it only
+// reads `.filename` for a CSS `background-image` URL), so it narrows
+// `media` to `string | StorefrontMediaItem` locally instead.
+
+/** The untyped Lexical/Slate-style rich text array every CMS block/hero's
+ * `richText` field carries. Mirrors `NativeRichTextNode[]`
+ * (`src/lib/domain/types.ts`) and is structurally identical to
+ * `payload-types.ts`'s inline `{ [k: string]: unknown }[]` richText shape.
+ * Every component that reads this only ever forwards it to
+ * `<RichText content={...} />` (itself typed `content: any`), so this just
+ * gives the array a name instead of repeating the anonymous type inline. */
+export type StorefrontRichText = Record<string, unknown>[]
+
+/** Mirrors `NativeLinkGroupItem` (`src/lib/domain/types.ts`) — identical
+ * shape to `StorefrontNavItem` above (`{ id?, link: StorefrontCMSLink }`),
+ * aliased separately so `hero.links` / `cta.links` call sites read as "a
+ * list of CMS links" rather than "nav items", matching Payload's own field
+ * naming for these (`hero.links`, `cta.links`) vs. `Header`/`Footer`'s
+ * `navItems`. */
+export type StorefrontLinkGroupItem = StorefrontNavItem
+
+/** The subset of `payload-types.ts`'s `Page['layout'][number]` (the `cta`
+ * block variant) that `CallToActionBlock` actually reads. Mirrors
+ * `NativeCallToActionBlock` (`src/lib/domain/types.ts`) with `links`
+ * narrowed to `StorefrontLinkGroupItem[]` in place of
+ * `NativeLinkGroupItem[]`. Every real Payload `cta` block, and everything
+ * a future native `cta` block producer would build to match
+ * `NativeCallToActionBlock`, satisfies this unchanged. */
+export interface StorefrontCallToActionBlock {
+  invertBackground?: boolean
+  richText: StorefrontRichText
+  links?: StorefrontLinkGroupItem[]
+  id?: string
+  blockName?: string
+  blockType?: 'cta'
+}
+
+/** The subset of `payload-types.ts`'s `Page['layout'][number]['columns'][number]`
+ * (the `content` block's column shape) that `ContentBlock` actually reads.
+ * Mirrors `NativeContentColumn` (`src/lib/domain/types.ts`), `link`
+ * narrowed to `StorefrontCMSLink` in place of `NativeCMSLink`. */
+export interface StorefrontContentColumn {
+  size?: 'oneThird' | 'half' | 'twoThirds' | 'full'
+  richText: StorefrontRichText
+  enableLink?: boolean
+  link?: StorefrontCMSLink
+  id?: string
+}
+
+/** The subset of `payload-types.ts`'s `Page['layout'][number]` (the
+ * `content` block variant) that `ContentBlock` actually reads. Mirrors
+ * `NativeContentBlock` (`src/lib/domain/types.ts`) with `columns` narrowed
+ * to `StorefrontContentColumn[]`. */
+export interface StorefrontContentBlock {
+  invertBackground?: boolean
+  columns?: StorefrontContentColumn[]
+  id?: string
+  blockName?: string
+  blockType?: 'content'
+}
+
+/** The subset of `payload-types.ts`'s `Page['hero']` that `LowImpactHero`
+ * reads (`richText` only — `LowImpactHero` never reads `links` or `media`,
+ * unlike the other three hero variants). */
+export interface StorefrontLowImpactHero {
+  richText: StorefrontRichText
+}
+
+/** The `richText`/`links` subset of `payload-types.ts`'s `Page['hero']`
+ * shared by `HighImpactHero`/`MediumImpactHero`/`CustomHero` — mirrors
+ * `NativeHero` (`src/lib/domain/types.ts`) minus `media` (see the
+ * file-level comment above for why `media` is deliberately excluded here
+ * and typed locally by each of those three components instead). */
+export interface StorefrontHeroLinksContent {
+  richText: StorefrontRichText
+  links?: StorefrontLinkGroupItem[]
+}
+
 /** Anything with a `.url` — matches both `payload-types.ts`'s `Media`
  * and the bare media-id-string state a `string | Media` relation field
  * can be in before population. Deliberately does NOT include `.sizes`

@@ -1,0 +1,72 @@
+PHASE 13L MANIFEST
+==================
+Migrate CMS block/hero components onto the StorefrontCMSLink/NativeCMSLink-derived
+view-model chain established in Phase 13K.
+
+FILES MODIFIED
+--------------
+src/app/_types/storefront.ts
+  - Added: StorefrontRichText, StorefrontLinkGroupItem,
+    StorefrontCallToActionBlock, StorefrontContentColumn,
+    StorefrontContentBlock, StorefrontLowImpactHero,
+    StorefrontHeroLinksContent.
+  - No existing exports changed.
+
+src/app/_blocks/CallToAction/index.tsx
+  - Props type: Extract<Page['layout'][0], { blockType: 'cta' }>
+    -> StorefrontCallToActionBlock
+  - Dropped `payload-types.ts` import.
+
+src/app/_blocks/Content/index.tsx
+  - Props type: Extract<Page['layout'][0], { blockType: 'content' }>
+    -> StorefrontContentBlock
+  - Dropped `payload-types.ts` import.
+
+src/app/_heros/HighImpact/index.tsx
+  - Props type: Page['hero'] -> StorefrontHeroLinksContent & { media: string | MediaType }
+  - `payload-types.ts` import kept (narrowed to `Media` type only), required
+    because `media` is passed to <Media resource={media} /> which needs the
+    full Payload Media shape (.sizes).
+
+src/app/_heros/MediumImpact/index.tsx
+  - Same change/rationale as HighImpact/index.tsx.
+
+src/app/_heros/CustomHero/index.tsx
+  - Props type: Page['hero'] -> StorefrontHeroLinksContent & { media?: string | StorefrontMediaItem }
+  - Dropped `payload-types.ts` import (media never passed to <Media/>, only
+    `.filename` is read).
+  - Removed a pre-existing unused `Media` component import (dead code,
+    behavior-neutral).
+
+src/app/_heros/LowImpact/index.tsx
+  - Props type: Page['hero'] -> StorefrontLowImpactHero
+  - Dropped `payload-types.ts` import.
+
+FILES CREATED
+-------------
+tests/storefrontCmsBlocks.test.ts
+  - 7 tests: type-level construction tests for the new view models, plus
+    runtime tests proving real payload-types.ts Page['layout']/Page['hero']
+    objects remain assignable to the narrowed types unchanged.
+
+FILES NOT CHANGED (explicitly reviewed, no change needed)
+-----------------------------------------------------------
+src/app/_components/RichText/serialize.tsx
+  - Already has zero payload-types.ts dependency (uses `as any` for the
+    `reference` prop it passes to CMSLink). Out of scope for further
+    change under this phase's DO NOT list.
+
+FILES DELETED
+-------------
+(none)
+
+VALIDATION
+----------
+- `npx tsc --noEmit`: only the pre-existing, unrelated ArchiveBlock `sort`
+  prop error remains (confirmed present in the unmodified baseline before
+  this phase's changes). No new type errors introduced.
+- `npx vitest run`: 50 test files, 411 tests passed (404 pre-existing +
+  7 new in tests/storefrontCmsBlocks.test.ts). 0 failures.
+- payload-types.ts import count (src, excluding src/payload/**):
+  Before Phase 13L: 46
+  After Phase 13L:  42
