@@ -124,8 +124,170 @@ export interface Page {
 }
 
 // ---------------------------------------------------------------------------
-// Media
+// CMS layout / hero — native types (PHASE 13I)
 // ---------------------------------------------------------------------------
+//
+// FOUNDATION ONLY — see docs/native-cms-layout-plan.md (written in Phase
+// 13H) for the full design record this section implements step 1 of.
+//
+// These types are a pure, additive alternative to `Page.layout: unknown[]`
+// / `Page.hero: unknown` / `Product.layout: unknown[]` above — they do NOT
+// replace those fields yet, and NOTHING in the codebase constructs or
+// consumes them yet (no adapter, no repository, no component). That wiring
+// is explicitly later phases (see the plan's "Suggested sequencing" §5,
+// steps 2 onward).
+//
+// Mirrors `payload-types.ts`'s generated `Page['layout']` / `Page['hero']`
+// shape (`Product['layout']` reuses the identical four block shapes) field-
+// for-field closely enough that a future mapping layer can convert between
+// them without semantic loss — but every field here is built from this
+// file's OWN vocabulary (`Media`, `Product`, `Category`, `Page` as declared
+// above in this file, plus the few new supporting types below), never
+// imported from `payload-types.ts` or `src/payload/**`. Same treatment as
+// this file's existing `Media` type, which already deliberately duplicates
+// rather than imports Payload's generated `Media`.
+//
+// `id`/`blockName` are carried on every block (as they are in Payload's
+// generated types) even though nothing reads them today, for structural
+// parity with the source shape this is modelled on.
+
+/** A single Lexical/Slate-style rich text node. Same "untyped payload,
+ * typed container" treatment as `Media.caption` above and the existing
+ * `layout: unknown[]` fields — rich text's internal node shape is owned by
+ * the CMS/render layer, not the domain layer, but the field itself (an
+ * array of these) is now a named type instead of bare `unknown[]`. */
+export type NativeRichTextNode = Record<string, unknown>
+
+export type NativeLinkAppearance = 'default' | 'primary' | 'secondary'
+
+/** Mirrors the `CMSLinkShape` documented in
+ * docs/native-cms-layout-plan.md §1 — shared verbatim by `hero.links`,
+ * `cta.links`, and `content.columns[].link` in the Payload source shape.
+ * `reference.value` is `string | Page` (unresolved id vs. populated doc),
+ * matching how `layoutRelationsAdapter.ts`'s `resolveLink` already
+ * represents a resolved reference today (just against this native `Page`
+ * instead of `payload-types.ts`'s). */
+export interface NativeCMSLink {
+  type?: 'reference' | 'custom'
+  newTab?: boolean
+  reference?: {
+    relationTo: 'pages'
+    value: string | Page
+  }
+  url?: string
+  label: string
+  icon?: string | Media
+  appearance?: NativeLinkAppearance
+}
+
+/** Wrapper Payload puts around every link in a `links` array (adds the
+ * array-item `id`, distinct from the link's own fields). */
+export interface NativeLinkGroupItem {
+  id?: string
+  link: NativeCMSLink
+}
+
+export interface NativeCallToActionBlock {
+  blockType: 'cta'
+  id?: string
+  blockName?: string
+  invertBackground?: boolean
+  richText: NativeRichTextNode[]
+  links?: NativeLinkGroupItem[]
+}
+
+export interface NativeContentColumn {
+  id?: string
+  size?: 'oneThird' | 'half' | 'twoThirds' | 'full'
+  richText: NativeRichTextNode[]
+  enableLink?: boolean
+  link?: NativeCMSLink
+}
+
+export interface NativeContentBlock {
+  blockType: 'content'
+  id?: string
+  blockName?: string
+  invertBackground?: boolean
+  columns?: NativeContentColumn[]
+}
+
+/** Named `NativeMediaLayoutBlock`, not `NativeMediaBlock`, to avoid
+ * ambiguity with `Media` above (this is the CMS *block* that displays a
+ * media item, not a media item itself). */
+export interface NativeMediaLayoutBlock {
+  blockType: 'mediaBlock'
+  id?: string
+  blockName?: string
+  invertBackground?: boolean
+  position?: 'default' | 'fullscreen'
+  media: string | Media
+}
+
+/** A single entry in `archive.selectedDocs` / `archive.populatedDocs` —
+ * Payload's generated type unions the unresolved (`value: string`) and
+ * resolved (`value: Product`) forms into two distinct array types; this
+ * flattens that into one item type with a `string | Product` value,
+ * matching how `NativeCMSLink.reference.value` above handles the same
+ * unresolved-vs-resolved distinction for pages. */
+export interface NativeArchiveRelation {
+  relationTo: 'products'
+  value: string | Product
+}
+
+/** Per docs/native-cms-layout-plan.md §3.6, `categories` and
+ * `selectedDocs` are NOT relation-resolved by `layoutRelationsAdapter.ts`
+ * today (no current component reads them) — modelled here as `string[]`
+ * only (unresolved ids), NOT `string[] | Category[]` like
+ * `payload-types.ts`'s does, since nothing in this codebase produces the
+ * resolved form yet. Widening this to allow `Category[]` is a decision
+ * explicitly deferred to the "migrate archive" step (plan §5, step 7),
+ * once/if that resolution gap is closed. `populatedDocs`, which IS
+ * resolved today (see `resolveArchivePopulatedDocs`), keeps the
+ * `string | Product` union via `NativeArchiveRelation` above so a future
+ * mapping layer can represent either state. */
+export interface NativeArchiveBlock {
+  blockType: 'archive'
+  id?: string
+  blockName?: string
+  introContent: NativeRichTextNode[]
+  populateBy?: 'collection' | 'selection'
+  relationTo?: 'products'
+  categories?: string[]
+  limit?: number
+  selectedDocs?: NativeArchiveRelation[]
+  populatedDocs?: NativeArchiveRelation[]
+  populatedDocsTotal?: number
+}
+
+/** Discriminated on `blockType` as a literal (not widened to `string`),
+ * matching docs/native-cms-layout-plan.md §5's "Risks" note on preserving
+ * TypeScript's control-flow narrowing through the union — required for
+ * any future `Blocks`-style dispatcher built against this type to narrow
+ * correctly. Covers the four real CMS-authored blocks only; `relatedProducts`
+ * is explicitly out of scope (see the plan §1 — it's synthesized by
+ * `RelatedProducts`/`ProductHero` at render time, not a Payload block). */
+export type NativeLayoutBlock =
+  | NativeCallToActionBlock
+  | NativeContentBlock
+  | NativeMediaLayoutBlock
+  | NativeArchiveBlock
+
+export type NativeHeroType = 'none' | 'highImpact' | 'mediumImpact' | 'lowImpact' | 'customHero'
+
+/** Mirrors `Page['hero']` — note this is a single shape with a `type`
+ * discriminant field, NOT a discriminated union of per-type shapes: every
+ * hero variant (`highImpact`/`mediumImpact`/`lowImpact`/`customHero`)
+ * shares the same `richText`/`links`/`media` fields in the Payload source
+ * shape, and the hero *component* chosen at render time is what varies,
+ * not the data shape. `ProductHero` (see the plan §1) is out of scope —
+ * it does not consume `Page['hero']` at all. */
+export interface NativeHero {
+  type: NativeHeroType
+  richText: NativeRichTextNode[]
+  links?: NativeLinkGroupItem[]
+  media: string | Media
+}
 
 export interface Media {
   id: string

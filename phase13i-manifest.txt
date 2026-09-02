@@ -1,0 +1,37 @@
+PHASE 13I MANIFEST
+==================
+Generated: 2026-09-01
+
+Files created:
+  tests/nativeCmsLayoutTypes.test.ts
+
+Files modified:
+  src/lib/domain/types.ts
+    (additive only — new "CMS layout / hero — native types (PHASE 13I)"
+    section inserted before the existing "Media" section. No existing
+    line in this file was changed or removed.)
+
+Files deleted:
+  (none)
+
+Files explicitly NOT touched this phase (per the DO NOT list):
+  src/lib/repositories/adapters/layoutRelationsAdapter.ts
+  src/lib/repositories/adapters/pageStorefrontAdapter.ts
+  src/lib/repositories/adapters/productStorefrontAdapter.ts
+  src/app/_components/Blocks/index.tsx
+  src/app/_components/Hero/index.tsx
+  src/app/_blocks/CallToAction/index.tsx
+  src/app/_blocks/Content/index.tsx
+  src/app/_blocks/MediaBlock/index.tsx
+  src/app/_blocks/ArchiveBlock/*
+  src/app/_heros/*
+  src/app/_components/Link/index.tsx (CMSLink)
+  src/app/_components/Header/*, src/app/_components/Footer/*
+  src/app/_providers/Cart/* (reducer/provider)
+  src/app/_components/Media/* (component + responsive media logic)
+  Every "native fetch helper" (fetchPageNative.ts, fetchProductNative.ts,
+    fetchCategoriesNative.ts, fetchGlobalsNative.ts, meNative.ts,
+    fetchPaywallNative.ts)
+  docs/native-cms-layout-plan.md (read only, not modified)
+
+Excluded from zip: node_modules, .next, .git, build output, reports, env files.
