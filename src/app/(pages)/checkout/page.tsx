@@ -1,13 +1,13 @@
 import React, { Fragment } from 'react'
 import { Metadata } from 'next'
 
-import { Settings } from '../../../payload/payload-types'
 import { fetchSettings } from '../../_api/fetchGlobals'
 import { isNativeStripeCheckoutEnabled } from '../../_api/nativeStripeCheckoutFlag'
 import { isPaynowCheckoutEnabled } from '../../_api/paynowCheckoutFlag'
 import { Gutter } from '../../_components/Gutter'
 import { Message } from '../../_components/Message'
 import { LowImpactHero } from '../../_heros/LowImpact'
+import { StorefrontSettingsLike } from '../../_types/storefront'
 import { getMeUser } from '../../_utilities/getMeUser'
 import { mergeOpenGraph } from '../../_utilities/mergeOpenGraph'
 import { CheckoutPage } from './CheckoutPage'
@@ -21,7 +21,12 @@ export default async function Checkout() {
     )}&redirect=${encodeURIComponent('/checkout')}`,
   })
 
-  let settings: Settings | null = null
+  // PHASE 13G: narrowed from the full `payload-types.ts` `Settings` —
+  // this file only ever passes `settings` straight through to
+  // `CheckoutPage`, which itself only reads `settings.productsPage.slug`
+  // (already narrowed to `StorefrontSettingsLike` in Phase 13F-B). Never
+  // read directly in this file.
+  let settings: StorefrontSettingsLike | null = null
 
   try {
     settings = await fetchSettings()

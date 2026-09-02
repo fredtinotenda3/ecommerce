@@ -62,3 +62,34 @@ export interface StorefrontCategory {
   title?: string | null
   media?: StorefrontMediaRef
 }
+
+/** PHASE 13G — the subset of `payload-types.ts`'s `Order` that the
+ * order-*list* pages (`/orders`, `/account/orders`) actually read: a
+ * summary row of id/total/createdAt. Deliberately does NOT include
+ * `.items`, `.stripePaymentIntentID`, or any populated `Product`/`User`
+ * relation — the order-*detail* pages (`/orders/[id]`,
+ * `/account/orders/[id]`) need those (they render a populated
+ * `Product`'s `meta.image` through the `Media` display component,
+ * which needs `.sizes`), so they intentionally stay on the full
+ * `Order` type and were left unchanged. */
+export interface StorefrontOrderSummary {
+  id: string
+  total: number
+  createdAt: string
+}
+
+/** PHASE 13G — the subset of `payload-types.ts`'s `Page`/`Product` that
+ * `generateMeta` actually reads: `.slug` and a few `.meta` fields for
+ * an SEO/Open-Graph tag, including the `.meta.image` media relation —
+ * read only for its `.url` (see `StorefrontMediaRef`), never `.sizes`.
+ * Every real `Page`/`Product` (and the `staticHome`/`staticCart` seed
+ * fallbacks, which are plain `Page`-shaped objects) satisfies this
+ * unchanged. */
+export interface StorefrontMetaDoc {
+  slug?: string | null
+  meta?: {
+    title?: string | null
+    description?: string | null
+    image?: StorefrontMediaRef
+  } | null
+}

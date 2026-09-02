@@ -2,7 +2,7 @@ import React, { Fragment } from 'react'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
-import { Page, Settings } from '../../../payload/payload-types'
+import { Page } from '../../../payload/payload-types'
 import { staticCart } from '../../../payload/seed/cart-static'
 import { fetchDoc } from '../../_api/fetchDoc'
 import { fetchSettings } from '../../_api/fetchGlobals'
@@ -10,6 +10,7 @@ import { Blocks } from '../../_components/Blocks'
 import { Gutter } from '../../_components/Gutter'
 import { Hero } from '../../_components/Hero'
 import { Message } from '../../_components/Message'
+import { StorefrontSettingsLike } from '../../_types/storefront'
 import { generateMeta } from '../../_utilities/generateMeta'
 import { CartPage } from './CartPage'
 
@@ -45,7 +46,14 @@ export default async function Cart() {
     return notFound()
   }
 
-  let settings: Settings | null = null
+  // PHASE 13G: narrowed from the full `payload-types.ts` `Settings` —
+  // this file only ever passes `settings` straight through to
+  // `CartPage`, which itself only reads `settings.productsPage.slug`
+  // (already narrowed to `StorefrontSettingsLike` in Phase 13F-B). Never
+  // read directly in this file. `Page` is kept — `page.layout` still
+  // goes to `<Blocks>` (a CMS layout union) and `page` is still passed
+  // whole to `generateMeta`.
+  let settings: StorefrontSettingsLike | null = null
 
   try {
     settings = await fetchSettings()
@@ -60,7 +68,7 @@ export default async function Cart() {
     <div className={classes.container}>
       <Gutter>
         <h3>Cart</h3>
-        <CartPage settings={settings} page={page} />
+        <CartPage settings={settings} />
       </Gutter>
       <Blocks blocks={page?.layout} disableBottomPadding />
     </div>

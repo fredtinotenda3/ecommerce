@@ -1,9 +1,17 @@
 import type { Metadata } from 'next'
 
-import type { Page, Product } from '../../payload/payload-types'
+import type { StorefrontMetaDoc } from '../_types/storefront'
 import { mergeOpenGraph } from './mergeOpenGraph'
 
-export const generateMeta = async (args: { doc: Page | Product }): Promise<Metadata> => {
+// PHASE 13G: narrowed from the full `payload-types.ts` `Page | Product`
+// — this function only ever reads `.slug` and a few `.meta` fields
+// (including `.meta.image`, read only for its `.url`, same as
+// `StorefrontMediaRef` — never `.sizes`). See StorefrontMetaDoc's doc
+// comment in src/app/_types/storefront.ts. Every real `Page`/`Product`,
+// and the `staticHome`/`staticCart` seed fallbacks, satisfy this
+// unchanged — none of `generateMeta`'s three call sites needed to
+// change.
+export const generateMeta = async (args: { doc: StorefrontMetaDoc }): Promise<Metadata> => {
   const { doc } = args || {}
 
   const ogImage =

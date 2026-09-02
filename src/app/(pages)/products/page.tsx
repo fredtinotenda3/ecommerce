@@ -2,7 +2,7 @@
 import React from 'react'
 import { draftMode } from 'next/headers'
 
-import { Category, Page } from '../../../payload/payload-types'
+import { Page } from '../../../payload/payload-types'
 import { isNativeRepositoryEnabled } from '../../_api/dataSource'
 import { fetchCategoriesNative } from '../../_api/fetchCategoriesNative'
 import { fetchDoc } from '../../_api/fetchDoc'
@@ -11,6 +11,7 @@ import { fetchPageNative } from '../../_api/fetchPageNative'
 import { Blocks } from '../../_components/Blocks'
 import { Gutter } from '../../_components/Gutter'
 import { HR } from '../../_components/HR'
+import { StorefrontCategory } from '../../_types/storefront'
 import Filters from './Filters'
 
 import classes from './index.module.scss'
@@ -19,7 +20,12 @@ const Products = async () => {
   const { isEnabled: isDraftMode } = draftMode()
 
   let page: Page | null = null
-  let categories: Category[] | null = null
+  // PHASE 13G: narrowed from the full `payload-types.ts` `Category[]` —
+  // this file only ever passes the array straight through to
+  // `<Filters>` (already narrowed to `StorefrontCategory[]` in Phase
+  // 13F-B). `Page` is kept — `page.layout` is still a CMS discriminated
+  // union with no native equivalent to narrow to.
+  let categories: StorefrontCategory[] | null = null
 
   try {
     page = isNativeRepositoryEnabled()
@@ -32,7 +38,7 @@ const Products = async () => {
 
     categories = isNativeRepositoryEnabled()
       ? await fetchCategoriesNative()
-      : await fetchDocs<Category>('categories')
+      : await fetchDocs<StorefrontCategory>('categories')
   } catch (error) {
     console.log(error)
   }

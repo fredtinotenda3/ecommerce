@@ -3,7 +3,6 @@
 import React, { Fragment } from 'react'
 import Link from 'next/link'
 
-import { Page } from '../../../../payload/payload-types'
 import { Button } from '../../../_components/Button'
 import { HR } from '../../../_components/HR'
 import { LoadingShimmer } from '../../../_components/LoadingShimmer'
@@ -24,7 +23,12 @@ export const CartPage: React.FC<{
   // Every existing caller already passes a real `Settings`, which
   // satisfies this narrower shape unchanged.
   settings: StorefrontSettingsLike
-  page: Page
+  // PHASE 13G: dropped the `page: Page` prop entirely — it was declared
+  // but never read anywhere in this component (confirmed via the
+  // 13F-B report, which flagged it as "already-unused" but left it as
+  // out of scope). Removing an unused prop is not a behavior change:
+  // nothing here ever depended on it. The caller (`cart/page.tsx`) was
+  // updated in the same commit to stop passing it.
 }> = props => {
   const { settings } = props
   const { productsPage } = settings || {}

@@ -3,11 +3,11 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
-import { Order } from '../../../payload/payload-types'
 import { Button } from '../../_components/Button'
 import { Gutter } from '../../_components/Gutter'
 import { HR } from '../../_components/HR'
 import { RenderParams } from '../../_components/RenderParams'
+import { StorefrontOrderSummary } from '../../_types/storefront'
 import { formatDateTime } from '../../_utilities/formatDateTime'
 import { getMeUser } from '../../_utilities/getMeUser'
 import { mergeOpenGraph } from '../../_utilities/mergeOpenGraph'
@@ -21,7 +21,13 @@ export default async function Orders() {
     )}&redirect=${encodeURIComponent('/orders')}`,
   })
 
-  let orders: Order[] | null = null
+  // PHASE 13G: narrowed from the full `payload-types.ts` `Order[]` —
+  // this page only ever reads `order.id` / `.total` / `.createdAt` for
+  // a summary row, never `.items` or any populated relation (see
+  // StorefrontOrderSummary's doc comment in src/app/_types/storefront.ts).
+  // The order-detail page keeps the full `Order` type since it renders
+  // a populated `Product`'s image through `Media`.
+  let orders: StorefrontOrderSummary[] | null = null
 
   try {
     orders = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/orders`, {
