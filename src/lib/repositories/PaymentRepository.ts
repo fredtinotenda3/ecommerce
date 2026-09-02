@@ -16,6 +16,15 @@ export interface PaymentRepository {
   getById(id: string): Promise<Payment | null>
   getByOrderId(orderId: string): Promise<Payment[]>
   getByMerchantReference(merchantReference: string): Promise<Payment | null>
+  /** PHASE 13F-A — looks a Payment up by the PROVIDER's own identifier
+   * (e.g. a Stripe PaymentIntent id) rather than our merchant reference.
+   * Needed because an inbound Stripe webhook event only ever carries
+   * `event.data.object.id` (the PaymentIntent id) — it has no idea what
+   * merchant reference we generated for it. `providerReference` is
+   * already indexed (see db/models/Payment.ts), just not unique (a
+   * provider reference is only known/written after Payment creation,
+   * unlike merchantReference). */
+  getByProviderReference(providerReference: string): Promise<Payment | null>
   create(input: CreatePaymentInput): Promise<Payment>
   updateStatus(
     id: string,
@@ -68,6 +77,12 @@ export class MongoPaymentRepository implements PaymentRepository {
   async getByMerchantReference(merchantReference: string): Promise<Payment | null> {
     const Model = getPaymentModel(this.connection)
     const doc = await Model.findOne({ merchantReference }).lean<PaymentDocument>().exec()
+    return doc ? toDomain(doc as unknown as PaymentDocument) : null
+  }
+
+  async getByProviderReference(providerReference: string): Promise<Payment | null> {
+    const Model = getPaymentModel(this.connection)
+    const doc = await Model.findOne({ providerReference }).lean<PaymentDocument>().exec()
     return doc ? toDomain(doc as unknown as PaymentDocument) : null
   }
 

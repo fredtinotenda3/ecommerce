@@ -66,10 +66,13 @@ const flags: FlagStatus[] = [
   {
     envVar: 'USE_NATIVE_STRIPE_CHECKOUT',
     enabled: isNativeStripeCheckoutEnabled(),
-    whenOn: 'PHASE 13E: Stripe checkout requests a PaymentIntent from /api/checkout/stripe/create-payment-intent ' +
-      'instead of Payload; /api/payments/stripe/webhook is live. Payload is never used for Stripe.',
-    whenOff: 'Stripe checkout uses the existing Payload endpoint (/api/create-payment-intent) and ' +
-      "@payloadcms/plugin-stripe's webhook handling (default). New native Stripe routes respond 404.",
+    whenOn: 'PHASE 13E/13F-A: Stripe checkout requests a PaymentIntent from /api/checkout/stripe/create-payment-intent ' +
+      'instead of Payload; CheckoutForm creates the order via /api/orders/native (OrderService-backed) instead of ' +
+      "Payload's /api/orders; /api/payments/stripe/webhook reconciles payment_intent.* events against those native " +
+      'Order/Payment records. Payload is never used for Stripe.',
+    whenOff: 'Stripe checkout uses the existing Payload endpoint (/api/create-payment-intent), CheckoutForm posts to ' +
+      "Payload's /api/orders, and @payloadcms/plugin-stripe's webhook handling is used (default). New native Stripe " +
+      'routes (including /api/orders/native) all respond 404.',
   },
   {
     envVar: 'USE_NATIVE_SERVER',

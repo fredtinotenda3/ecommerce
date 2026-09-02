@@ -17,18 +17,29 @@ import Stripe from 'stripe'
 
 import { getDbConnection } from '../../lib/db/connection'
 import type { CartItem } from '../../lib/domain/types'
+import { StripeProvider } from '../../lib/payments/StripeProvider'
+import { MongoOrderRepository } from '../../lib/repositories/OrderRepository'
+import { MongoPaymentRepository } from '../../lib/repositories/PaymentRepository'
 import { MongoProductRepository } from '../../lib/repositories/ProductRepository'
 import { MongoUserRepository } from '../../lib/repositories/UserRepository'
 import { CartService } from '../../lib/services/CartService'
+import { OrderService } from '../../lib/services/OrderService'
+import { PaymentService } from '../../lib/services/PaymentService'
 import {
   createStripePaymentIntent,
   type CreateStripePaymentIntentResult,
   type StripePaymentIntentGateway,
 } from '../../lib/services/StripeCheckoutService'
 import {
+  createNativeStripeOrder,
+  type CreateNativeStripeOrderResult,
+} from '../../lib/services/StripeOrderService'
+import {
   processStripeWebhookEvent,
+  reconcileStripePaymentIntentEvent,
   type StripeEventLike,
   type StripeWebhookHandlingResult,
+  type StripeWebhookReconciliationResult,
   type StripeWebhookVerifier,
 } from '../../lib/services/StripeWebhookService'
 
@@ -92,6 +103,43 @@ const stripeWebhookVerifier: StripeWebhookVerifier = {
   },
 }
 
+// The StripeProvider adapter holds no request-scoped state either (see
+// its own file header) — safe to build once and reuse, same rationale
+// as the cached Stripe SDK client above.
+let cachedStripeProvider: StripeProvider | null = null
+const getStripeProvider = (): StripeProvider => {
+  if (!cachedStripeProvider) {
+    cachedStripeProvider = new StripeProvider()
+  }
+  return cachedStripeProvider
+}
+
+interface StripeOrderWiring {
+  orderRepository: MongoOrderRepository
+  paymentRepository: MongoPaymentRepository
+  productRepository: MongoProductRepository
+  userRepository: MongoUserRepository
+  orderService: OrderService
+  paymentService: PaymentService
+}
+
+const getOrderWiring = async (): Promise<StripeOrderWiring> => {
+  const connection = await getDbConnection()
+  const orderRepository = new MongoOrderRepository(connection)
+  const paymentRepository = new MongoPaymentRepository(connection)
+  const productRepository = new MongoProductRepository(connection)
+  const userRepository = new MongoUserRepository(connection)
+
+  return {
+    orderRepository,
+    paymentRepository,
+    productRepository,
+    userRepository,
+    orderService: new OrderService(orderRepository, productRepository),
+    paymentService: new PaymentService(paymentRepository, getStripeProvider()),
+  }
+}
+
 /** Reads the given customer's cart fresh from the database (native
  * `users.cart.items`, the same underlying collection Payload's own cart
  * UI writes — see paynowCheckout.ts's `getCustomerCartItemsNative` for
@@ -132,3 +180,43 @@ export const processStripeWebhookEventNative = (
     verifier: stripeWebhookVerifier,
     webhookSecret: process.env.STRIPE_WEBHOOKS_SIGNING_SECRET,
   })
+
+/** PHASE 13F-A — the ONLY source of cart items the native order-creation
+ * route handler is allowed to use — read fresh from the database for the
+ * given customer, never accepted from the request body. Same
+ * `UserRepository`-backed precedent as paynowCheckout.ts's
+ * `getCustomerCartItemsNative`. */
+export const getCustomerCartItemsNativeStripe = async (customerId: string): Promise<CartItem[]> => {
+  const { userRepository } = await getOrderWiring()
+  const user = await userRepository.getById(customerId)
+  return user?.cart ?? []
+}
+
+/** PHASE 13F-A — creates a native Order + Payment for a native Stripe
+ * checkout (see StripeOrderService.ts for the orchestration and
+ * idempotency contract). This is what /api/orders/native calls. */
+export const createNativeStripeOrderNative = async (input: {
+  customerId: string
+  cartItems: CartItem[]
+  paymentIntentId: string
+}): Promise<CreateNativeStripeOrderResult> => {
+  const { orderService, paymentService, paymentRepository } = await getOrderWiring()
+  return createNativeStripeOrder(input, { orderService, paymentService, paymentRepository })
+}
+
+/** PHASE 13F-A — reconciles one verified `payment_intent.*` webhook
+ * event (see StripeWebhookService.ts's `reconcileStripePaymentIntentEvent`
+ * for the full contract: idempotency, order/cart transitions). Returns
+ * `null` for an event type this phase doesn't reconcile — the caller
+ * should treat that the same as `handled: false`. */
+export const reconcileStripePaymentIntentEventNative = async (
+  eventType: string,
+  paymentIntentId: string,
+): Promise<StripeWebhookReconciliationResult | null> => {
+  const { paymentRepository, orderRepository, userRepository } = await getOrderWiring()
+  return reconcileStripePaymentIntentEvent(eventType, paymentIntentId, {
+    paymentRepository,
+    orderRepository,
+    userRepository,
+  })
+}

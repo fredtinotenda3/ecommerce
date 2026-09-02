@@ -222,7 +222,7 @@ export const CheckoutPage: React.FC<{
                   },
                 }}
               >
-                <CheckoutForm />
+                <CheckoutForm nativeStripeCheckoutEnabled={nativeStripeCheckoutEnabled} />
               </Elements>
             </Fragment>
           )}

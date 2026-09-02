@@ -19,6 +19,10 @@ export class FakePaymentRepository implements PaymentRepository {
     return Array.from(this.payments.values()).find(p => p.merchantReference === merchantReference) ?? null
   }
 
+  async getByProviderReference(providerReference: string): Promise<Payment | null> {
+    return Array.from(this.payments.values()).find(p => p.providerReference === providerReference) ?? null
+  }
+
   /** Mirrors the real repository's unique-index behavior: creating a
    * second payment with a merchant reference that already exists throws,
    * so PaymentService's race-handling path is exercised the same way it

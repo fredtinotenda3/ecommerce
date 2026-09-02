@@ -19,16 +19,33 @@
 // verification — a parsed/re-serialized body will not match the
 // signature) via `request.text()`, matching Stripe's own documented
 // webhook-handling guidance.
+//
+// PHASE 13F-A — after a `payment_intent.*` event is verified and
+// classified as `handled`, this route now also reconciles it against
+// the native Order/Payment records `POST /api/orders/native` created
+// (see StripeWebhookService.ts's `reconcileStripePaymentIntentEvent`):
+// transitions Payment/Order status and, on the delivery that first
+// confirms payment, clears the customer's cart. Always acknowledges a
+// signature-valid event with 2xx regardless of reconciliation outcome
+// (duplicate or not) — a non-2xx response makes Stripe retry
+// indefinitely on what may otherwise be a fully processed, idempotent
+// no-op, same rationale as the Paynow callback route.
 
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
+import { InvalidPaymentTransitionError } from '../../../../../lib/services/orderStateMachine'
 import {
+  StripeOrderNotFoundError,
+  StripePaymentNotFoundError,
   StripeWebhookConfigError,
   StripeWebhookSignatureError,
 } from '../../../../../lib/services/StripeWebhookService'
 import { guardNativeStripeCheckoutEnabled } from '../../../../_api/nativeStripeCheckoutFlag'
-import { processStripeWebhookEventNative } from '../../../../_api/stripeCheckoutNative'
+import {
+  processStripeWebhookEventNative,
+  reconcileStripePaymentIntentEventNative,
+} from '../../../../_api/stripeCheckoutNative'
 
 export async function POST(request: NextRequest): Promise<Response> {
   const guard = guardNativeStripeCheckoutEnabled()
@@ -39,7 +56,52 @@ export async function POST(request: NextRequest): Promise<Response> {
 
   try {
     const result = processStripeWebhookEventNative(rawBody, signature)
-    return NextResponse.json({ received: true, ...result })
+
+    if (!result.handled || !result.paymentIntentId) {
+      return NextResponse.json({ received: true, ...result })
+    }
+
+    try {
+      const reconciliation = await reconcileStripePaymentIntentEventNative(
+        result.eventType,
+        result.paymentIntentId,
+      )
+      return NextResponse.json({
+        received: true,
+        ...result,
+        reconciled: reconciliation !== null,
+        duplicate: reconciliation?.duplicate ?? false,
+      })
+    } catch (reconcileError: unknown) {
+      if (
+        reconcileError instanceof StripePaymentNotFoundError ||
+        reconcileError instanceof StripeOrderNotFoundError
+      ) {
+        // Signature-valid, but references a Payment/Order we don't
+        // recognize (e.g. the client's POST to /api/orders/native
+        // hasn't landed yet, or this webhook is pointed at the wrong
+        // environment's database). Logged for investigation.
+        // eslint-disable-next-line no-console
+        console.error('Native Stripe webhook for unknown Payment/Order:', reconcileError.message)
+        return NextResponse.json({ error: 'Unknown payment' }, { status: 404 })
+      }
+      if (reconcileError instanceof InvalidPaymentTransitionError) {
+        // Signature-valid, but reports a status transition the state
+        // machine doesn't allow for wherever this Payment currently is
+        // (e.g. an out-of-order/stale delivery). NOT the duplicate/
+        // idempotent case — that's handled inside the reconciliation
+        // function without throwing. Logged, deliberately not applied,
+        // acknowledged with 200 since retrying will not change the
+        // outcome.
+        // eslint-disable-next-line no-console
+        console.error(
+          'Native Stripe webhook: invalid payment status transition:',
+          reconcileError.message,
+        )
+        return NextResponse.json({ received: true, ignored: true }, { status: 200 })
+      }
+      throw reconcileError
+    }
   } catch (error: unknown) {
     if (error instanceof StripeWebhookSignatureError) {
       return NextResponse.json({ error: error.message }, { status: 400 })
