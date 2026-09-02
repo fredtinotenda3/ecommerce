@@ -1,0 +1,39 @@
+PHASE 13J MANIFEST
+==================
+Generated: 2026-09-02
+
+Files created:
+  (none)
+
+Files modified:
+  src/lib/repositories/adapters/layoutRelationsAdapter.ts
+    (internal rewrite: real structural validation against
+    NativeLayoutBlock/NativeHero/NativeCMSLink from src/lib/domain/types.ts,
+    replacing the untyped `switch (block.blockType)` string-comparison walk.
+    External function signatures (resolveStorefrontLayout,
+    resolveStorefrontHero) and their return shapes are unchanged.)
+  tests/layoutRelationsAdapter.test.ts
+    (all 10 pre-existing tests left completely unchanged, still passing —
+    proves relationship-resolution behavior for well-formed input is
+    unchanged. 11 new tests appended covering missing/optional fields,
+    malformed field shapes, non-object layout entries, unrecognized
+    blockType/hero.type, and fail-safe try/catch behavior when a
+    repository throws.)
+
+Files deleted:
+  (none)
+
+Files explicitly NOT touched this phase (per the DO NOT list):
+  src/lib/repositories/adapters/pageStorefrontAdapter.ts
+  src/lib/repositories/adapters/productStorefrontAdapter.ts
+    (both still contain their pre-existing unchecked
+    `as PayloadPage['layout']` / `as PayloadPage['hero']` casts, verified
+    unchanged after this phase's edits)
+  Any UI component (Blocks, Hero, block/hero components, CMSLink, Header,
+    Footer, etc.)
+  src/app/_providers/Cart/* (reducer/provider)
+  src/app/_components/Media/* (component + responsive media logic)
+  src/lib/domain/types.ts (Phase 13I's types consumed as-is, not modified)
+  docs/native-cms-layout-plan.md (read only, not modified)
+
+Excluded from zip: node_modules, .next, .git, build output, reports, env files.
