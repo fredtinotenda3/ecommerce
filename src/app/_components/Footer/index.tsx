@@ -1,13 +1,15 @@
 import React from 'react'
 import Link from 'next/link'
 
-import { Footer } from '../../../payload/payload-types'
 import { fetchFooter } from '../../_api/fetchGlobals'
+import { StorefrontFooter } from '../../_types/storefront'
 import { ErrorBoundary } from '../ErrorBoundary'
 import FooterComponent from './FooterComponent'
 
 export async function Footer() {
-  let footer: Footer | null = null
+  // PHASE 13K: `footer` is narrowed to `StorefrontFooter` — see the
+  // matching comment in ../Header/index.tsx for why this is safe.
+  let footer: StorefrontFooter | null = null
 
   try {
     footer = await fetchFooter()

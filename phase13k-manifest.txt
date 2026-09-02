@@ -1,0 +1,28 @@
+PHASE 13K — Link/Reference Union Migration
+Manifest of changed/new files (relative to repo root)
+
+MODIFIED
+  src/app/_types/storefront.ts
+  src/app/_components/Link/index.tsx
+  src/app/_components/Header/index.tsx
+  src/app/_components/Header/HeaderComponent/index.tsx
+  src/app/_components/Header/Nav/index.tsx
+  src/app/_components/Footer/index.tsx
+  src/app/_components/Footer/FooterComponent/index.tsx
+
+CREATED
+  src/app/_components/Link/resolveHref.ts
+  tests/resolveCMSLinkHref.test.ts
+  tests/storefrontCmsLink.test.ts
+
+DELETED
+  (none)
+
+Verification performed:
+  npx tsc --noEmit -p tsconfig.json
+    -> only pre-existing, unrelated error remains (src/app/_blocks/ArchiveBlock/index.tsx,
+       confirmed present in the unmodified Phase 13J baseline before this phase's changes)
+  npx vitest run
+    -> 49 test files, 404 tests, all passing (includes the 2 new Phase 13K test files)
+  npx eslint <changed files> --fix
+    -> only import-order autofixes applied; no remaining lint errors

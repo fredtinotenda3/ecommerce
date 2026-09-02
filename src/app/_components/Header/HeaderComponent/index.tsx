@@ -5,14 +5,17 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-import { Header } from '../../../../payload/payload-types'
+import { StorefrontHeader } from '../../../_types/storefront'
 import { noHeaderFooterUrls } from '../../../constants'
 import { Gutter } from '../../Gutter'
 import { HeaderNav } from '../Nav'
 
 import classes from './index.module.scss'
 
-const HeaderComponent = ({ header }: { header: Header | null }) => {
+// PHASE 13K: narrowed from `payload-types.ts`'s `Header` to
+// `StorefrontHeader` — see the matching comment in ../Nav/index.tsx, which
+// this component just forwards `header` on to unchanged.
+const HeaderComponent = ({ header }: { header: StorefrontHeader | null }) => {
   // `header` may be `null` here (see src/app/_components/Header/index.tsx's
   // try/catch, e.g. when the native repository has no Header global yet) —
   // `HeaderNav` below already null-guards `header?.navItems`.

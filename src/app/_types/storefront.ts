@@ -23,6 +23,77 @@
 // when a new leaf component needs another read-only, non-relational
 // field — that keeps this safe/narrow migration path open for future
 // phases instead of undoing it.
+//
+// PHASE 13K — `StorefrontCMSLink`/`StorefrontNavItem`/`StorefrontHeader`/
+// `StorefrontFooter` below are *derived* from `NativeCMSLink`
+// (src/lib/domain/types.ts) with `Omit<...>` rather than hand-duplicated
+// field-for-field like the interfaces above — see each type's doc comment
+// for why the specific fields are overridden. This is the "compatible
+// storefront view model" half of the Phase 13K objective (migrate the
+// shared Header/Footer/CMSLink nav consumers onto `NativeCMSLink` "where
+// safe"): a literal `reference?: { relationTo: 'pages'; value: string |
+// Page }` (domain `Page`, which requires `status`/`layout`/`hero`/etc.)
+// is NOT safe here, because every real caller — both the default
+// Payload/GraphQL path (payload-types.ts's `Header`/`Footer`) and the
+// flag-gated native path (globalsStorefrontAdapter.ts's
+// `toStorefrontHeader`/`toStorefrontFooter`) — only ever populates
+// `reference.value` with `{ slug }`, never a full `Page`. Same reasoning
+// applies to `icon` (never a full `Media`, just `{ url }`) and `label`
+// (Payload's generated type marks it required; the real GraphQL/native
+// data doesn't always populate it, matching the pre-13K `CMSLinkType`).
+
+import type { NativeCMSLink } from '../../lib/domain/types'
+
+/** The subset of `NativeCMSLink` that `Header`/`Footer` nav items and
+ * `CMSLink` actually exchange — `type`/`newTab`/`url`/`appearance` are
+ * kept as-is from `NativeCMSLink`, while `reference`/`icon`/`label` are
+ * narrowed to the `{ slug }`/`{ url }`/optional shapes every real caller
+ * (Payload GraphQL, and the native `globalsStorefrontAdapter.ts` path)
+ * actually produces — see the file-level comment above. Every real
+ * `payload-types.ts` `Header['navItems'][number]['link']` /
+ * `Footer['navItems'][number]['link']`, and everything
+ * `globalsStorefrontAdapter.ts`'s `toStorefrontLink` produces, satisfies
+ * this unchanged. */
+export type StorefrontCMSLink = Omit<NativeCMSLink, 'reference' | 'icon' | 'label'> & {
+  reference?: {
+    relationTo: 'pages'
+    value: string | StorefrontLinkablePage
+  }
+  /** Kept as a `string | StorefrontMediaItem` union (matching
+   * `payload-types.ts`'s `string | Media` and `NativeCMSLink`'s
+   * `string | Media`) rather than narrowed to just `StorefrontMediaItem`,
+   * because an *unresolved* relation (before Payload/the native adapter
+   * populates it) really can be the bare id string — narrowing this away
+   * would make `StorefrontFooter`/`StorefrontHeader` unsafe to assign the
+   * real `fetchHeader()`/`fetchFooter()` return value to (see
+   * ../_components/Footer/FooterComponent/index.tsx, the one reader of
+   * this field, for how it's narrowed further at the point of use). */
+  icon?: string | StorefrontMediaItem
+  label?: string
+}
+
+/** Mirrors the `{ link, id? }` wrapper Payload puts around every nav item
+ * (see `NativeLinkGroupItem` in domain/types.ts, which this deliberately
+ * parallels with the narrower `StorefrontCMSLink` in place of
+ * `NativeCMSLink`). */
+export interface StorefrontNavItem {
+  id?: string
+  link: StorefrontCMSLink
+}
+
+/** The subset of `payload-types.ts`'s `Header` that `HeaderComponent`/
+ * `HeaderNav` actually read. */
+export interface StorefrontHeader {
+  navItems?: StorefrontNavItem[]
+}
+
+/** The subset of `payload-types.ts`'s `Footer` that `FooterComponent`
+ * actually reads: `copyright` plus the same nav items as `StorefrontHeader`
+ * above (used here for the social-link icons, not page navigation). */
+export interface StorefrontFooter {
+  copyright?: string | null
+  navItems?: StorefrontNavItem[]
+}
 
 /** Anything with a `.url` — matches both `payload-types.ts`'s `Media`
  * and the bare media-id-string state a `string | Media` relation field

@@ -1,23 +1,27 @@
 import React from 'react'
 import Link from 'next/link'
 
-import { StorefrontLinkablePage } from '../../_types/storefront'
+import { StorefrontCMSLink } from '../../_types/storefront'
 import { Button, Props as ButtonProps } from '../Button'
+import { resolveCMSLinkHref } from './resolveHref'
 
-type CMSLinkType = {
-  type?: 'custom' | 'reference'
-  url?: string
-  newTab?: boolean
-  reference?: {
-    // PHASE 13F-B: narrowed from `string | Page` — this component only
-    // ever reads `.slug` to build the internal href (see
-    // StorefrontLinkablePage's doc comment in
-    // src/app/_types/storefront.ts). Every existing caller already
-    // spreads a real Payload `Page['hero']['links'][number]['link']`
-    // (or equivalent), which satisfies this narrower shape unchanged.
-    value: string | StorefrontLinkablePage
-    relationTo: 'pages'
-  }
+// PHASE 13K: previously a hand-written, standalone shape; now derived from
+// `StorefrontCMSLink` (src/app/_types/storefront.ts), itself an
+// `Omit<NativeCMSLink, ...>` of the native domain type
+// (src/lib/domain/types.ts) — see that file's header comment for why
+// `reference`/`icon`/`label` are narrowed rather than used as-is. `label`
+// and `appearance` are re-widened here to this component's own,
+// slightly different needs (`label` optional; `appearance` matches
+// `ButtonProps['appearance']`, which includes `'none'` — used by
+// `HeaderNav` — unlike `NativeCMSLink`'s `NativeLinkAppearance`). `icon`
+// is dropped entirely — this component has never read it (only
+// `FooterComponent` does, directly off the nav item, not through
+// `CMSLink`) — same as the pre-13K shape. `children`/`className`/`invert`
+// are this component's own additions, unrelated to the CMS link shape.
+// Every existing caller already spreads a real Payload
+// `Page['hero']['links'][number]['link']` (or the Header/Footer nav item
+// equivalent), which satisfies this narrower shape unchanged.
+type CMSLinkType = Omit<StorefrontCMSLink, 'appearance' | 'label' | 'icon'> & {
   label?: string
   appearance?: ButtonProps['appearance']
   children?: React.ReactNode
@@ -36,12 +40,7 @@ export const CMSLink: React.FC<CMSLinkType> = ({
   className,
   invert,
 }) => {
-  const href =
-    type === 'reference' && typeof reference?.value === 'object' && reference.value.slug
-      ? `${reference?.relationTo !== 'pages' ? `/${reference?.relationTo}` : ''}/${
-          reference.value.slug
-        }`
-      : url
+  const href = resolveCMSLinkHref({ type, reference, url })
 
   if (!href) return null
 
