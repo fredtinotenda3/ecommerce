@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 
-import { Product } from '../../../payload/payload-types'
+import { StorefrontPriceableProduct } from '../../_types/storefront'
 
 import classes from './index.module.scss'
 
@@ -38,7 +38,12 @@ export const priceFromJSON = (priceJSON: string, quantity: number = 1, raw?: boo
 }
 
 export const Price: React.FC<{
-  product: Product
+  // PHASE 13F-B: narrowed from the full `payload-types.ts` `Product` —
+  // this component only ever reads `priceJSON` (see StorefrontPriceableProduct's
+  // doc comment in src/app/_types/storefront.ts). Every existing caller
+  // already passes a real `Product` (or a native-adapter-built
+  // equivalent), which satisfies this narrower shape unchanged.
+  product: StorefrontPriceableProduct
   quantity?: number
   button?: 'addToCart' | 'removeFromCart' | false
 }> = props => {

@@ -3,11 +3,14 @@
 import React, { Fragment, useEffect, useState } from 'react'
 import Link from 'next/link'
 
-import { Settings } from '../../../../payload/payload-types'
 import { useAuth } from '../../../_providers/Auth'
+import { StorefrontSettingsLike } from '../../../_types/storefront'
 
 export const LogoutPage: React.FC<{
-  settings: Settings
+  // PHASE 13F-B: narrowed from the full `payload-types.ts` `Settings` —
+  // see CartPage/index.tsx's identical comment (and
+  // StorefrontSettingsLike's doc comment in src/app/_types/storefront.ts).
+  settings: StorefrontSettingsLike
 }> = props => {
   const { settings } = props
   const { productsPage } = settings || {}

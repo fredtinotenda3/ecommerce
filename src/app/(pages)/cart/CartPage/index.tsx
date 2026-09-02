@@ -3,7 +3,7 @@
 import React, { Fragment } from 'react'
 import Link from 'next/link'
 
-import { Page, Settings } from '../../../../payload/payload-types'
+import { Page } from '../../../../payload/payload-types'
 import { Button } from '../../../_components/Button'
 import { HR } from '../../../_components/HR'
 import { LoadingShimmer } from '../../../_components/LoadingShimmer'
@@ -12,12 +12,18 @@ import { Price } from '../../../_components/Price'
 import { RemoveFromCartButton } from '../../../_components/RemoveFromCartButton'
 import { useAuth } from '../../../_providers/Auth'
 import { useCart } from '../../../_providers/Cart'
+import { StorefrontSettingsLike } from '../../../_types/storefront'
 import CartItem from '../CartItem'
 
 import classes from './index.module.scss'
 
 export const CartPage: React.FC<{
-  settings: Settings
+  // PHASE 13F-B: narrowed from the full `payload-types.ts` `Settings` —
+  // this component only ever reads `settings.productsPage.slug` (see
+  // StorefrontSettingsLike's doc comment in src/app/_types/storefront.ts).
+  // Every existing caller already passes a real `Settings`, which
+  // satisfies this narrower shape unchanged.
+  settings: StorefrontSettingsLike
   page: Page
 }> = props => {
   const { settings } = props

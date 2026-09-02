@@ -1,7 +1,7 @@
 import React from 'react'
 import Link from 'next/link'
 
-import { Page } from '../../../payload/payload-types'
+import { StorefrontLinkablePage } from '../../_types/storefront'
 import { Button, Props as ButtonProps } from '../Button'
 
 type CMSLinkType = {
@@ -9,7 +9,13 @@ type CMSLinkType = {
   url?: string
   newTab?: boolean
   reference?: {
-    value: string | Page
+    // PHASE 13F-B: narrowed from `string | Page` — this component only
+    // ever reads `.slug` to build the internal href (see
+    // StorefrontLinkablePage's doc comment in
+    // src/app/_types/storefront.ts). Every existing caller already
+    // spreads a real Payload `Page['hero']['links'][number]['link']`
+    // (or equivalent), which satisfies this narrower shape unchanged.
+    value: string | StorefrontLinkablePage
     relationTo: 'pages'
   }
   label?: string

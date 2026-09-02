@@ -2,17 +2,22 @@
 import React from 'react'
 import Link from 'next/link'
 
-import { Category, Media } from '../../../../payload/payload-types'
+import { StorefrontCategory } from '../../../_types/storefront'
 import { useFilter } from '../../../_providers/Filter'
 
 import classes from './index.module.scss'
 
 type CategoryCardProps = {
-  category: Category
+  // PHASE 13F-B: narrowed from the full `payload-types.ts` `Category` —
+  // this component only ever reads `id`/`title`/`media.url` (see
+  // StorefrontCategory's doc comment in src/app/_types/storefront.ts).
+  // Every existing caller already passes a real `Category`, which
+  // satisfies this narrower shape unchanged.
+  category: StorefrontCategory
 }
 
 const CategoryCard = ({ category }: CategoryCardProps) => {
-  const media = category.media as Media | string | null | undefined
+  const media = category.media
   const mediaUrl = media && typeof media === 'object' ? media.url : undefined
   const { setCategoryFilters } = useFilter()
 

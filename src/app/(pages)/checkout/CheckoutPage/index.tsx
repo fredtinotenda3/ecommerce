@@ -6,12 +6,12 @@ import { loadStripe } from '@stripe/stripe-js'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
-import { Settings } from '../../../../payload/payload-types'
 import { Button } from '../../../_components/Button'
 import { LoadingShimmer } from '../../../_components/LoadingShimmer'
 import { useAuth } from '../../../_providers/Auth'
 import { useCart } from '../../../_providers/Cart'
 import { useTheme } from '../../../_providers/Theme'
+import { StorefrontSettingsLike } from '../../../_types/storefront'
 import cssVariables from '../../../cssVariables'
 import { CheckoutForm } from '../CheckoutForm'
 import { CheckoutItem } from '../CheckoutItem'
@@ -23,7 +23,10 @@ const apiKey = `${process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}`
 const stripe = loadStripe(apiKey)
 
 export const CheckoutPage: React.FC<{
-  settings: Settings
+  // PHASE 13F-B: narrowed from the full `payload-types.ts` `Settings` —
+  // see CartPage/index.tsx's identical comment (and
+  // StorefrontSettingsLike's doc comment in src/app/_types/storefront.ts).
+  settings: StorefrontSettingsLike
   /** PHASE 9 — server-resolved USE_PAYNOW_CHECKOUT flag (see
    * ../../../_api/paynowCheckoutFlag.ts), passed down from the server
    * component in page.tsx. When true, this component renders the

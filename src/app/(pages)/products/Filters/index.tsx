@@ -3,7 +3,7 @@
 
 import React from 'react'
 
-import { Category } from '../../../../payload/payload-types'
+import { StorefrontCategory } from '../../../_types/storefront'
 import { Checkbox } from '../../../_components/Checkbox'
 import { HR } from '../../../_components/HR'
 import { RadioButton } from '../../../_components/Radio'
@@ -11,7 +11,12 @@ import { useFilter } from '../../../_providers/Filter'
 
 import classes from './index.module.scss'
 
-const Filters = ({ categories }: { categories: Category[] }) => {
+// PHASE 13F-B: narrowed from `payload-types.ts`'s `Category[]` — this
+// component only ever reads `id`/`title` (see StorefrontCategory's doc
+// comment in src/app/_types/storefront.ts). Every existing caller
+// already passes a real `Category[]`, which satisfies this narrower
+// shape unchanged.
+const Filters = ({ categories }: { categories: StorefrontCategory[] }) => {
   const { categoryFilters, sort, setCategoryFilters, setSort } = useFilter()
 
   const handleCategories = (categoryId: string) => {
