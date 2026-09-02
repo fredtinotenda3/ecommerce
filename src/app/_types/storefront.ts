@@ -32,6 +32,29 @@
  * only ever reads `.url` for a CSS `background-image`. */
 export type StorefrontMediaRef = string | { url?: string | null } | null | undefined
 
+/** PHASE 13H — a structural subset of `payload-types.ts`'s `Media` for
+ * components that read a handful of plain scalar fields off an
+ * already-populated media object — `.url`/`.width`/`.height`/`.alt`/
+ * `.filename`/`.mimeType` — and do NOT pass the object to the `Media`
+ * display component (which needs the full `Media` shape for its
+ * responsive-image logic). Every real `payload-types.ts` `Media` object,
+ * and everything `mediaStorefrontAdapter.ts`'s `toStorefrontMedia`
+ * produces for the native-repository path, satisfies this unchanged.
+ *
+ * Unlike `StorefrontMediaRef` (just `.url`, for CSS backgrounds/plain
+ * `<img>`/`next/image` `src`), reach for this when a component also
+ * needs `.width`/`.height`/`.alt`/etc. off the same populated object —
+ * still never `.sizes`. See `FooterComponent`'s social-link icons for
+ * the first caller. */
+export interface StorefrontMediaItem {
+  url?: string | null
+  width?: number | null
+  height?: number | null
+  alt?: string | null
+  filename?: string | null
+  mimeType?: string | null
+}
+
 /** The subset of `payload-types.ts`'s `Product` that `Price` (and its
  * exported `priceFromJSON` helper) actually reads — just the
  * pre-serialized Stripe price blob. */

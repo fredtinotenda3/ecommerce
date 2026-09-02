@@ -5,8 +5,9 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-import { Footer, Media } from '../../../../payload/payload-types'
+import { Footer } from '../../../../payload/payload-types'
 import { inclusions, noHeaderFooterUrls, profileNavItems } from '../../../constants'
+import { StorefrontMediaItem } from '../../../_types/storefront'
 import { Button } from '../../Button'
 import { Gutter } from '../../Gutter'
 
@@ -53,7 +54,10 @@ const FooterComponent = ({ footer }: { footer: Footer | null }) => {
 
             <div className={classes.socialLinks}>
               {navItems.map(item => {
-                const icon = item?.link?.icon as Media
+                // PHASE 13H: narrowed from the full `payload-types.ts` `Media` —
+                // only `.url` is read here (passed straight to `next/image`'s
+                // `src`, never the `Media` display component).
+                const icon = item?.link?.icon as unknown as StorefrontMediaItem
 
                 return (
                   <Button
