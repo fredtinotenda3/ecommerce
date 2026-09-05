@@ -1,0 +1,50 @@
+PHASE 13Q — MANIFEST
+=====================
+
+Files Created
+-------------
+- tests/storefrontCmsDispatcher.test.ts
+    Type-level regression tests for StorefrontLayoutBlock /
+    StorefrontLayoutBlockType / StorefrontHero, proving real
+    payload-types.ts Page['layout'] / Page['hero'] objects still satisfy
+    the new view models, and that Blocks / Hero still accept real
+    Payload-shaped page data unchanged.
+
+Files Modified
+--------------
+- src/app/_types/storefront.ts
+    Added StorefrontLayoutBlockType, StorefrontLayoutBlock, StorefrontHero
+    (PHASE 13Q section appended at end of file). No existing exports
+    changed.
+
+- src/app/_components/Blocks/index.tsx
+    `blocks` prop re-typed from `(Page['layout'][0] | RelatedProductsProps)[]`
+    (Page from payload-types.ts) to `(StorefrontLayoutBlock |
+    RelatedProductsProps)[]`. Removed the payload-types.ts `Page` import
+    entirely. Added documentation comment above the existing
+    `<Block ... {...block} />` boundary cast. No rendering logic changed.
+
+- src/app/_components/Hero/index.tsx
+    Props re-typed from `Page['hero']` (Page from payload-types.ts) to
+    `StorefrontHero`. Removed the payload-types.ts `Page` import entirely.
+    Added a documented `@ts-expect-error` at the one line where the
+    dispatcher's narrow view model is spread into whichever full-shaped
+    `_heros/*` component was selected. No rendering logic changed.
+
+Files Deleted
+-------------
+(none)
+
+Verification (run from repo root after `npm install --legacy-peer-deps`)
+--------------------------------------------------------------------------
+- npm run lint        -> 2 problems, both pre-existing/unrelated to this
+                          phase (src/app/_providers/Cart/reducer.ts,
+                          src/app/_types/storefront.ts:137 — both present
+                          before Phase 13Q's changes, unchanged by them)
+- npx tsc --noEmit     -> 1 error, pre-existing/unrelated
+                          (src/app/_blocks/ArchiveBlock/index.tsx:40,
+                          present before Phase 13Q's changes)
+- npm run test         -> 54 test files, 434 tests, all passing
+                          (was 53 files / 428 tests before this phase;
+                          +1 file / +6 tests added by this phase)
+- npm run build        -> NOT run, per instructions
