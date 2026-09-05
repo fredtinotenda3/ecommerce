@@ -222,7 +222,32 @@ export type StorefrontMediaRef = string | { url?: string | null } | null | undef
  * `<img>`/`next/image` `src`), reach for this when a component also
  * needs `.width`/`.height`/`.alt`/etc. off the same populated object —
  * still never `.sizes`. See `FooterComponent`'s social-link icons for
- * the first caller. */
+ * the first caller.
+ *
+ * PHASE 13N — this is exactly the "simple media fields" view model that
+ * phase's audit set out to add (`url?`/`width?`/`height?`/`alt?`/
+ * `filename?`/`mimeType?`, no `.sizes`), so it is reused here rather than
+ * duplicated under a new name. That audit also traced every line of
+ * `src/app/_components/Media/index.tsx`, `Media/Image/index.tsx`, and
+ * `Media/Video/index.tsx` and confirmed the display component's
+ * rendering logic only ever reads `resource.mimeType` (video/image
+ * branch), `resource.width`/`.height`/`.filename`/`.alt` (`Image`), and
+ * `resource.filename` (`Video`) — i.e. a subset of the six fields above,
+ * and `resource.url` is never read at all (`Image` builds its own
+ * `/media/${filename}` URL). It also confirmed `payload-types.ts`'s
+ * generated `Media` interface has no `.sizes` field to begin with — the
+ * "needs `Media.sizes` for responsive variants" reasoning in earlier
+ * phases' comments (13H/13L/13M) describes a caution about a case that
+ * does not exist in this codebase's generated types, not an actual field
+ * this component reads.
+ *
+ * This means `Media`'s `Props.resource` (`src/app/_components/Media/
+ * types.ts`) could, in principle, be safely narrowed from `string |
+ * payload-types.ts Media` to `string | StorefrontMediaItem` without
+ * changing what it renders. Phase 13N deliberately does NOT make that
+ * change — see that phase's report ("Remaining Blockers" /
+ * "Recommended Next Phase") for why it's left as a single, explicit,
+ * separately-tested follow-up rather than folded into this audit. */
 export interface StorefrontMediaItem {
   url?: string | null
   width?: number | null
