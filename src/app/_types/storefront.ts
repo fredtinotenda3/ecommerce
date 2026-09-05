@@ -278,6 +278,19 @@ export interface StorefrontOrderSummary {
   createdAt: string
 }
 
+/** PHASE 13M — the subset of `payload-types.ts`'s `Order` that
+ * `CheckoutForm` actually reads after creating an order via Payload's
+ * `/api/orders` REST endpoint: just the newly-created order's `.id`, to
+ * build the `/order-confirmation?order_id=...` redirect. Deliberately
+ * does NOT include `.items`, `.total`, `.stripePaymentIntentID`, or any
+ * other field — none of them are read here. Every real `Order` (and the
+ * native `/api/orders/native` route's `{ orderId }` response, which this
+ * type does not even apply to — see CheckoutForm's own branch) satisfies
+ * this unchanged. */
+export interface StorefrontOrderReference {
+  id: string
+}
+
 /** PHASE 13G — the subset of `payload-types.ts`'s `Page`/`Product` that
  * `generateMeta` actually reads: `.slug` and a few `.meta` fields for
  * an SEO/Open-Graph tag, including the `.meta.image` media relation —
