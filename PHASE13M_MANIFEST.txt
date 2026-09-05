@@ -1,0 +1,38 @@
+PHASE 13M MANIFEST
+==================
+
+Files Modified
+--------------
+src/app/_types/storefront.ts
+  - Added new view-model type: StorefrontOrderReference ({ id: string }).
+
+src/app/(pages)/checkout/CheckoutForm/index.tsx
+  - Dropped `import { Order } from '../../../../payload/payload-types'`.
+  - Added `import { StorefrontOrderReference } from '../../../_types/storefront'`.
+  - Retyped the Payload order-creation response's `doc` field from `Order`
+    to `StorefrontOrderReference` (only `.id` is ever read off it).
+
+Files Created
+-------------
+tests/storefrontOrderReference.test.ts
+  - Type-level tests for StorefrontOrderReference: accepts a minimal
+    `{ id }` object, and accepts a real payload-types.ts `Order` object
+    unchanged (structural-subset check, same pattern as
+    tests/storefrontCmsBlocks.test.ts from Phase 13L).
+
+Files Deleted
+-------------
+(none)
+
+Verification performed
+-----------------------
+- `npx vitest run` — 51 test files / 413 tests, all passing (no
+  regressions; 2 new tests added).
+- `npx tsc --noEmit` — no new errors; only the pre-existing, unrelated
+  `src/app/_blocks/ArchiveBlock/index.tsx` `sort` prop error remains
+  (present before this phase, confirmed in Phase 13L's report too).
+
+Remaining payload-types.ts import count (outside src/payload)
+---------------------------------------------------------------
+Before Phase 13M: 42
+After Phase 13M: 41

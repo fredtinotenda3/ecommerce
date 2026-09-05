@@ -1,0 +1,55 @@
+PHASE 13N MANIFEST
+==================
+
+Files Modified
+--------------
+src/app/_types/storefront.ts
+  - No shape change to any exported type.
+  - Extended `StorefrontMediaItem`'s doc comment (Phase 13H's existing
+    view model) with the Phase 13N audit findings: it already matches
+    the exact "simple media fields" spec this phase asked for
+    (`url?`/`width?`/`height?`/`alt?`/`filename?`/`mimeType?`, no
+    `.sizes`), so no new/duplicate type was added. The comment also
+    records that `Media`/`Image`/`Video`'s rendering logic only reads a
+    subset of these fields (`mimeType`/`width`/`height`/`filename`/
+    `alt` — never `.url`), and that `payload-types.ts`'s generated
+    `Media` interface has no `.sizes` field at all.
+
+Files Created
+-------------
+tests/storefrontMediaItem.test.ts
+  - 3 tests:
+    - `StorefrontMediaItem` accepts a real `payload-types.ts` `Media`
+      object unchanged (structural-subset check).
+    - `StorefrontMediaItem` accepts a minimal object with only its own
+      fields.
+    - The fields `Media`/`Image`/`Video` actually read
+      (`mimeType`/`width`/`height`/`filename`/`alt`) type-check as a
+      `Pick<StorefrontMediaItem, ...>` subset — locks in the
+      "rendered fields ⊆ StorefrontMediaItem" relationship this phase's
+      audit established, for a future phase to safely act on.
+
+Files Deleted
+-------------
+(none)
+
+Files Migrated Off payload-types.ts
+------------------------------------
+(none — see Phase 13N Implementation Report, "Files Intentionally Left
+Unchanged", for why every remaining Media-touching file passes its
+media value directly to `<Media resource={...} />`, which this phase
+was explicitly scoped not to narrow yet)
+
+Verification performed
+-----------------------
+- `npx vitest run` — 52 test files / 416 tests, all passing (no
+  regressions; 3 new tests added).
+- `npx tsc --noEmit` — no new errors; only the pre-existing, unrelated
+  `src/app/_blocks/ArchiveBlock/index.tsx` `sort` prop error remains.
+
+Remaining payload-types.ts import count (outside src/payload)
+---------------------------------------------------------------
+Before Phase 13N: 41
+After Phase 13N: 41 (unchanged — this phase's deliverable is the
+groundwork/audit, not a file migration; see report for why 0 files
+qualified under the phase's own "do NOT narrow yet" constraint)
