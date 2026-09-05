@@ -1,14 +1,21 @@
 import React from 'react'
 import Image from 'next/image'
 
-import { Product } from '../../../payload/payload-types'
+import { StorefrontCartProduct } from '../../_types/storefront'
 import { useCart } from '../../_providers/Cart'
 
 import classes from './index.module.scss'
 
 export const RemoveFromCartButton: React.FC<{
   className?: string
-  product: Product
+  // PHASE 13P — narrowed from the full `payload-types.ts` `Product` to
+  // `StorefrontCartProduct` (see that type's doc comment in
+  // src/app/_types/storefront.ts): this component only ever reads
+  // `product.id`, via `isProductInCart`/`deleteItemFromCart`, both of
+  // which now accept `StorefrontCartProduct` (see
+  // `src/app/_providers/Cart/index.tsx`). Every existing caller
+  // (`CartItem`, passing a real `Product`) satisfies this unchanged.
+  product: StorefrontCartProduct
 }> = props => {
   const { className, product } = props
 

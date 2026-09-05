@@ -1,8 +1,34 @@
-import type { CartItems, Product, User } from '../../../payload/payload-types'
+import type { StorefrontCartProduct } from '../../_types/storefront'
 
-export type CartItem = CartItems[0]
+// PHASE 13P — `CartItem`/`CartType` below were previously re-exports of
+// `payload-types.ts`'s generated `CartItems[0]` / `User['cart']`
+// (`{ product?: string | Product; quantity?: number; id?: string }` /
+// `{ items?: CartItems }`). They're now defined independently, with
+// `Product` swapped for the narrower `StorefrontCartProduct` (see that
+// type's doc comment in `src/app/_types/storefront.ts` for exactly which
+// fields this reducer, `AddToCartButton`, and `RemoveFromCartButton`
+// actually read off a cart line's product).
+//
+// This is safe with NO changes anywhere else that constructs/fetches a
+// cart value: every real `payload-types.ts` `CartItems[0]` — and
+// therefore every real `User['cart']` — satisfies these types unchanged,
+// because the full generated `Product` type structurally satisfies the
+// narrower `StorefrontCartProduct` (a real `Product` object has every
+// field `StorefrontCartProduct` requires, plus more). The reverse is
+// intentionally NOT required: nothing here needs a value typed against
+// `StorefrontCartProduct` to also satisfy the full `Product` shape.
+export type CartItem = {
+  product?: string | StorefrontCartProduct
+  quantity?: number
+  id?: string
+}
 
-type CartType = User['cart']
+export type CartType =
+  | {
+      items?: CartItem[]
+    }
+  | null
+  | undefined
 
 type CartAction =
   | {
@@ -19,7 +45,7 @@ type CartAction =
     }
   | {
       type: 'DELETE_ITEM'
-      payload: Product
+      payload: StorefrontCartProduct
     }
   | {
       type: 'CLEAR_CART'

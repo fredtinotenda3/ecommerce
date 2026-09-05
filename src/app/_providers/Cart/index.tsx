@@ -10,17 +10,24 @@ import React, {
   useState,
 } from 'react'
 
-import { Product, User } from '../../../payload/payload-types'
+import type { StorefrontCartProduct } from '../../_types/storefront'
 import { useAuth } from '../Auth'
-import { CartItem, cartReducer } from './reducer'
+import { CartItem, CartType, cartReducer } from './reducer'
 
 export type CartContext = {
-  cart: User['cart']
+  // PHASE 13P — narrowed from `payload-types.ts`'s `User['cart']` to
+  // `CartType`, and `Product` to `StorefrontCartProduct`, both now
+  // defined independently in `./reducer` / `../../_types/storefront`
+  // (see reducer.ts's file-level comment for why this drops the
+  // `payload-types.ts` import here entirely without changing what any
+  // caller can pass — every real `User['cart']`/`Product` still
+  // satisfies these unchanged).
+  cart: CartType
   addItemToCart: (item: CartItem) => void
-  deleteItemFromCart: (product: Product) => void
+  deleteItemFromCart: (product: StorefrontCartProduct) => void
   cartIsEmpty: boolean | undefined
   clearCart: () => void
-  isProductInCart: (product: Product) => boolean
+  isProductInCart: (product: StorefrontCartProduct) => boolean
   cartTotal: {
     formatted: string
     raw: number
@@ -185,7 +192,7 @@ export const CartProvider = props => {
   }, [user, cart])
 
   const isProductInCart = useCallback(
-    (incomingProduct: Product): boolean => {
+    (incomingProduct: StorefrontCartProduct): boolean => {
       let isInCart = false
       const { items: itemsInCart } = cart || {}
       if (Array.isArray(itemsInCart) && itemsInCart.length > 0) {
@@ -210,7 +217,7 @@ export const CartProvider = props => {
     })
   }, [])
 
-  const deleteItemFromCart = useCallback((incomingProduct: Product) => {
+  const deleteItemFromCart = useCallback((incomingProduct: StorefrontCartProduct) => {
     dispatchCart({
       type: 'DELETE_ITEM',
       payload: incomingProduct,

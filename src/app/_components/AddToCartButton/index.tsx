@@ -3,14 +3,22 @@
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-import { Product } from '../../../payload/payload-types'
+import { StorefrontCartProduct } from '../../_types/storefront'
 import { useCart } from '../../_providers/Cart'
 import { Button, Props } from '../Button'
 
 import classes from './index.module.scss'
 
 export const AddToCartButton: React.FC<{
-  product: Product
+  // PHASE 13P — narrowed from the full `payload-types.ts` `Product` to
+  // `StorefrontCartProduct` (see that type's doc comment in
+  // src/app/_types/storefront.ts): this component only ever reads
+  // `product.id` (via `isProductInCart`) and forwards `product` whole
+  // into `addItemToCart`'s `CartItem` payload, which itself now expects
+  // `StorefrontCartProduct` (see `src/app/_providers/Cart/reducer.ts`).
+  // Every existing caller (`ProductHero`, passing a real `Product`)
+  // satisfies this unchanged.
+  product: StorefrontCartProduct
   quantity?: number
   className?: string
   appearance?: Props['appearance']

@@ -84,7 +84,16 @@ export const CartPage: React.FC<{
                       const {
                         quantity,
                         product,
-                        product: { id, title, meta, stripeProductID },
+                        // PHASE 13P — `stripeProductID` dropped from this
+                        // destructure: it was already unused here (never
+                        // read anywhere in this scope), and the narrowed
+                        // `StorefrontCartProduct` a cart item's `product`
+                        // is now typed against (see
+                        // `src/app/_providers/Cart/reducer.ts`) doesn't
+                        // carry that field, since nothing in Cart-coupled
+                        // code ever reads it. No behavior change — this
+                        // variable was dead code before this phase too.
+                        product: { id, title, meta },
                       } = item
 
                       const isLast = index === (cart?.items?.length || 0) - 1

@@ -270,6 +270,51 @@ export interface StorefrontLinkablePage {
   slug?: string | null
 }
 
+// ---------------------------------------------------------------------------
+// PHASE 13P — Cart product view model
+// ---------------------------------------------------------------------------
+//
+// The Cart provider/reducer (`useCart()`'s `cart`/`addItemToCart`/
+// `deleteItemFromCart`/`isProductInCart`) and the two Cart-coupled leaf
+// components that call it (`AddToCartButton`, `RemoveFromCartButton`) never
+// read a populated `Product` relation, a CMS `layout`/`paywall` block union,
+// or `categories` — they only ever match cart lines by `.id`, and render a
+// label/link/thumbnail for the cart row. `StorefrontCartProduct` below is
+// that subset.
+
+/** The subset of `payload-types.ts`'s `Product` that Cart-coupled code
+ * actually reads: `id` for cart-line identity/dedup matching (every
+ * `isProductInCart`/`deleteItemFromCart`/reducer `DELETE_ITEM` comparison
+ * is `product.id === incomingProduct.id`, nothing deeper), `title`/`slug`
+ * for the cart row's label and "view product" link, and `meta.image` for
+ * the cart row's thumbnail. Extends `StorefrontPriceableProduct` for
+ * `priceJSON`, since the same cart row also renders a `<Price product=
+ * {product} />` and there's already a name for that field.
+ *
+ * `meta.image` is narrowed to `StorefrontMediaRef` (just `.url`) rather
+ * than the full `payload-types.ts` `Media` — unlike `HighImpactHero`/
+ * `MediumImpactHero`'s `media` field (see the file-level `PHASE 13L`
+ * comment above), the one place this flows to a `<Media resource={...}
+ * />` call (`src/app/(pages)/cart/CartItem/index.tsx`) is itself a plain,
+ * untyped function component with no declared prop types (consistent
+ * with how it already receives `product`/`title`/`qty`/`addItemToCart`),
+ * so nothing here is ever type-checked against `Media/types.ts`'s
+ * `Props.resource: string | payload-types.ts Media` requirement the way
+ * `HighImpactHero`/`MediumImpactHero` are. Should that component ever
+ * gain explicit prop types, this field would need to move to the full
+ * `Media` type at that point, the same way the hero components' `media`
+ * field does.
+ *
+ * Every real `payload-types.ts` `Product` satisfies this unchanged. */
+export interface StorefrontCartProduct extends StorefrontPriceableProduct {
+  id: string
+  title: string
+  slug?: string | null
+  meta?: {
+    image?: StorefrontMediaRef
+  } | null
+}
+
 /** The subset of `payload-types.ts`'s `Settings` global that `CartPage`/
  * `CheckoutPage`/`LogoutPage` actually read: the `productsPage`
  * relation, and only ever for its `.slug` (a "continue shopping" link) —
