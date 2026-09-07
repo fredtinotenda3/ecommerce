@@ -12,14 +12,9 @@ import { Gutter } from '../../Gutter'
 
 import classes from './index.module.scss'
 
-// PHASE 13K: narrowed from `payload-types.ts`'s `Footer` to
-// `StorefrontFooter` (src/app/_types/storefront.ts) — this component only
-// ever reads `.copyright` and `.navItems[].link.{url,label,icon}`. Every
-// real `payload-types.ts` `Footer` (default GraphQL path), and everything
-// the native `globalsStorefrontAdapter.ts`/`fetchGlobalsNative.ts` path
-// produces, satisfies this unchanged.
+// Reads only `.copyright` and `.navItems[].link.{url,label,icon}`.
 const FooterComponent = ({ footer }: { footer: StorefrontFooter | null }) => {
-  // PHASE 13D: see the matching comment in
+  // see the matching comment in
   // src/app/_components/Header/HeaderComponent/index.tsx — `usePathname`
   // is called unconditionally here (react-hooks/rules-of-hooks); a
   // render-phase crash inside it is guarded against one level up by an
@@ -59,18 +54,6 @@ const FooterComponent = ({ footer }: { footer: StorefrontFooter | null }) => {
 
             <div className={classes.socialLinks}>
               {navItems.map(item => {
-                // PHASE 13H: narrowed from the full `payload-types.ts` `Media` —
-                // only `.url` is read here (passed straight to `next/image`'s
-                // `src`, never the `Media` display component).
-                // PHASE 13K: `item.link.icon` is now typed `string |
-                // StorefrontMediaItem` (via `StorefrontFooter` ->
-                // `StorefrontNavItem` -> `StorefrontCMSLink`, which keeps the
-                // same `string | Media`-shaped union `payload-types.ts` and
-                // `NativeCMSLink` both use for an unresolved-vs-populated
-                // relation — see storefront.ts's comment on `icon`). The cast
-                // below is unchanged from Phase 13H: this field is always
-                // populated (an object) by the time it reaches this
-                // component in practice, never the bare id string.
                 const icon = item?.link?.icon as StorefrontMediaItem | undefined
 
                 return (

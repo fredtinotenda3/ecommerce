@@ -1,37 +1,29 @@
+// src/app/(pages)/products/[slug]/page.tsx
+
 import React from 'react'
 import { Metadata } from 'next'
 import { draftMode } from 'next/headers'
 import { notFound } from 'next/navigation'
 
-import { Product, Product as ProductType } from '../../../../payload/payload-types'
-import { isNativeRepositoryEnabled } from '../../../_api/dataSource'
-import { fetchDoc } from '../../../_api/fetchDoc'
-import { fetchDocs } from '../../../_api/fetchDocs'
-import { fetchProductNative } from '../../../_api/fetchProductNative'
+import { fetchProduct, fetchProductSlugs } from '../../../_api/fetchProduct'
 import { Blocks } from '../../../_components/Blocks'
 import { PaywallBlocks } from '../../../_components/PaywallBlocks'
 import { ProductHero } from '../../../_heros/Product'
+import type { StorefrontProductDetail } from '../../../_types/storefront'
 import { generateMeta } from '../../../_utilities/generateMeta'
 
-// Force this page to be dynamic so that Next.js does not cache it
-// See the note in '../../../[slug]/page.tsx' about this
+// Dynamic so a price or stock change is never served from a stale render.
 export const dynamic = 'force-dynamic'
 
-export default async function Product({ params: { slug } }) {
+export default async function ProductPage({ params: { slug } }) {
   const { isEnabled: isDraftMode } = draftMode()
 
-  let product: Product | null = null
+  let product: StorefrontProductDetail | null = null
 
   try {
-    product = isNativeRepositoryEnabled()
-      ? await fetchProductNative(slug, isDraftMode ? undefined : 'published')
-      : await fetchDoc<Product>({
-          collection: 'products',
-          slug,
-          draft: isDraftMode,
-        })
+    product = await fetchProduct(slug, isDraftMode ? undefined : 'published')
   } catch (error) {
-    console.error(error) // eslint-disable-line no-console
+    console.error('product read failed:', error) // eslint-disable-line no-console
   }
 
   if (!product) {
@@ -54,11 +46,7 @@ export default async function Product({ params: { slug } }) {
             introContent: [
               {
                 type: 'h3',
-                children: [
-                  {
-                    text: 'Related Products',
-                  },
-                ],
+                children: [{ text: 'Related Products' }],
               },
             ],
             docs: relatedProducts,
@@ -71,8 +59,7 @@ export default async function Product({ params: { slug } }) {
 
 export async function generateStaticParams() {
   try {
-    const products = await fetchDocs<ProductType>('products')
-    return products?.map(({ slug }) => slug)
+    return await fetchProductSlugs()
   } catch (error) {
     return []
   }
@@ -81,17 +68,13 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params: { slug } }): Promise<Metadata> {
   const { isEnabled: isDraftMode } = draftMode()
 
-  let product: Product | null = null
+  let product: StorefrontProductDetail | null = null
 
   try {
-    product = isNativeRepositoryEnabled()
-      ? await fetchProductNative(slug, isDraftMode ? undefined : 'published')
-      : await fetchDoc<Product>({
-          collection: 'products',
-          slug,
-          draft: isDraftMode,
-        })
-  } catch (error) {}
+    product = await fetchProduct(slug, isDraftMode ? undefined : 'published')
+  } catch (error) {
+    // Metadata falls back to defaults.
+  }
 
   return generateMeta({ doc: product })
 }

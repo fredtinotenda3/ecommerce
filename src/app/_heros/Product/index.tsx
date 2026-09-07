@@ -12,21 +12,6 @@ import {
 
 import classes from './index.module.scss'
 
-// PHASE 13U: previously the full `payload-types.ts` `Product`; now
-// `id`/`title`/`slug`/`priceJSON`/`categories` come from the shared
-// `StorefrontProductHeroView` view model (`src/app/_types/storefront.ts`).
-//
-// PHASE 13V: `meta.image` is now `string | StorefrontMediaItem` instead of
-// `payload-types.ts`'s full `Media` — the Phase 13N audit established
-// `<Media resource={...} />` only reads the scalar fields
-// `StorefrontMediaItem` already models (see that type's own doc comment).
-// This is stricter than `StorefrontProductHeroView`'s own `meta.image`
-// (inherited from `StorefrontCartProduct`'s `StorefrontMediaRef`, just
-// `.url` — sufficient for the Cart row's plain thumbnail use, but not
-// self-documenting enough for `<Media resource={...} fill />`'s actual
-// field reads here), hence this `Omit<..., 'meta'> & { meta?: ... }`
-// override, same pattern as the Phase 13U original. This drops the
-// `payload-types.ts` import from this file entirely.
 type ProductHeroProduct = Omit<StorefrontProductHeroView, 'meta'> & {
   meta?: {
     image?: string | StorefrontMediaItem

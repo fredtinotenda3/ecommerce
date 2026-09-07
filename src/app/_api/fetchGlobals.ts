@@ -1,81 +1,130 @@
 // src/app/_api/fetchGlobals.ts
 //
-// PHASE 13D: branches on `isNativeRepositoryEnabled()` (see ./dataSource.ts)
-// to read Header/Footer/Settings from the native repository path
-// (./fetchGlobalsNative.ts) instead of Payload GraphQL, when
-// USE_NATIVE_REPOSITORY=true. Default (flag unset/false): the GraphQL path
-// below is unchanged from before this phase.
-import type { Footer, Header, Settings } from '../../payload/payload-types'
-import { FOOTER_QUERY, HEADER_QUERY, SETTINGS_QUERY } from '../_graphql/globals'
-import { isNativeRepositoryEnabled } from './dataSource'
-import { fetchFooterNative, fetchHeaderNative, fetchSettingsNative } from './fetchGlobalsNative'
-import { GRAPHQL_API_URL } from './shared'
+// Read-only reads for the Header, Footer and Settings globals, with nav
+// item relations (referenced page -> slug, icon media -> url) resolved.
 
-async function graphqlFetch(query: string): Promise<Record<string, unknown>> {
-  // Re-read at call time so build-time worker processes see INTERNAL_SERVER_URL
-  const apiUrl =
-    process.env.INTERNAL_SERVER_URL || process.env.NEXT_PUBLIC_SERVER_URL || GRAPHQL_API_URL
+import type { NavItem } from '../../lib/domain/types'
+import {
+  type ResolvedNavRelations,
+  toStorefrontFooter,
+  toStorefrontHeader,
+  toStorefrontSettings,
+} from '../../lib/repositories/adapters/globalsStorefrontAdapter'
+import type { GlobalsRepository } from '../../lib/repositories/GlobalsRepository'
+import type { MediaRepository } from '../../lib/repositories/MediaRepository'
+import type { PageRepository } from '../../lib/repositories/PageRepository'
+import type {
+  StorefrontFooter,
+  StorefrontHeader,
+  StorefrontSettingsLike,
+} from '../_types/storefront'
+import { getRepositories } from './repositories'
 
-  const response = await fetch(`${apiUrl}/api/graphql`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    cache: 'no-store',
-    body: JSON.stringify({ query }),
-  })
+/** Orchestration only — takes repository interfaces so it can be unit
+ * tested with fakes. */
+const resolveNavRelations = async (
+  navItems: NavItem[],
+  pageRepository: PageRepository,
+  mediaRepository: MediaRepository,
+): Promise<ResolvedNavRelations> => {
+  const pageIds = new Set<string>()
+  const mediaIds = new Set<string>()
 
-  if (!response.ok) {
-    throw new Error(
-      `GraphQL request failed: HTTP ${response.status} ${response.statusText} — URL: ${apiUrl}`,
-    )
+  for (const item of navItems) {
+    if (item.link.referencePageId) pageIds.add(item.link.referencePageId)
+    if (item.link.iconMediaId) mediaIds.add(item.link.iconMediaId)
   }
 
-  const contentType = response.headers.get('content-type') || ''
-  if (!contentType.includes('application/json')) {
-    throw new Error(
-      `fetchGlobals: expected JSON but got "${contentType}" from ${apiUrl}. ` +
-        `INTERNAL_SERVER_URL=${process.env.INTERNAL_SERVER_URL} ` +
-        `NEXT_PUBLIC_SERVER_URL=${process.env.NEXT_PUBLIC_SERVER_URL}`,
-    )
-  }
+  const pageSlugsById = new Map<string, string>()
+  await Promise.all(
+    Array.from(pageIds).map(async id => {
+      const page = await pageRepository.getById(id)
+      if (page) pageSlugsById.set(id, page.slug)
+    }),
+  )
 
-  const json = await response.json()
-  if (json?.errors) throw new Error(json.errors[0]?.message ?? 'GraphQL error')
-  return json
+  const mediaUrlsById = new Map<string, string | null>()
+  await Promise.all(
+    Array.from(mediaIds).map(async id => {
+      const media = await mediaRepository.getById(id)
+      mediaUrlsById.set(id, media?.url ?? null)
+    }),
+  )
+
+  return { pageSlugsById, mediaUrlsById }
 }
 
-export async function fetchSettings(): Promise<Settings> {
-  if (isNativeRepositoryEnabled()) {
-    return (await fetchSettingsNative()) as Settings
-  }
-  const json = await graphqlFetch(SETTINGS_QUERY)
-  return (json.data as Record<string, Settings>)?.Settings
+/** Returns `null` when the global has not been created yet. That is a
+ * normal state for a fresh database, not an error, and every consumer
+ * already renders a fallback for it. */
+export const buildStorefrontHeader = async (
+  globalsRepository: GlobalsRepository,
+  pageRepository: PageRepository,
+  mediaRepository: MediaRepository,
+): Promise<StorefrontHeader | null> => {
+  const header = await globalsRepository.getHeader()
+  if (!header) return null
+  const resolved = await resolveNavRelations(header.navItems, pageRepository, mediaRepository)
+  return toStorefrontHeader(header, resolved)
 }
 
-export async function fetchHeader(): Promise<Header> {
-  if (isNativeRepositoryEnabled()) {
-    return (await fetchHeaderNative()) as Header
-  }
-  const json = await graphqlFetch(HEADER_QUERY)
-  return (json.data as Record<string, Header>)?.Header
+/** See `buildStorefrontHeader` for the null-is-not-an-error rationale. */
+export const buildStorefrontFooter = async (
+  globalsRepository: GlobalsRepository,
+  pageRepository: PageRepository,
+  mediaRepository: MediaRepository,
+): Promise<StorefrontFooter | null> => {
+  const footer = await globalsRepository.getFooter()
+  if (!footer) return null
+  const resolved = await resolveNavRelations(footer.navItems, pageRepository, mediaRepository)
+  return toStorefrontFooter(footer, resolved)
 }
 
-export async function fetchFooter(): Promise<Footer> {
-  if (isNativeRepositoryEnabled()) {
-    return (await fetchFooterNative()) as Footer
+/** See `buildStorefrontHeader` for the null-is-not-an-error rationale. */
+export const buildStorefrontSettings = async (
+  globalsRepository: GlobalsRepository,
+  pageRepository: PageRepository,
+): Promise<StorefrontSettingsLike | null> => {
+  const settings = await globalsRepository.getSettings()
+  if (!settings) return null
+
+  let productsPageSlug: string | null = null
+  if (settings.productsPageId) {
+    const page = await pageRepository.getById(settings.productsPageId)
+    productsPageSlug = page?.slug ?? null
   }
-  const json = await graphqlFetch(FOOTER_QUERY)
-  return (json.data as Record<string, Footer>)?.Footer
+
+  return toStorefrontSettings(settings, productsPageSlug)
 }
 
+export const fetchHeader = async (): Promise<StorefrontHeader | null> => {
+  const { globals, pages, media } = await getRepositories()
+  return buildStorefrontHeader(globals, pages, media)
+}
+
+export const fetchFooter = async (): Promise<StorefrontFooter | null> => {
+  const { globals, pages, media } = await getRepositories()
+  return buildStorefrontFooter(globals, pages, media)
+}
+
+export const fetchSettings = async (): Promise<StorefrontSettingsLike | null> => {
+  const { globals, pages } = await getRepositories()
+  return buildStorefrontSettings(globals, pages)
+}
+
+/** All three over a single shared connection. */
 export const fetchGlobals = async (): Promise<{
-  settings: Settings
-  header: Header
-  footer: Footer
+  settings: StorefrontSettingsLike | null
+  header: StorefrontHeader | null
+  footer: StorefrontFooter | null
 }> => {
+  const { globals, pages, media } = await getRepositories()
+
   const [settings, header, footer] = await Promise.all([
-    fetchSettings(),
-    fetchHeader(),
-    fetchFooter(),
+    buildStorefrontSettings(globals, pages),
+    buildStorefrontHeader(globals, pages, media),
+    buildStorefrontFooter(globals, pages, media),
   ])
+
   return { settings, header, footer }
 }

@@ -1,6 +1,6 @@
 // src/app/_api/adminQueries.ts
 //
-// PHASE 6 — DB-wired entry points for the native admin area's read-only
+// DB-wired entry points for the native admin area's read-only
 // pages. Mirrors the fetchProductNative.ts / authNative.ts split:
 // `AdminQueryService.ts` takes repository INTERFACES for unit testing,
 // and this file supplies the concrete `Mongo*Repository` classes wired

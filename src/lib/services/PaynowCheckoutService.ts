@@ -1,6 +1,6 @@
 // src/lib/services/PaynowCheckoutService.ts
 //
-// PHASE 8 — orchestrates Paynow checkout initiation: given an
+// orchestrates Paynow checkout initiation: given an
 // authenticated customer id and their SERVER-SIDE cart items, this is
 // the only code path that turns a cart into an Order + Payment for the
 // Paynow flow.

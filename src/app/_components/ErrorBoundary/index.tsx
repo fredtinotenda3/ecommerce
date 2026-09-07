@@ -2,7 +2,7 @@
 
 // src/app/_components/ErrorBoundary/index.tsx
 //
-// PHASE 13D — generic, minimal client-side error boundary.
+// generic, minimal client-side error boundary.
 //
 // Added specifically so a render-phase crash inside HeaderComponent /
 // FooterComponent (see the reproducible `usePathname` /

@@ -1,30 +1,27 @@
+// src/app/_utilities/generateMeta.ts
+//
+// Builds Next.js metadata for a page or product. Reads only the handful of
+// SEO fields modelled by `StorefrontMetaDoc`.
+
 import type { Metadata } from 'next'
 
 import type { StorefrontMetaDoc } from '../_types/storefront'
 import { mergeOpenGraph } from './mergeOpenGraph'
 
-// PHASE 13G: narrowed from the full `payload-types.ts` `Page | Product`
-// — this function only ever reads `.slug` and a few `.meta` fields
-// (including `.meta.image`, read only for its `.url`, same as
-// `StorefrontMediaRef` — never `.sizes`). See StorefrontMetaDoc's doc
-// comment in src/app/_types/storefront.ts. Every real `Page`/`Product`,
-// and the `staticHome`/`staticCart` seed fallbacks, satisfy this
-// unchanged — none of `generateMeta`'s three call sites needed to
-// change.
 export const generateMeta = async (args: { doc: StorefrontMetaDoc }): Promise<Metadata> => {
   const { doc } = args || {}
 
+  const metaImage = doc?.meta?.image
   const ogImage =
-    typeof doc?.meta?.image === 'object' &&
-    doc?.meta?.image !== null &&
-    'url' in doc?.meta?.image &&
-    `${process.env.NEXT_PUBLIC_SERVER_URL}${doc.meta.image.url}`
+    typeof metaImage === 'object' && metaImage !== null && metaImage.url
+      ? `${process.env.NEXT_PUBLIC_SERVER_URL}${metaImage.url}`
+      : undefined
 
   return {
-    title: doc?.meta?.title || 'Payload',
+    title: doc?.meta?.title || 'Store',
     description: doc?.meta?.description,
     openGraph: mergeOpenGraph({
-      title: doc?.meta?.title || 'Payload',
+      title: doc?.meta?.title || 'Store',
       description: doc?.meta?.description,
       url: Array.isArray(doc?.slug) ? doc?.slug.join('/') : '/',
       images: ogImage

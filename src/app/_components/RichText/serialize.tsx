@@ -1,7 +1,5 @@
 import React, { Fragment } from 'react'
 import escapeHTML from 'escape-html'
-import Link from 'next/link'
-import { Text } from 'slate'
 
 import { Label } from '../Label'
 import { LargeBody } from '../LargeBody'
@@ -9,6 +7,12 @@ import { CMSLink } from '../Link'
 
 // eslint-disable-next-line no-use-before-define
 type Children = Leaf[]
+
+/** Rich text is stored in Slate's node format. A text node is any node
+ * carrying a string `text` — checked structurally here so this renderer
+ * needs no editor library at runtime. */
+const isTextNode = (node: unknown): node is { text: string; [key: string]: unknown } =>
+  typeof node === 'object' && node !== null && typeof (node as { text?: unknown }).text === 'string'
 
 type Leaf = {
   type: string
@@ -23,7 +27,7 @@ type Leaf = {
 
 const serialize = (children?: Children): React.ReactNode[] =>
   children?.map((node, i) => {
-    if (Text.isText(node)) {
+    if (isTextNode(node)) {
       let text = <span dangerouslySetInnerHTML={{ __html: escapeHTML(node.text) }} />
 
       if (node.bold) {

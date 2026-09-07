@@ -13,13 +13,18 @@ export interface UserListFilter {
 export interface UserRepository {
   getById(id: string): Promise<User | null>
   getByEmail(email: string): Promise<User | null>
-  /** PHASE 6 — read-only admin listing. Returns the same sanitized `User`
-   * shape `toDomain` already produces for every other method on this
-   * repository (no `hash`/`salt`/reset-token fields — those only ever
-   * live on `AuthUserRepository`/`AuthUserRecord`), so this is safe to
-   * expose directly to the native admin customers list/detail views. */
+  /** Read-only admin listing. Returns the same sanitized `User` shape
+   * `toDomain` produces everywhere else on this repository — no
+   * `hash`/`salt`/reset-token fields, which live only on
+   * `AuthUserRepository`/`AuthUserRecord` — so it is safe to render
+   * directly in the admin customer views. */
   list(filter?: UserListFilter): Promise<User[]>
   updateCart(id: string, items: CartItem[]): Promise<User | null>
+  /** Profile fields a customer may change about themselves. Deliberately
+   * excludes `roles` and `purchases`: a customer-facing endpoint must never
+   * be able to grant an account admin rights or an entitlement it did not
+   * pay for. Those are admin/checkout operations and live elsewhere. */
+  updateProfile(id: string, patch: { name?: string | null; email?: string }): Promise<User | null>
   appendPurchases(id: string, productIds: string[]): Promise<User | null>
 }
 
@@ -90,6 +95,23 @@ export class MongoUserRepository implements UserRepository {
       },
       { new: true },
     )
+      .lean<UserDocument>()
+      .exec()
+    return doc ? toDomain(doc as unknown as UserDocument) : null
+  }
+
+  async updateProfile(
+    id: string,
+    patch: { name?: string | null; email?: string },
+  ): Promise<User | null> {
+    const Model = getUserModel(this.connection)
+    const $set: Record<string, unknown> = {}
+    if ('name' in patch) $set.name = patch.name ?? null
+    if (typeof patch.email === 'string') $set.email = patch.email
+
+    if (Object.keys($set).length === 0) return this.getById(id)
+
+    const doc = await Model.findByIdAndUpdate(id, { $set }, { new: true })
       .lean<UserDocument>()
       .exec()
     return doc ? toDomain(doc as unknown as UserDocument) : null

@@ -1,29 +1,20 @@
 // src/lib/auth/password.ts
 //
-// PHASE 1 (scrypt pair below) — Foundation only, not wired into any
-// route. Kept as-is; nothing in Phase 5 uses it, and its own tests
-// (tests/auth.test.ts) still pass unchanged.
+// Password hashing and verification.
 //
-// PHASE 5 (PBKDF2 pair further down) — this is what the native auth
-// service actually uses. The Phase 1 comment above assumed Payload used
-// bcrypt-style hashing and that scrypt could be swapped in for
-// bcrypt/argon2 later. That assumption was WRONG: inspecting Payload
-// 2.0.7's actual auth strategy
-// (node_modules/payload/dist/auth/strategies/local/{authenticate,generatePasswordSaltHash}.js)
-// shows Payload uses Node's built-in `crypto.pbkdf2` — NOT bcrypt — with:
-//   - 25000 iterations
-//   - 512-byte derived key length
-//   - sha256 digest
-//   - a random 32-byte salt (hex-encoded)
-//   - hash and salt stored as two SEPARATE fields (`hash`, `salt`) on the
-//     user document, not one combined string
-//   - constant-time comparison via the `scmp` package
-// Since this is already Node's built-in `crypto` module, NO new
-// dependency (bcrypt/bcryptjs/argon2) is needed or was added — see the
-// Phase 5 report for the explicit "no new dependency" confirmation.
-// The scrypt pair below is left untouched (different algorithm, single
-// combined-string format) since nothing depends on it being
-// Payload-compatible and removing it would be a gratuitous change.
+// The PBKDF2 pair (`hashPasswordPayloadCompatible` /
+// `verifyPasswordPayloadCompatible`) is what the auth service uses. Its
+// parameters — 25,000 iterations, 512-byte derived key, sha256, a random
+// 32-byte hex salt, and `hash`/`salt` stored as two separate fields —
+// match exactly what the previous CMS wrote, which is why accounts created
+// before the migration still verify against their original passwords. Do
+// not change these parameters without a migration path that rehashes on
+// next successful login; changing them alone locks every existing user out.
+// Verification is constant-time.
+//
+// The scrypt pair (`hashPassword`/`verifyPassword`) is a stronger scheme
+// kept for future use. It is not wired into any route: switching to it
+// requires the rehash-on-login step described above.
 
 import {
   pbkdf2 as pbkdf2Callback,

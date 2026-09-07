@@ -1,49 +1,45 @@
+// src/app/api/preview/route.ts
+//
+// GET /api/preview?url=&secret= — enables Next.js draft mode so a page can
+// be viewed before it is published.
+//
+// Two independent checks must pass: a valid admin session, and the shared
+// draft secret. The session check comes first so the secret is never
+// exercised by an anonymous caller, and the redirect target is constrained
+// to a same-origin path so this cannot be used as an open redirect.
+
 import { draftMode } from 'next/headers'
-import { redirect } from 'next/navigation'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 
-import { payloadToken } from '../../_api/token'
+import { getAdminAccess } from '../../_api/adminAccess'
 
-export async function GET(
-  req: Request & {
-    cookies: {
-      get: (name: string) => {
-        value: string
-      }
-    }
-  },
-): Promise<Response> {
-  const token = req.cookies.get(payloadToken)?.value
-  const { searchParams } = new URL(req.url)
+export const dynamic = 'force-dynamic'
+
+export async function GET(request: NextRequest): Promise<Response> {
+  const { searchParams } = request.nextUrl
   const url = searchParams.get('url')
   const secret = searchParams.get('secret')
 
-  if (!url) {
-    return new Response('No URL provided', { status: 404 })
-  }
+  const expectedSecret = process.env.NEXT_PRIVATE_DRAFT_SECRET
 
-  if (!token) {
-    new Response('You are not allowed to preview this page', { status: 403 })
-  }
-
-  // validate the Payload token
-  const userReq = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/me`, {
-    headers: {
-      Authorization: `JWT ${token}`,
-    },
-  })
-
-  const userRes = await userReq.json()
-
-  if (!userReq.ok || !userRes?.user) {
+  const access = await getAdminAccess()
+  if (!access.authorized) {
     draftMode().disable()
     return new Response('You are not allowed to preview this page', { status: 403 })
   }
 
-  if (secret !== process.env.NEXT_PRIVATE_DRAFT_SECRET) {
+  if (!expectedSecret || secret !== expectedSecret) {
     return new Response('Invalid token', { status: 401 })
+  }
+
+  // Same-origin, path-only redirects. A caller-supplied absolute URL would
+  // make this an open redirect.
+  if (!url || !url.startsWith('/') || url.startsWith('//')) {
+    return new Response('No valid URL provided', { status: 400 })
   }
 
   draftMode().enable()
 
-  redirect(url)
+  return NextResponse.redirect(new URL(url, request.nextUrl.origin))
 }

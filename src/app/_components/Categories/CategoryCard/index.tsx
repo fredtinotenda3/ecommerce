@@ -8,11 +8,6 @@ import { useFilter } from '../../../_providers/Filter'
 import classes from './index.module.scss'
 
 type CategoryCardProps = {
-  // PHASE 13F-B: narrowed from the full `payload-types.ts` `Category` —
-  // this component only ever reads `id`/`title`/`media.url` (see
-  // StorefrontCategory's doc comment in src/app/_types/storefront.ts).
-  // Every existing caller already passes a real `Category`, which
-  // satisfies this narrower shape unchanged.
   category: StorefrontCategory
 }
 

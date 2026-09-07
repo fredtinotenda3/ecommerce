@@ -11,12 +11,7 @@ import { CMSLink } from '../../Link'
 
 import classes from './index.module.scss'
 
-// PHASE 13K: narrowed from `payload-types.ts`'s `Header` to
-// `StorefrontHeader` (src/app/_types/storefront.ts) — this component only
-// ever reads `.navItems[].link`, spread straight into `CMSLink`. Every real
-// `payload-types.ts` `Header` (the default GraphQL path), and everything
-// the native `globalsStorefrontAdapter.ts`/`fetchGlobalsNative.ts` path
-// produces (see src/app/_api/fetchGlobals.ts), satisfies this unchanged.
+// Reads only `.navItems[].link`, spread straight into `CMSLink`.
 export const HeaderNav: React.FC<{ header: StorefrontHeader | null }> = ({ header }) => {
   const navItems = header?.navItems || []
   const { user } = useAuth()

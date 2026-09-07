@@ -1,67 +1,36 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import { Metadata } from 'next'
-import { notFound } from 'next/navigation'
 
-import { Page } from '../../../payload/payload-types'
-import { staticCart } from '../../../payload/seed/cart-static'
-import { fetchDoc } from '../../_api/fetchDoc'
+import { fetchPage } from '../../_api/fetchPage'
 import { fetchSettings } from '../../_api/fetchGlobals'
 import { Blocks } from '../../_components/Blocks'
 import { Gutter } from '../../_components/Gutter'
-import { Hero } from '../../_components/Hero'
-import { Message } from '../../_components/Message'
-import { StorefrontSettingsLike } from '../../_types/storefront'
+import { fallbackCart } from '../../_data/fallbackPages'
+import type { StorefrontPage, StorefrontSettingsLike } from '../../_types/storefront'
 import { generateMeta } from '../../_utilities/generateMeta'
 import { CartPage } from './CartPage'
 
 import classes from './index.module.scss'
 
-// Force this page to be dynamic so that Next.js does not cache it
-// See the note in '../[slug]/page.tsx' about this
 export const dynamic = 'force-dynamic'
 
-export default async function Cart() {
-  let page: Page | null = null
-
+const loadCartPage = async (): Promise<StorefrontPage> => {
   try {
-    page = await fetchDoc<Page>({
-      collection: 'pages',
-      slug: 'cart',
-    })
+    return (await fetchPage('cart', 'published')) ?? fallbackCart
   } catch (error) {
-    // when deploying this template on Payload Cloud, this page needs to build before the APIs are live
-    // so swallow the error here and simply render the page with fallback data where necessary
-    // in production you may want to redirect to a 404  page or at least log the error somewhere
-    // console.error(error)
+    return fallbackCart
   }
+}
 
-  // if no `cart` page exists, render a static one using dummy content
-  // you should delete this code once you have a cart page in the CMS
-  // this is really only useful for those who are demoing this template
-  if (!page) {
-    page = staticCart
-  }
+export default async function Cart() {
+  const page = await loadCartPage()
 
-  if (!page) {
-    return notFound()
-  }
-
-  // PHASE 13G: narrowed from the full `payload-types.ts` `Settings` —
-  // this file only ever passes `settings` straight through to
-  // `CartPage`, which itself only reads `settings.productsPage.slug`
-  // (already narrowed to `StorefrontSettingsLike` in Phase 13F-B). Never
-  // read directly in this file. `Page` is kept — `page.layout` still
-  // goes to `<Blocks>` (a CMS layout union) and `page` is still passed
-  // whole to `generateMeta`.
   let settings: StorefrontSettingsLike | null = null
 
   try {
     settings = await fetchSettings()
   } catch (error) {
-    // when deploying this template on Payload Cloud, this page needs to build before the APIs are live
-    // so swallow the error here and simply render the page with fallback data where necessary
-    // in production you may want to redirect to a 404  page or at least log the error somewhere
-    // console.error(error)
+    // The "continue shopping" link is the only thing settings drives here.
   }
 
   return (
@@ -76,23 +45,5 @@ export default async function Cart() {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  let page: Page | null = null
-
-  try {
-    page = await fetchDoc<Page>({
-      collection: 'pages',
-      slug: 'cart',
-    })
-  } catch (error) {
-    // don't throw an error if the fetch fails
-    // this is so that we can render a static cart page for the demo
-    // when deploying this template on Payload Cloud, this page needs to build before the APIs are live
-    // in production you may want to redirect to a 404  page or at least log the error somewhere
-  }
-
-  if (!page) {
-    page = staticCart
-  }
-
-  return generateMeta({ doc: page })
+  return generateMeta({ doc: await loadCartPage() })
 }

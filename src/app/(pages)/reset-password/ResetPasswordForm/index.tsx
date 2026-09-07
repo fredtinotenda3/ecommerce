@@ -18,7 +18,7 @@ type FormData = {
 
 export const ResetPasswordForm: React.FC = () => {
   const [error, setError] = useState('')
-  const { login, resetPassword, nativeAuthEnabled } = useAuth()
+  const { resetPassword } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
@@ -32,46 +32,16 @@ export const ResetPasswordForm: React.FC = () => {
 
   const onSubmit = useCallback(
     async (data: FormData) => {
-      // PHASE 13B: native mode goes through AuthProvider's
-      // `resetPassword` (POST /api/auth-native/reset-password), which —
-      // like Payload's own reset-password — issues a fresh session and
-      // logs the user in as part of the same request, so no separate
-      // `login()` call is needed here. Default (flag off) path below is
-      // unchanged.
-      if (nativeAuthEnabled) {
-        try {
-          await resetPassword({ password: data.password, token: data.token })
-          router.push('/account?success=Password reset successfully.')
-        } catch (_) {
-          setError('There was a problem while resetting your password. Please try again later.')
-        }
-        return
-      }
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/reset-password`,
-        {
-          method: 'POST',
-          body: JSON.stringify(data),
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        },
-      )
-
-      if (response.ok) {
-        const json = await response.json()
-
-        // Automatically log the user in after they successfully reset password
-        await login({ email: json.user.email, password: data.password })
-
-        // Redirect them to `/account` with success message in URL
+      try {
+        // Resetting issues a fresh session in the same request, so the
+        // customer is signed in on success without a second round trip.
+        await resetPassword({ password: data.password, token: data.token })
         router.push('/account?success=Password reset successfully.')
-      } else {
+      } catch (_) {
         setError('There was a problem while resetting your password. Please try again later.')
       }
     },
-    [router, login, resetPassword, nativeAuthEnabled],
+    [router, resetPassword],
   )
 
   // when Next.js populates token within router,

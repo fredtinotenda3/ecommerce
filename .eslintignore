@@ -1,14 +1,5 @@
-# Skip linting for these problematic files
-src/app/_components/Promotion/index.tsx
-src/payload/endpoints/stripe-products.ts
-src/payload/endpoints/prices.ts
-
-# Skip build directories
 .next/
-dist/
 node_modules/
 out/
 build/
-
-# Skip all payload endpoints temporarily
-src/payload/endpoints/*.ts
+public/

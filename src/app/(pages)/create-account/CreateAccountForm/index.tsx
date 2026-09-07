@@ -3,7 +3,7 @@
 import React, { useCallback, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 
 import { Button } from '../../../_components/Button'
 import { Input } from '../../../_components/Input'
@@ -22,8 +22,7 @@ type FormData = {
 const CreateAccountForm: React.FC = () => {
   const searchParams = useSearchParams()
   const allParams = searchParams.toString() ? `?${searchParams.toString()}` : ''
-  const { login, create, nativeAuthEnabled } = useAuth()
-  const router = useRouter()
+  const { create } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -41,73 +40,38 @@ const CreateAccountForm: React.FC = () => {
     async (data: FormData) => {
       const redirect = searchParams.get('redirect')
 
-      // PHASE 13B: when native auth is enabled, account creation and
-      // login-after-create both go through `create()` (see AuthProvider),
-      // which calls POST /api/auth-native/register — that route already
-      // issues a session in the same request, so there is no separate
-      // Payload-style create-then-login round trip here.
-      if (nativeAuthEnabled) {
-        const timer = setTimeout(() => {
-          setLoading(true)
-        }, 1000)
-
-        try {
-          await create({
-            email: data.email,
-            password: data.password,
-            passwordConfirm: data.passwordConfirm,
-            name: data.name,
-          })
-          clearTimeout(timer)
-          if (redirect) router.push(redirect as string)
-          else router.push(`/`)
-          window.location.href = '/'
-        } catch (_) {
-          clearTimeout(timer)
-          setError('There was an error with the credentials provided. Please try again.')
-        }
-        return
-      }
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/users`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (!response.ok) {
-        const message = response.statusText || 'There was an error creating the account.'
-        setError(message)
-        return
-      }
-
       const timer = setTimeout(() => {
         setLoading(true)
       }, 1000)
 
       try {
-        await login(data)
+        // Registration issues the session in the same request, so there is
+        // no separate login round trip.
+        await create({
+          email: data.email,
+          password: data.password,
+          passwordConfirm: data.passwordConfirm,
+          name: data.name,
+        })
         clearTimeout(timer)
-        if (redirect) router.push(redirect as string)
-        else router.push(`/`)
-        window.location.href = '/'
-      } catch (_) {
+        // Full navigation so every server component re-renders against the
+        // new session rather than a cached anonymous render.
+        window.location.href = redirect ? String(redirect) : '/'
+      } catch (err) {
         clearTimeout(timer)
-        setError('There was an error with the credentials provided. Please try again.')
+        setLoading(false)
+        setError(
+          err instanceof Error && err.message
+            ? err.message
+            : 'There was an error creating your account. Please try again.',
+        )
       }
     },
-    [create, login, nativeAuthEnabled, router, searchParams],
+    [create, searchParams],
   )
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className={classes.form}>
-      <p>
-        {`This is where new customers can signup and create a new account. To manage all users, `}
-        <Link href="/admin/collections/users">login to the admin dashboard</Link>
-        {'.'}
-      </p>
       <Message error={error} className={classes.message} />
       <Input
         name="email"

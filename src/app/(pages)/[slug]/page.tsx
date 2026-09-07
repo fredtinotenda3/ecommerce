@@ -1,20 +1,20 @@
 // src/app/(pages)/[slug]/page.tsx
+//
+// The CMS-driven page route. Reads directly from MongoDB through the
+// repository layer — there is no HTTP hop for storefront reads.
+
 import React from 'react'
 import { Metadata } from 'next'
 import { draftMode } from 'next/headers'
 import { notFound } from 'next/navigation'
 
-import { Page } from '../../../payload/payload-types'
-import { staticHome } from '../../../payload/seed/home-static'
-import { isNativeRepositoryEnabled } from '../../_api/dataSource'
-import { fetchCategoriesNative } from '../../_api/fetchCategoriesNative'
-import { fetchDoc } from '../../_api/fetchDoc'
-import { fetchDocs } from '../../_api/fetchDocs'
-import { fetchPageNative } from '../../_api/fetchPageNative'
+import { fetchCategories } from '../../_api/fetchCategories'
+import { fetchPage, fetchPageSlugs } from '../../_api/fetchPage'
 import { Blocks } from '../../_components/Blocks'
 import { Gutter } from '../../_components/Gutter'
 import { Hero } from '../../_components/Hero'
-import { StorefrontCategory } from '../../_types/storefront'
+import { fallbackHome } from '../../_data/fallbackPages'
+import type { StorefrontCategory, StorefrontPage } from '../../_types/storefront'
 import { generateMeta } from '../../_utilities/generateMeta'
 
 export const dynamic = 'force-dynamic'
@@ -24,36 +24,27 @@ import Promotion from '../../_components/Promotion'
 
 import classes from './index.module.scss'
 
+/** Draft mode returns the latest version regardless of status; otherwise
+ * only published content is ever read. */
+const statusFor = (isDraftMode: boolean): 'draft' | 'published' | undefined =>
+  isDraftMode ? undefined : 'published'
+
 export default async function Page({ params: { slug = 'home' } }) {
   const { isEnabled: isDraftMode } = draftMode()
 
-  let page: Page | null = null
-  // PHASE 13G: narrowed from the full `payload-types.ts` `Category[]` —
-  // this file only ever reads `categories.length` and passes the array
-  // straight through to `<Categories>` (already narrowed to
-  // `StorefrontCategory[]` in Phase 13F-B). `Page` is kept — `hero`/
-  // `layout` are still CMS discriminated unions with no native
-  // equivalent to narrow to.
+  let page: StorefrontPage | null = null
   let categories: StorefrontCategory[] | null = null
 
   try {
-    page = isNativeRepositoryEnabled()
-      ? await fetchPageNative(slug, isDraftMode ? undefined : 'published')
-      : await fetchDoc<Page>({
-          collection: 'pages',
-          slug,
-          draft: isDraftMode,
-        })
-
-    categories = isNativeRepositoryEnabled()
-      ? await fetchCategoriesNative()
-      : await fetchDocs<StorefrontCategory>('categories')
+    page = await fetchPage(slug, statusFor(isDraftMode))
+    categories = await fetchCategories()
   } catch (error) {
-    // swallow error - page will use fallback
+    // Render the fallback below rather than failing the request outright.
+    console.error('page read failed:', error) // eslint-disable-line no-console
   }
 
   if (!page && slug === 'home') {
-    page = staticHome
+    page = fallbackHome
   }
 
   if (!page) {
@@ -89,8 +80,7 @@ export default async function Page({ params: { slug = 'home' } }) {
 
 export async function generateStaticParams() {
   try {
-    const pages = await fetchDocs<Page>('pages')
-    return pages?.map(({ slug }) => slug)
+    return await fetchPageSlugs()
   } catch (error) {
     return []
   }
@@ -99,22 +89,16 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params: { slug = 'home' } }): Promise<Metadata> {
   const { isEnabled: isDraftMode } = draftMode()
 
-  let page: Page | null = null
+  let page: StorefrontPage | null = null
 
   try {
-    page = isNativeRepositoryEnabled()
-      ? await fetchPageNative(slug, isDraftMode ? undefined : 'published')
-      : await fetchDoc<Page>({
-          collection: 'pages',
-          slug,
-          draft: isDraftMode,
-        })
+    page = await fetchPage(slug, statusFor(isDraftMode))
   } catch (error) {
-    // swallow
+    // Fall through to the fallback below.
   }
 
   if (!page && slug === 'home') {
-    page = staticHome
+    page = fallbackHome
   }
 
   return generateMeta({ doc: page })

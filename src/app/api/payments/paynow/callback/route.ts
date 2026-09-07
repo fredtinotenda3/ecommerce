@@ -1,34 +1,21 @@
 // src/app/api/payments/paynow/callback/route.ts
 //
-// PHASE 8 — POST /api/payments/paynow/callback
+// POST /api/payments/paynow/callback — Paynow's `resulturl`, and the ONLY
+// authoritative source of payment success. The browser return URL is
+// cosmetic and never marks anything paid.
 //
-// This is Paynow's `resulturl` — the ONLY authoritative source of
-// payment success (see the brief's Critical Security Rules #4 and #5:
-// a browser redirect is not proof of payment, this callback is). The
-// GET .../return route is cosmetic only and must never mark anything
-// paid — see that route's header comment.
+// The body is read as a RAW STRING and never JSON-parsed here: Paynow's
+// hash is computed positionally over the exact field order it sent, and any
+// intermediate parse risks losing that order and failing a legitimate
+// callback. `PaynowProvider.handleCallback` parses it in an order-preserving
+// way and verifies the hash before anything is trusted.
 //
-// Reads the request body as a RAW STRING via `request.text()`,
-// deliberately never JSON-parsed. Paynow's hash validation is
-// positional over the EXACT field order Paynow sent the fields in (see
-// PaynowProvider.ts / paynowSignature.ts) — parsing into an object
-// first risks losing that order (e.g. via a body parser, a spread, or a
-// Map), which would make a legitimate callback fail hash verification.
-// The raw string is handed straight to PaynowProvider.handleCallback
-// (via processPaynowCallbackNative), which parses it internally in a
-// way that preserves order.
+// Responds 200 for any well-formed, hash-valid payload — including a
+// duplicate delivery, which is an idempotent no-op. A non-200 there would
+// make Paynow retry indefinitely on already-processed work.
 //
-// Always responds 200 for a payload that is well-formed and
-// hash-valid — REGARDLESS of whether it turned out to be a duplicate
-// delivery — per the brief's "duplicate callback must return 200
-// without side effects" requirement. A non-200 response here would
-// make Paynow retry indefinitely on what is otherwise a fully
-// processed, idempotent no-op.
-//
-// Flag-gated (USE_PAYNOW_CHECKOUT). No end-user auth check: this route
-// is called by Paynow's servers, not a logged-in browser session —
-// authenticity is established entirely by the hash, never by a cookie
-// or session.
+// No session check: the caller is Paynow's server, not a logged-in browser.
+// Authenticity comes from the hash alone, never from a cookie.
 
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
@@ -39,18 +26,17 @@ import {
   PaynowCallbackOrderNotFoundError,
   PaynowCallbackPaymentNotFoundError,
 } from '../../../../../lib/services/PaynowCallbackService'
-import { processPaynowCallbackNative } from '../../../../_api/paynowCheckout'
-import { guardPaynowCheckoutEnabled } from '../../../../_api/paynowCheckoutFlag'
+import { processPaynowCallback } from '../../../../_api/paynowCheckout'
+
+/** Reads request state (cookies/headers) — never statically rendered. */
+export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest): Promise<Response> {
-  const guard = guardPaynowCheckoutEnabled()
-  if (guard) return guard
-
   // Raw body string, not JSON — see file header.
   const rawBody = await request.text()
 
   try {
-    const { duplicate } = await processPaynowCallbackNative(rawBody)
+    const { duplicate } = await processPaynowCallback(rawBody)
     return NextResponse.json({ received: true, duplicate }, { status: 200 })
   } catch (error: unknown) {
     if (error instanceof InvalidPaynowCallbackError) {
@@ -75,7 +61,7 @@ export async function POST(request: NextRequest): Promise<Response> {
       // doesn't allow for wherever this Payment currently is (e.g. an
       // out-of-order/stale delivery arriving after a later status was
       // already recorded). This is NOT the duplicate/idempotent case —
-      // that's handled inside processPaynowCallbackNative without
+      // that's handled inside processPaynowCallback without
       // throwing. Logged, deliberately not applied, and acknowledged
       // with 200 since retrying will not change the outcome.
       // eslint-disable-next-line no-console

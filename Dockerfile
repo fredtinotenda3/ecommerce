@@ -1,27 +1,24 @@
-FROM node:18.8-alpine as base
+FROM node:20-alpine AS deps
+WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm ci --omit=dev || npm install --omit=dev
 
-FROM base as builder
-
-WORKDIR /home/node/app
-COPY package*.json ./
-
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm ci || npm install
 COPY . .
-RUN yarn install
-RUN yarn build
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN npm run build
 
-FROM base as runtime
-
+FROM node:20-alpine AS runtime
+WORKDIR /app
 ENV NODE_ENV=production
-ENV PAYLOAD_CONFIG_PATH=dist/payload.config.js
-
-WORKDIR /home/node/app
-COPY package*.json  ./
-COPY yarn.lock ./
-
-RUN yarn install --production
-COPY --from=builder /home/node/app/dist ./dist
-COPY --from=builder /home/node/app/build ./build
-
+ENV NEXT_TELEMETRY_DISABLED=1
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY package.json next.config.js csp.js redirects.js ./
 EXPOSE 3000
-
-CMD ["node", "dist/server.js"]
+USER node
+CMD ["npx", "next", "start"]

@@ -4,7 +4,7 @@
 //
 // RULES FOR THIS FILE (and everything under src/lib/domain, src/lib/services,
 // src/lib/repositories *interfaces*, src/lib/payments):
-//   - MUST NOT import from `payload`, `@payloadcms/*`, or `stripe`.
+//   - MUST NOT import a framework, an ORM, or a payment SDK.
 //   - MUST NOT import Mongoose. Mongoose is an infrastructure concern that
 //     belongs in src/lib/db/models and the repository *implementations* only.
 //
@@ -137,13 +137,13 @@ export interface Page {
 // is explicitly later phases (see the plan's "Suggested sequencing" §5,
 // steps 2 onward).
 //
-// Mirrors `payload-types.ts`'s generated `Page['layout']` / `Page['hero']`
+// Mirrors the stored `Page['layout']` / `Page['hero']` shape
 // shape (`Product['layout']` reuses the identical four block shapes) field-
 // for-field closely enough that a future mapping layer can convert between
 // them without semantic loss — but every field here is built from this
 // file's OWN vocabulary (`Media`, `Product`, `Category`, `Page` as declared
 // above in this file, plus the few new supporting types below), never
-// imported from `payload-types.ts` or `src/payload/**`. Same treatment as
+// imported from a generated type. Same treatment as
 // this file's existing `Media` type, which already deliberately duplicates
 // rather than imports Payload's generated `Media`.
 //
@@ -166,7 +166,7 @@ export type NativeLinkAppearance = 'default' | 'primary' | 'secondary'
  * `reference.value` is `string | Page` (unresolved id vs. populated doc),
  * matching how `layoutRelationsAdapter.ts`'s `resolveLink` already
  * represents a resolved reference today (just against this native `Page`
- * instead of `payload-types.ts`'s). */
+ * instead of the stored document's). */
 export interface NativeCMSLink {
   type?: 'reference' | 'custom'
   newTab?: boolean
@@ -239,7 +239,7 @@ export interface NativeArchiveRelation {
  * `selectedDocs` are NOT relation-resolved by `layoutRelationsAdapter.ts`
  * today (no current component reads them) — modelled here as `string[]`
  * only (unresolved ids), NOT `string[] | Category[]` like
- * `payload-types.ts`'s does, since nothing in this codebase produces the
+ * the stored shape does, since nothing in this codebase produces the
  * resolved form yet. Widening this to allow `Category[]` is a decision
  * explicitly deferred to the "migrate archive" step (plan §5, step 7),
  * once/if that resolution gap is closed. `populatedDocs`, which IS
@@ -453,7 +453,7 @@ export interface PaymentAttempt {
 // Site globals (Header / Footer / Settings)
 // ---------------------------------------------------------------------------
 //
-// PHASE 13D — mirrors the shape of Payload's Header/Footer/Settings globals
+// mirrors the shape of Payload's Header/Footer/Settings globals
 // (see src/payload/globals/{Header,Footer,Settings}.ts and the shared `link`
 // field builder at src/payload/fields/link.ts) closely enough for a
 // repository to map a Mongo `globals` document onto them without semantic

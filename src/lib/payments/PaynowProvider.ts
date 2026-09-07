@@ -3,7 +3,7 @@
 // Concrete `PaymentProvider` implementation (see PaymentProvider.ts,
 // Phase 1) for Paynow Zimbabwe (https://developers.paynow.co.zw).
 //
-// PHASE 7 SCOPE: this file implements the provider ADAPTER only. It is
+// SCOPE: this file implements the provider ADAPTER only. It is
 // not wired into checkout, cart, or any storefront route — see the
 // Phase 7 report for the full list of what was and wasn't touched.
 //

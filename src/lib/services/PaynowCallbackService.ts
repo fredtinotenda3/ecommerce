@@ -1,6 +1,6 @@
 // src/lib/services/PaynowCallbackService.ts
 //
-// PHASE 8 — orchestrates a single inbound Paynow callback (Paynow's
+// orchestrates a single inbound Paynow callback (Paynow's
 // `resulturl` POST) end to end: validate -> look up Payment -> (if this
 // is a genuine, non-duplicate status change) transition Payment and
 // Order status -> clear the customer's cart and record the purchase,

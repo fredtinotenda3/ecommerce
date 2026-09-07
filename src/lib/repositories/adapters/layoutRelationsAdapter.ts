@@ -1,83 +1,3 @@
-// src/lib/repositories/adapters/layoutRelationsAdapter.ts
-//
-// PHASE 3 — resolves the relational fields embedded INSIDE a raw
-// `layout` block array or a `hero` object (both are stored as Mongoose
-// `Mixed`/passthrough on Page.ts and Product.ts, so a `.lean()` read
-// returns them largely as Payload originally wrote them: relationship
-// fields are bare ObjectIds, not the populated docs the existing GraphQL
-// path already resolves — see PRODUCT/PAGE queries' nested selections in
-// src/app/_graphql/{blocks,pages,products}.ts).
-//
-// Block types `cta`, `content`, `mediaBlock`, and `archive` are shared
-// verbatim between `Page.layout` and `Product.layout` (see
-// payload-types.ts), and `hero` uses the same `media`/`links` shapes as
-// `mediaBlock`/`cta` — so this one module is reused by both
-// `fetchPageNative.ts` and `fetchProductNative.ts` rather than
-// duplicating the resolution logic per collection.
-//
-// NOTE ON DEVIATION FROM THE "PURE ADAPTER" CONVENTION: unlike
-// `categoryStorefrontAdapter.ts`/`mediaStorefrontAdapter.ts` (pure, no
-// I/O), the functions here DO call repositories, because resolving a
-// block tree's relationships is inherently a graph-walk that needs
-// lookups at arbitrary depth. Like `fetchCategoriesNative.ts`'s
-// `buildStorefrontCategories`, they take repository INTERFACES (not
-// concrete Mongo classes), so they remain unit-testable with the
-// existing fake-repository pattern without a database.
-//
-// This resolves ONLY the fields the current block components actually
-// read (see Phase 3 report for the full list of what was intentionally
-// left unresolved, e.g. `archive.categories`, `archive.selectedDocs` —
-// neither is consumed by `CollectionArchive`/`ArchiveBlock` today).
-//
-// READS ONLY.
-//
-// ---------------------------------------------------------------------
-// PHASE 13J — real parsing/validation against the native CMS types
-// ---------------------------------------------------------------------
-//
-// Added in this phase: the walk below is now driven by structural type
-// guards against `NativeLayoutBlock`/`NativeHero`/`NativeCMSLink`
-// (src/lib/domain/types.ts, added in Phase 13I) instead of a bare
-// `block.blockType === '...'` string comparison with no shape checking
-// at all. See the "PHASE 13J — structural validation" section below for
-// the guards themselves and why they're deliberately permissive rather
-// than a strict schema validator.
-//
-// UNCHANGED by this phase, on purpose (per the phase's own scope):
-//   - The EXTERNAL return shape of `resolveStorefrontLayout` /
-//     `resolveStorefrontHero` — still `unknown[]` / `RawBlock | null`. The
-//     caller (`pageStorefrontAdapter.ts`, `productStorefrontAdapter.ts`)
-//     now casts the result to a `StorefrontPage`/`StorefrontProductDetail`
-//     field type (`src/app/_types/storefront.ts`) instead of a
-//     `payload-types.ts` one — see PHASE 13S below and each of those two
-//     files' own comments.
-//   - Every *resolved* field's actual content for well-formed input
-//     (media/link/archive resolution logic is behaviorally identical to
-//     before this phase — see tests/layoutRelationsAdapter.test.ts,
-//     entirely unchanged from before this phase, still passing).
-//   - `archive.categories`/`archive.selectedDocs` remain unresolved (Phase
-//     3's documented scope limit — see the file header above and
-//     docs/native-cms-layout-plan.md §3.6).
-//
-// ---------------------------------------------------------------------
-// PHASE 13S — drop the `payload-types.ts` import from this file
-// ---------------------------------------------------------------------
-//
-// Before this phase, `resolveMediaField`'s return type and
-// `resolveArchivePopulatedDocs`'s resolved `value` field were annotated/cast
-// against `payload-types.ts`'s `Media`/`Product` (`PayloadMedia`/
-// `PayloadProduct`), even though neither annotation was load-bearing:
-// `toStorefrontMedia`/`buildMinimalStorefrontProduct` (this file's own
-// callees) already produce a value structurally compatible with those
-// types without any cast. `resolveMediaField` now returns the dedicated
-// `StorefrontMediaItem` view model (`src/app/_types/storefront.ts`) instead
-// — every value `toStorefrontMedia` produces still satisfies it unchanged
-// — and the `as PayloadProduct` in `resolveArchivePopulatedDocs` is simply
-// removed (the surrounding `RawBlock`'s `value: any` accepted it either
-// way). This drops the `Media as PayloadMedia`/`Product as PayloadProduct`
-// import entirely; nothing about either function's runtime behavior
-// changes — see tests/layoutRelationsAdapter.test.ts, unchanged and still
-// passing.
 
 import type { StorefrontMediaItem } from '../../../app/_types/storefront'
 import type {
@@ -120,7 +40,7 @@ const idToString = (value: unknown): string | null => {
 }
 
 // ---------------------------------------------------------------------
-// PHASE 13J — structural validation
+// structural validation
 // ---------------------------------------------------------------------
 //
 // These guards/coercers give the raw-Mongo-document walk below real
@@ -321,7 +241,7 @@ const resolveBlock = async (block: unknown, deps: LayoutResolutionDeps): Promise
   try {
     return await resolveKnownBlock(block, deps)
   } catch (error: unknown) {
-    // PHASE 13J — "fail safely": one malformed/unresolvable block (e.g. a
+    // "fail safely": one malformed/unresolvable block (e.g. a
     // relation id that causes a repository lookup to throw) must not fail
     // resolution of the entire page/product layout. Log for visibility
     // and fall back to the untouched raw block — same outcome as the

@@ -24,7 +24,7 @@ export interface OrderRepository {
   getById(id: string): Promise<Order | null>
   getByOrderNumber(orderNumber: string): Promise<Order | null>
   getByCustomer(customerId: string): Promise<Order[]>
-  /** PHASE 6 — read-only admin listing across ALL customers (unlike
+  /** read-only admin listing across ALL customers (unlike
    * `getByCustomer`, which is scoped to one). Added for the native admin
    * orders list; not used by any storefront/checkout code path. Sorted
    * newest-first, same convention as `getByCustomer`. */

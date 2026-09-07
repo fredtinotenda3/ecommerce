@@ -2,9 +2,6 @@ import React from 'react'
 import { Metadata } from 'next'
 import { Jost } from 'next/font/google'
 
-import { isNativeAdminEnabled } from './_api/adminFlag'
-import { resolveAuthMode } from './_api/authMode'
-import { AdminBar } from './_components/AdminBar'
 import { Footer } from './_components/Footer'
 import { Header } from './_components/Header'
 import { Providers } from './_providers'
@@ -28,24 +25,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </head>
       <body className={jost.variable}>
-        {/* PHASE 13B: nativeAuthEnabled is resolved server-side here
-            (resolveAuthMode() reads USE_NATIVE_AUTH via authFlag.ts, not
-            NEXT_PUBLIC_-prefixed) and passed down as a plain boolean
-            prop — AuthProvider itself is a client component and has no
-            other way to see this flag. Default off, so this line is a
-            no-op change for the flag-off path. */}
-        <Providers nativeAuthEnabled={resolveAuthMode() === 'native'}>
-          {/* PHASE 13A: nativeAdminEnabled is resolved server-side here
-              (isNativeAdminEnabled() reads USE_NATIVE_ADMIN, not
-              NEXT_PUBLIC_-prefixed) and passed down as a plain boolean
-              prop — AdminBar itself is a client component and has no
-              other way to see this flag. Default off, so this line is a
-              no-op change for the flag-off path. */}
-          <AdminBar nativeAdminEnabled={isNativeAdminEnabled()} />
-          {/* @ts-expect-error */}
+        <Providers>
+          {/* @ts-expect-error async server component */}
           <Header />
           <main className="main">{children}</main>
-          {/* @ts-expect-error */}
+          {/* @ts-expect-error async server component */}
           <Footer />
         </Providers>
       </body>
@@ -54,10 +38,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 }
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SERVER_URL || 'https://payloadcms.com'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'),
   twitter: {
     card: 'summary_large_image',
-    creator: '@payloadcms',
   },
   openGraph: mergeOpenGraph(),
 }

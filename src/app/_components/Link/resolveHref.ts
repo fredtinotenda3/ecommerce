@@ -1,6 +1,6 @@
 // src/app/_components/Link/resolveHref.ts
 //
-// PHASE 13K — link classification/reference-resolution logic extracted
+// link classification/reference-resolution logic extracted
 // out of `CMSLink` (see ./index.tsx) into a pure, dependency-free
 // function so it can be unit tested directly (see
 // tests/resolveCMSLinkHref.test.ts) without rendering React. Behavior is

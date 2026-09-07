@@ -1,393 +1,191 @@
 'use client'
 
+// src/app/_providers/Auth/index.tsx
+//
+// Client-side session state, backed by the /api/auth/* routes.
+//
+// The session itself lives in an httpOnly cookie the browser sends
+// automatically (`credentials: 'include'`); nothing here reads or stores a
+// token, so a script injected into the page cannot exfiltrate one. The user
+// object held in state is a convenience for rendering — every
+// authorization decision is made server-side, per request.
+
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
 
-import { User } from '../../../payload/payload-types'
-import { mapNativeAuthUserToStorefrontUser, NativeAuthUser } from './nativeAuthUser'
+import type { StorefrontUser } from '../../_types/storefront'
+import { type AuthUser, mapAuthUserToStorefrontUser } from './authUser'
 
-// eslint-disable-next-line no-unused-vars
 type ResetPassword = (args: {
   password: string
   passwordConfirm?: string
   token: string
 }) => Promise<void>
 
-type ForgotPassword = (args: { email: string }) => Promise<void> // eslint-disable-line no-unused-vars
+type ForgotPassword = (args: { email: string }) => Promise<void>
 
 type Create = (args: {
   email: string
   password: string
   passwordConfirm?: string
   name?: string
-}) => Promise<void> // eslint-disable-line no-unused-vars
+}) => Promise<void>
 
-type Login = (args: { email: string; password: string }) => Promise<User> // eslint-disable-line no-unused-vars
+type Login = (args: { email: string; password: string }) => Promise<StorefrontUser>
 
 type Logout = () => Promise<void>
 
 type AuthContext = {
-  user?: User | null
-  setUser: (user: User | null) => void // eslint-disable-line no-unused-vars
+  user?: StorefrontUser | null
+  setUser: (user: StorefrontUser | null) => void
   logout: Logout
   login: Login
   create: Create
   resetPassword: ResetPassword
   forgotPassword: ForgotPassword
   status: undefined | 'loggedOut' | 'loggedIn'
-  /** PHASE 13B: exposes the resolved auth mode to consumers (e.g. pages
-   * that call `fetch` directly instead of going through `login`/`create`
-   * above) so they can branch to the matching endpoint. Mirrors the
-   * `nativeAuthEnabled` prop this same value is threaded down from. */
-  nativeAuthEnabled: boolean
 }
 
 const Context = createContext({} as AuthContext)
 
-/** Native auth JSON responses ({@link NativeAuthUser}) come back on this
- * shape from all six `/api/auth-native/*` routes on success — see
- * src/app/api/auth-native/*\/route.ts. */
-type NativeAuthResponseBody = {
-  user?: NativeAuthUser
+/** Every /api/auth/* route responds on this shape. */
+type AuthResponseBody = {
+  user?: AuthUser
   error?: string
 }
 
-const NATIVE_AUTH_HEADERS = { 'Content-Type': 'application/json' } as const
+const AUTH_HEADERS = { 'Content-Type': 'application/json' } as const
 
-export const AuthProvider: React.FC<{
-  children: React.ReactNode
-  /** PHASE 13B: when true (`USE_NATIVE_AUTH=true`, resolved server-side
-   * in layout.tsx via `resolveAuthMode()` and passed down as a prop,
-   * since this is a client component and the flag itself is not
-   * `NEXT_PUBLIC_`-prefixed — same pattern as `AdminBar`'s
-   * `nativeAdminEnabled` in Phase 13a), every method below calls the
-   * `/api/auth-native/*` routes and reads/writes the `native-session`
-   * cookie instead of Payload's `/api/users/*` + `payload-token`.
-   * Defaults to false, so omitting this prop preserves the exact
-   * pre-Phase-13b (Payload-only) behavior byte-for-byte. */
-  nativeAuthEnabled?: boolean
-}> = ({ children, nativeAuthEnabled = false }) => {
-  const [user, setUser] = useState<User | null>()
+/** Relative URLs keep every auth request same-origin, so the session cookie
+ * is sent and no absolute origin needs to be configured for the client. */
+const authUrl = (path: string): string => `/api/auth/${path}`
 
-  // used to track the single event of logging in or logging out
-  // useful for `useEffect` hooks that should only run once
+/** The auth routes only ever return deliberately non-specific messages, so
+ * showing the server's own text is safe; anything else falls back to a
+ * generic string rather than surfacing a transport-level detail. */
+const readError = (body: AuthResponseBody | null, fallback: string): string =>
+  typeof body?.error === 'string' && body.error ? body.error : fallback
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<StorefrontUser | null>()
+
+  // Tracks the single event of logging in or out, for effects that should
+  // run once per transition rather than on every user object change.
   const [status, setStatus] = useState<undefined | 'loggedOut' | 'loggedIn'>()
 
-  const create = useCallback<Create>(
-    async args => {
-      if (nativeAuthEnabled) {
-        try {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/auth-native/register`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: NATIVE_AUTH_HEADERS,
-            body: JSON.stringify({
-              email: args.email,
-              password: args.password,
-              name: args.name ?? null,
-            }),
-          })
+  const create = useCallback<Create>(async args => {
+    const res = await fetch(authUrl('register'), {
+      method: 'POST',
+      credentials: 'include',
+      headers: AUTH_HEADERS,
+      body: JSON.stringify({
+        email: args.email,
+        password: args.password,
+        name: args.name ?? null,
+      }),
+    })
 
-          const body: NativeAuthResponseBody = await res.json()
-          if (!res.ok || !body.user) throw new Error(body.error || 'Invalid registration')
+    const body: AuthResponseBody | null = await res.json().catch(() => null)
+    if (!res.ok || !body?.user) {
+      throw new Error(readError(body, 'Unable to create your account.'))
+    }
 
-          // Native `/register` already issues a session and sets the
-          // `native-session` cookie (see the route's header comment) —
-          // unlike Payload's `/api/users` create, there is no separate
-          // login step needed here.
-          setUser(mapNativeAuthUserToStorefrontUser(body.user))
-          setStatus('loggedIn')
-        } catch (e) {
-          throw new Error('An error occurred while attempting to login.')
-        }
-        return
-      }
+    // Registration issues the session in the same request, so there is no
+    // separate login round trip here.
+    setUser(mapAuthUserToStorefrontUser(body.user))
+    setStatus('loggedIn')
+  }, [])
 
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/create`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: args.email,
-            password: args.password,
-            passwordConfirm: args.passwordConfirm,
-          }),
-        })
+  const login = useCallback<Login>(async args => {
+    const res = await fetch(authUrl('login'), {
+      method: 'POST',
+      credentials: 'include',
+      headers: AUTH_HEADERS,
+      body: JSON.stringify({ email: args.email, password: args.password }),
+    })
 
-        if (res.ok) {
-          const { data, errors } = await res.json()
-          if (errors) throw new Error(errors[0].message)
-          setUser(data?.loginUser?.user)
-          setStatus('loggedIn')
-        } else {
-          throw new Error('Invalid login')
-        }
-      } catch (e) {
-        throw new Error('An error occurred while attempting to login.')
-      }
-    },
-    [nativeAuthEnabled],
-  )
+    const body: AuthResponseBody | null = await res.json().catch(() => null)
+    if (!res.ok || !body?.user) {
+      throw new Error(readError(body, 'Invalid login.'))
+    }
 
-  const login = useCallback<Login>(
-    async args => {
-      if (nativeAuthEnabled) {
-        try {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/auth-native/login`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: NATIVE_AUTH_HEADERS,
-            body: JSON.stringify({
-              email: args.email,
-              password: args.password,
-            }),
-          })
-
-          const body: NativeAuthResponseBody = await res.json()
-          if (!res.ok || !body.user) throw new Error(body.error || 'Invalid login')
-
-          const mappedUser = mapNativeAuthUserToStorefrontUser(body.user)
-          setUser(mappedUser)
-          setStatus('loggedIn')
-          return mappedUser
-        } catch (e) {
-          throw new Error('An error occurred while attempting to login.')
-        }
-      }
-
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/login`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: args.email,
-            password: args.password,
-          }),
-        })
-
-        if (res.ok) {
-          const { user: loggedInUser, errors } = await res.json()
-          if (errors) throw new Error(errors[0].message)
-          setUser(loggedInUser)
-          setStatus('loggedIn')
-          return loggedInUser
-        }
-
-        throw new Error('Invalid login')
-      } catch (e) {
-        throw new Error('An error occurred while attempting to login.')
-      }
-    },
-    [nativeAuthEnabled],
-  )
+    const mappedUser = mapAuthUserToStorefrontUser(body.user)
+    setUser(mappedUser)
+    setStatus('loggedIn')
+    return mappedUser
+  }, [])
 
   const logout = useCallback<Logout>(async () => {
-    if (nativeAuthEnabled) {
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/auth-native/logout`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: NATIVE_AUTH_HEADERS,
-        })
+    const res = await fetch(authUrl('logout'), {
+      method: 'POST',
+      credentials: 'include',
+      headers: AUTH_HEADERS,
+    })
 
-        if (res.ok) {
-          setUser(null)
-          setStatus('loggedOut')
-        } else {
-          throw new Error('An error occurred while attempting to logout.')
-        }
-      } catch (e) {
-        throw new Error('An error occurred while attempting to logout.')
-      }
-      return
-    }
-
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/logout`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (res.ok) {
-        setUser(null)
-        setStatus('loggedOut')
-      } else {
-        throw new Error('An error occurred while attempting to logout.')
-      }
-    } catch (e) {
+    if (!res.ok) {
       throw new Error('An error occurred while attempting to logout.')
     }
-  }, [nativeAuthEnabled])
+
+    setUser(null)
+    setStatus('loggedOut')
+  }, [])
 
   useEffect(() => {
-    const fetchMeNative = async () => {
+    const fetchMe = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/auth-native/me`, {
+        const res = await fetch(authUrl('me'), {
           method: 'GET',
           credentials: 'include',
-          headers: NATIVE_AUTH_HEADERS,
+          headers: AUTH_HEADERS,
         })
 
-        if (res.ok) {
-          const body: NativeAuthResponseBody = await res.json()
-          const mappedUser = body.user ? mapNativeAuthUserToStorefrontUser(body.user) : null
-          setUser(mappedUser)
-          setStatus(mappedUser ? 'loggedIn' : undefined)
-        } else {
-          // 401 (no/expired session) is the expected steady state for a
-          // logged-out visitor, not an error — mirrors the Payload path
-          // below treating a non-ok `/api/users/me` as "no user" too.
+        if (!res.ok) {
+          // 401 is the expected steady state for a logged-out visitor, not
+          // an error worth surfacing.
           setUser(null)
+          return
         }
+
+        const body: AuthResponseBody | null = await res.json().catch(() => null)
+        const mappedUser = body?.user ? mapAuthUserToStorefrontUser(body.user) : null
+        setUser(mappedUser)
+        setStatus(mappedUser ? 'loggedIn' : undefined)
       } catch (e) {
         setUser(null)
       }
     }
 
-    const fetchMePayload = async () => {
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/me`, {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        })
+    fetchMe()
+  }, [])
 
-        if (res.ok) {
-          const { user: meUser } = await res.json()
-          setUser(meUser || null)
-          setStatus(meUser ? 'loggedIn' : undefined)
-        } else {
-          throw new Error('An error occurred while fetching your account.')
-        }
-      } catch (e) {
-        setUser(null)
-        throw new Error('An error occurred while fetching your account.')
-      }
+  const forgotPassword = useCallback<ForgotPassword>(async args => {
+    const res = await fetch(authUrl('forgot-password'), {
+      method: 'POST',
+      credentials: 'include',
+      headers: AUTH_HEADERS,
+      body: JSON.stringify({ email: args.email }),
+    })
+
+    if (!res.ok) {
+      throw new Error('An error occurred while requesting a password reset.')
+    }
+  }, [])
+
+  const resetPassword = useCallback<ResetPassword>(async args => {
+    const res = await fetch(authUrl('reset-password'), {
+      method: 'POST',
+      credentials: 'include',
+      headers: AUTH_HEADERS,
+      body: JSON.stringify({ password: args.password, token: args.token }),
+    })
+
+    const body: AuthResponseBody | null = await res.json().catch(() => null)
+    if (!res.ok || !body?.user) {
+      throw new Error(readError(body, 'Unable to reset your password.'))
     }
 
-    if (nativeAuthEnabled) {
-      fetchMeNative()
-    } else {
-      fetchMePayload()
-    }
-  }, [nativeAuthEnabled])
-
-  const forgotPassword = useCallback<ForgotPassword>(
-    async args => {
-      if (nativeAuthEnabled) {
-        try {
-          const res = await fetch(
-            `${process.env.NEXT_PUBLIC_SERVER_URL}/api/auth-native/forgot-password`,
-            {
-              method: 'POST',
-              credentials: 'include',
-              headers: NATIVE_AUTH_HEADERS,
-              body: JSON.stringify({
-                email: args.email,
-              }),
-            },
-          )
-
-          if (!res.ok) throw new Error('Invalid login')
-        } catch (e) {
-          throw new Error('An error occurred while attempting to login.')
-        }
-        return
-      }
-
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/forgot-password`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: args.email,
-          }),
-        })
-
-        if (res.ok) {
-          const { data, errors } = await res.json()
-          if (errors) throw new Error(errors[0].message)
-          setUser(data?.loginUser?.user)
-        } else {
-          throw new Error('Invalid login')
-        }
-      } catch (e) {
-        throw new Error('An error occurred while attempting to login.')
-      }
-    },
-    [nativeAuthEnabled],
-  )
-
-  const resetPassword = useCallback<ResetPassword>(
-    async args => {
-      if (nativeAuthEnabled) {
-        try {
-          const res = await fetch(
-            `${process.env.NEXT_PUBLIC_SERVER_URL}/api/auth-native/reset-password`,
-            {
-              method: 'POST',
-              credentials: 'include',
-              headers: NATIVE_AUTH_HEADERS,
-              body: JSON.stringify({
-                password: args.password,
-                token: args.token,
-              }),
-            },
-          )
-
-          const body: NativeAuthResponseBody = await res.json()
-          if (!res.ok || !body.user) throw new Error(body.error || 'Invalid login')
-
-          const mappedUser = mapNativeAuthUserToStorefrontUser(body.user)
-          setUser(mappedUser)
-          setStatus('loggedIn')
-        } catch (e) {
-          throw new Error('An error occurred while attempting to login.')
-        }
-        return
-      }
-
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/reset-password`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            password: args.password,
-            passwordConfirm: args.passwordConfirm,
-            token: args.token,
-          }),
-        })
-
-        if (res.ok) {
-          const { data, errors } = await res.json()
-          if (errors) throw new Error(errors[0].message)
-          setUser(data?.loginUser?.user)
-          setStatus(data?.loginUser?.user ? 'loggedIn' : undefined)
-        } else {
-          throw new Error('Invalid login')
-        }
-      } catch (e) {
-        throw new Error('An error occurred while attempting to login.')
-      }
-    },
-    [nativeAuthEnabled],
-  )
+    setUser(mapAuthUserToStorefrontUser(body.user))
+    setStatus('loggedIn')
+  }, [])
 
   return (
     <Context.Provider
@@ -400,7 +198,6 @@ export const AuthProvider: React.FC<{
         resetPassword,
         forgotPassword,
         status,
-        nativeAuthEnabled,
       }}
     >
       {children}
@@ -408,6 +205,4 @@ export const AuthProvider: React.FC<{
   )
 }
 
-type UseAuth<T = User> = () => AuthContext // eslint-disable-line no-unused-vars
-
-export const useAuth: UseAuth = () => useContext(Context)
+export const useAuth = (): AuthContext => useContext(Context)

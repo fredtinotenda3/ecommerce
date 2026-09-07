@@ -1,5 +1,5 @@
 export type Theme = 'light' | 'dark'
 
-export const themeLocalStorageKey = 'payload-theme'
+export const themeLocalStorageKey = 'site-theme'
 
 export const defaultTheme = 'light'

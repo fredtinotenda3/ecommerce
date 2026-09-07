@@ -9,7 +9,7 @@ export interface CategoryDocument extends Document {
   _id: Types.ObjectId
   title: string
   media?: Types.ObjectId | null
-  /** Added by @payloadcms/plugin-nested-docs at the Payload layer today;
+  /** Written by the previous CMS's nested-docs plugin;
    * declared here as optional/passthrough so this model can read it
    * without owning the nested-docs breadcrumb-building logic yet. */
   parent?: Types.ObjectId | null

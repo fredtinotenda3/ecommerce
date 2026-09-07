@@ -1,19 +1,13 @@
 // src/app/api/checkout/paynow/initiate/route.ts
 //
-// PHASE 8 — POST /api/checkout/paynow/initiate
+// POST /api/checkout/paynow/initiate — creates the order and starts the
+// Paynow payment, returning the URL to redirect the customer to.
 //
-// Flag-gated (USE_PAYNOW_CHECKOUT — see ../../../../_api/paynowCheckoutFlag.ts).
-// Requires an authenticated Payload user via the EXISTING `payload-token`
-// cookie (see ../../../../_api/getAuthenticatedPayloadUser.ts) — no new
-// auth mechanism is introduced.
-//
-// SECURITY: this route never reads a price, total, or cart contents from
-// the request body. The request body is not used for pricing at all —
-// cart items are always read fresh from the database for the
-// authenticated customer (see getCustomerCartItemsNative), and every
-// price is re-derived server-side from the current product records by
-// OrderService (see src/lib/services/pricing.ts). A client sending a
-// tampered body cannot influence what gets charged.
+// SECURITY: this route never reads a price, total or cart from the request
+// body — it reads nothing from the body at all. Cart contents come from the
+// database for the authenticated customer, and every price is re-derived
+// server-side from current product records (see src/lib/services/pricing.ts).
+// A tampered client cannot influence what is charged.
 
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
@@ -28,12 +22,14 @@ import {
   MixedCurrencyCartError,
   ProductNotPurchasableError,
 } from '../../../../../lib/services/pricing'
-import { getAuthenticatedPayloadUser } from '../../../../_api/getAuthenticatedPayloadUser'
+import { getAuthenticatedUser } from '../../../../_api/authenticatedUser'
 import {
-  getCustomerCartItemsNative,
-  initiatePaynowCheckoutNative,
+  getCustomerCartItems,
+  initiatePaynowCheckout,
 } from '../../../../_api/paynowCheckout'
-import { guardPaynowCheckoutEnabled } from '../../../../_api/paynowCheckoutFlag'
+
+/** Reads request state (cookies/headers) — never statically rendered. */
+export const dynamic = 'force-dynamic'
 
 /** Where Paynow POSTs its authoritative status update. A fixed
  * PAYNOW_RESULT_URL (recommended for production — see .env.example)
@@ -69,10 +65,7 @@ const mapCheckoutError = (error: unknown): NextResponse => {
 }
 
 export async function POST(request: NextRequest): Promise<Response> {
-  const guard = guardPaynowCheckoutEnabled()
-  if (guard) return guard
-
-  const user = await getAuthenticatedPayloadUser()
+  const user = await getAuthenticatedUser()
   if (!user) {
     return NextResponse.json({ error: 'You must be logged in to checkout.' }, { status: 401 })
   }
@@ -80,7 +73,7 @@ export async function POST(request: NextRequest): Promise<Response> {
   try {
     // Server-side source of truth for what's being purchased — see the
     // file header. Nothing from `request` is used to determine this.
-    const cartItems = await getCustomerCartItemsNative(user.id)
+    const cartItems = await getCustomerCartItems(user.id)
 
     if (cartItems.length === 0) {
       return NextResponse.json({ error: 'Your cart is empty.' }, { status: 400 })
@@ -89,7 +82,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     const resultUrl = getResultUrl(request)
     const origin = request.nextUrl.origin
 
-    const { order, payment, redirectUrl } = await initiatePaynowCheckoutNative({
+    const { order, payment, redirectUrl } = await initiatePaynowCheckout({
       customerId: user.id,
       cartItems,
       customerEmail: user.email,

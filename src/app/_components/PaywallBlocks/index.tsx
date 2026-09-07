@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react'
 import Link from 'next/link'
 
-import { Page } from '../../../payload/payload-types'
+import type { StorefrontLayoutBlock } from '../../_types/storefront'
 import { useAuth } from '../../_providers/Auth'
 import { Blocks } from '../Blocks'
 import { Gutter } from '../Gutter'
@@ -19,7 +19,7 @@ export const PaywallBlocks: React.FC<{
   const { user } = useAuth()
 
   const [isLoading, setIsLoading] = React.useState(false)
-  const [blocks, setBlocks] = React.useState<Page['layout']>()
+  const [blocks, setBlocks] = React.useState<StorefrontLayoutBlock[]>()
   const hasInitialized = React.useRef(false)
   const isRequesting = React.useRef(false)
 
@@ -34,12 +34,9 @@ export const PaywallBlocks: React.FC<{
       setIsLoading(true)
 
       try {
-        // PHASE 13A: this now calls a same-origin route (/api/paywall)
-        // instead of Payload's /api/graphql directly. The server-side
-        // route decides whether to serve native or Payload-backed
-        // content (USE_NATIVE_REPOSITORY) — see its header comment. The
-        // response shape and everything below this fetch call are
-        // unchanged: still `res?.data?.Products.docs[0]?.paywall`.
+        // The server decides what this caller may see — see
+        // /api/paywall. An unauthorized or anonymous request comes back
+        // with a null paywall, indistinguishable from "no such product".
         const paywall = await fetch(`/api/paywall`, {
           method: 'POST',
           credentials: 'include',
@@ -51,7 +48,7 @@ export const PaywallBlocks: React.FC<{
           }),
         })
           ?.then(res => res.json())
-          ?.then(res => res?.data?.Products.docs[0]?.paywall)
+          ?.then(res => res?.paywall as StorefrontLayoutBlock[] | null)
 
         if (paywall) {
           setBlocks(paywall)

@@ -1,14 +1,13 @@
 // src/lib/repositories/GlobalsRepository.ts
 //
-// PHASE 13D — read-only native repository for the Header/Footer/Settings
-// globals. Mirrors the CategoryRepository/PageRepository/MediaRepository
-// pattern in this directory: an interface (so callers/tests can depend on
-// an abstraction, not a concrete Mongo class) plus a Mongo implementation.
+// Read-only repository for the Header/Footer/Settings globals. Same shape
+// as the other repositories here: an interface, so callers and tests depend
+// on an abstraction rather than a concrete Mongo class, plus its Mongo
+// implementation.
 //
-// This performs READS ONLY, matching the storefront's own read-only use of
-// these globals today (see src/app/_api/fetchGlobals.ts) — Payload's admin
-// UI remains the only way to edit Header/Footer/Settings while Payload is
-// still in place.
+// Reads only. These documents are edited directly in the database (or by a
+// future admin screen); nothing in the request path writes them, so there
+// is no write API to misuse.
 import type { Connection } from 'mongoose'
 
 import {

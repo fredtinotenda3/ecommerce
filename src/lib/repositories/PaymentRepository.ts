@@ -16,7 +16,7 @@ export interface PaymentRepository {
   getById(id: string): Promise<Payment | null>
   getByOrderId(orderId: string): Promise<Payment[]>
   getByMerchantReference(merchantReference: string): Promise<Payment | null>
-  /** PHASE 13F-A — looks a Payment up by the PROVIDER's own identifier
+  /** looks a Payment up by the PROVIDER's own identifier
    * (e.g. a Stripe PaymentIntent id) rather than our merchant reference.
    * Needed because an inbound Stripe webhook event only ever carries
    * `event.data.object.id` (the PaymentIntent id) — it has no idea what

@@ -8,18 +8,6 @@ import RichText from '../../_components/RichText'
 
 import classes from './index.module.scss'
 
-// PHASE 13R: previously `Extract<Page['layout'][0], { blockType:
-// 'mediaBlock' }>` (`Page` from `payload-types.ts`); now
-// `invertBackground`/`position`/`id`/`blockName`/`blockType` come from the
-// shared `StorefrontMediaLayoutBlock` view model
-// (`src/app/_types/storefront.ts`) — same pattern as
-// `CallToActionBlock`/`ContentBlock` (Phase 13L).
-//
-// PHASE 13V: `media` is now `string | StorefrontHeroMedia` instead of
-// `payload-types.ts`'s full `Media` — this component reads `media.caption`
-// directly (below), same as `HighImpactHero`, so it needs
-// `StorefrontHeroMedia` (Phase 13V) rather than plain `StorefrontMediaItem`.
-// This drops the `payload-types.ts` import from this file entirely.
 type Props = StorefrontMediaLayoutBlock & {
   media: string | StorefrontHeroMedia
   staticImage?: StaticImageData

@@ -12,15 +12,12 @@ import { HeaderNav } from '../Nav'
 
 import classes from './index.module.scss'
 
-// PHASE 13K: narrowed from `payload-types.ts`'s `Header` to
-// `StorefrontHeader` — see the matching comment in ../Nav/index.tsx, which
-// this component just forwards `header` on to unchanged.
 const HeaderComponent = ({ header }: { header: StorefrontHeader | null }) => {
   // `header` may be `null` here (see src/app/_components/Header/index.tsx's
   // try/catch, e.g. when the native repository has no Header global yet) —
   // `HeaderNav` below already null-guards `header?.navItems`.
   //
-  // PHASE 13D: `usePathname` must still be called unconditionally
+  // `usePathname` must still be called unconditionally
   // (react-hooks/rules-of-hooks) — a crash inside it
   // ("Cannot read properties of null (reading 'useContext')") observed
   // during native server boot in a sandboxed environment with no Google

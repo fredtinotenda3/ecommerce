@@ -1,6 +1,6 @@
 // src/lib/repositories/AuthUserRepository.ts
 //
-// PHASE 5 — flag-gated, native authentication data access.
+// flag-gated, native authentication data access.
 //
 // Deliberately a SEPARATE repository from `UserRepository`
 // (UserRepository.ts), not an extension of it. `UserRepository`'s

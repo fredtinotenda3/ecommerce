@@ -1,28 +1,22 @@
 // src/lib/services/AdminAccessService.ts
 //
-// PHASE 6 — pure authorization-decision logic for the native admin area.
-// Orchestration only (mirrors AuthService.ts and the fetchXNative.ts /
-// buildStorefrontX split): takes an `AuthUserRepository` INTERFACE, not a
-// concrete Mongo class, so it's unit-testable with
-// `tests/fakes/FakeAuthUserRepository.ts` and no database. DB + cookie/
-// header wiring lives in `src/app/_api/adminAccess.ts`.
+// Authorization decision for the admin area. Orchestration only: takes an
+// `AuthUserRepository` INTERFACE, so it is unit-testable with
+// `tests/fakes/FakeAuthUserRepository.ts` and no database. Cookie/header
+// and connection wiring live in `src/app/_api/adminAccess.ts`.
 //
-// Access rule (per the Phase 6 task):
-//   USE_NATIVE_ADMIN=true AND USE_NATIVE_AUTH=true AND a valid
-//   native-session token AND the resolved user has role 'admin'.
-// Any other case is "not authorized" — the caller (adminAccess.ts /
-// the native-admin layout) is responsible for turning that into a 404,
-// never a 401/403, so the admin area's existence isn't confirmed to an
-// unauthorized caller (same rationale as guardNativeAuthEnabled in
-// src/app/api/auth-native/_shared/respond.ts).
+// Access rule: a valid session token whose user has the `admin` role.
+// Everything else — no token, an expired or tampered token, a deleted
+// user, a non-admin user — is the same "not authorized" result, with no
+// detail about which. The caller turns that into a 404 rather than a
+// 401/403, so the admin area's existence is never confirmed to an
+// unauthorized caller.
 
 import { isAdmin } from '../auth/roles'
 import type { AuthUserRepository } from '../repositories/AuthUserRepository'
 import { getCurrentUser, type SanitizedAuthUser } from './AuthService'
 
 export interface AdminAccessParams {
-  nativeAdminEnabled: boolean
-  nativeAuthEnabled: boolean
   token: string | null
 }
 
@@ -37,16 +31,10 @@ export const resolveAdminAccess = async (
   params: AdminAccessParams,
   deps: { userRepository: AuthUserRepository },
 ): Promise<AdminAccessResult> => {
-  if (!params.nativeAdminEnabled || !params.nativeAuthEnabled) {
-    return DENIED
-  }
-
   let user: SanitizedAuthUser
   try {
     user = await getCurrentUser(params.token, { userRepository: deps.userRepository })
   } catch {
-    // Invalid/expired/missing token, or the token refers to a user that
-    // no longer exists — all treated identically as "not authorized".
     return DENIED
   }
 

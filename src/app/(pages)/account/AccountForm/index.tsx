@@ -39,35 +39,47 @@ const AccountForm: React.FC = () => {
 
   const onSubmit = useCallback(
     async (data: FormData) => {
-      if (user) {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/${user.id}`, {
-          // Make sure to include cookies with fetch
-          credentials: 'include',
-          method: 'PATCH',
-          body: JSON.stringify(data),
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        })
+      if (!user) return
 
-        if (response.ok) {
-          const json = await response.json()
-          setUser(json.doc)
-          setSuccess('Successfully updated account.')
-          setError('')
-          setChangePassword(false)
-          reset({
-            email: json.doc.email,
-            name: json.doc.name,
-            password: '',
-            passwordConfirm: '',
-          })
-        } else {
-          setError('There was a problem updating your account.')
-        }
+      // The account updated is always the one in the session — no id is
+      // sent, and the route reads it from the session cookie.
+      const response = await fetch('/api/account', {
+        credentials: 'include',
+        method: 'PATCH',
+        body: JSON.stringify(
+          changePassword
+            ? { password: data.password }
+            : { email: data.email, name: data.name },
+        ),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      const json = await response.json().catch(() => null)
+
+      if (!response.ok || !json?.user) {
+        setError(
+          typeof json?.error === 'string'
+            ? json.error
+            : 'There was a problem updating your account.',
+        )
+        setSuccess('')
+        return
       }
+
+      setUser(json.user)
+      setSuccess(changePassword ? 'Password updated.' : 'Successfully updated account.')
+      setError('')
+      setChangePassword(false)
+      reset({
+        email: json.user.email,
+        name: json.user.name ?? '',
+        password: '',
+        passwordConfirm: '',
+      })
     },
-    [user, setUser, reset],
+    [user, setUser, reset, changePassword],
   )
 
   useEffect(() => {
@@ -83,7 +95,7 @@ const AccountForm: React.FC = () => {
     if (user) {
       reset({
         email: user.email,
-        name: user.name,
+        name: user.name ?? '',
         password: '',
         passwordConfirm: '',
       })

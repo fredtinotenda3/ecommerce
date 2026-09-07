@@ -8,7 +8,7 @@
 // these as untouched passthrough fields (via `strict: false`) since
 // nothing native read/wrote them yet.
 //
-// PHASE 5: the native auth service (src/lib/services/AuthService.ts, via
+// the native auth service (src/lib/services/AuthService.ts, via
 // src/lib/repositories/AuthUserRepository.ts) now reads and writes these
 // fields directly, so they're declared explicitly below rather than left
 // implicit. `strict: false` is kept so any other Payload-internal auth
@@ -42,7 +42,7 @@ export interface UserDocument extends Document {
   // ProductDocument.legacyStripeProductId. ---
   legacyStripeCustomerId?: string | null
 
-  // --- Payload auth fields (PHASE 5: read/written by native auth) ---
+  // --- Payload auth fields (read/written by native auth) ---
   hash?: string | null
   salt?: string | null
   loginAttempts?: number | null

@@ -4,11 +4,7 @@ import React, { Fragment } from 'react'
 import Link from 'next/link'
 
 import { Button } from '../../../_components/Button'
-import { HR } from '../../../_components/HR'
 import { LoadingShimmer } from '../../../_components/LoadingShimmer'
-import { Media } from '../../../_components/Media'
-import { Price } from '../../../_components/Price'
-import { RemoveFromCartButton } from '../../../_components/RemoveFromCartButton'
 import { useAuth } from '../../../_providers/Auth'
 import { useCart } from '../../../_providers/Cart'
 import { StorefrontSettingsLike } from '../../../_types/storefront'
@@ -17,18 +13,8 @@ import CartItem from '../CartItem'
 import classes from './index.module.scss'
 
 export const CartPage: React.FC<{
-  // PHASE 13F-B: narrowed from the full `payload-types.ts` `Settings` —
-  // this component only ever reads `settings.productsPage.slug` (see
-  // StorefrontSettingsLike's doc comment in src/app/_types/storefront.ts).
-  // Every existing caller already passes a real `Settings`, which
-  // satisfies this narrower shape unchanged.
-  settings: StorefrontSettingsLike
-  // PHASE 13G: dropped the `page: Page` prop entirely — it was declared
-  // but never read anywhere in this component (confirmed via the
-  // 13F-B report, which flagged it as "already-unused" but left it as
-  // out of scope). Removing an unused prop is not a behavior change:
-  // nothing here ever depended on it. The caller (`cart/page.tsx`) was
-  // updated in the same commit to stop passing it.
+  /** Only read for `productsPage.slug`, to link back to the catalogue. */
+  settings: StorefrontSettingsLike | null
 }> = props => {
   const { settings } = props
   const { productsPage } = settings || {}
@@ -79,29 +65,19 @@ export const CartPage: React.FC<{
                 </div>
                 {/* CART ITEM LIST */}
                 <ul className={classes.itemsList}>
-                  {cart?.items?.map((item, index) => {
+                  {cart?.items?.map(item => {
                     if (typeof item.product === 'object') {
                       const {
                         quantity,
                         product,
-                        // PHASE 13P — `stripeProductID` dropped from this
-                        // destructure: it was already unused here (never
-                        // read anywhere in this scope), and the narrowed
-                        // `StorefrontCartProduct` a cart item's `product`
-                        // is now typed against (see
-                        // `src/app/_providers/Cart/reducer.ts`) doesn't
-                        // carry that field, since nothing in Cart-coupled
-                        // code ever reads it. No behavior change — this
-                        // variable was dead code before this phase too.
                         product: { id, title, meta },
                       } = item
-
-                      const isLast = index === (cart?.items?.length || 0) - 1
 
                       const metaImage = meta?.image
 
                       return (
                         <CartItem
+                          key={id}
                           product={product}
                           title={title}
                           metaImage={metaImage}

@@ -1,76 +1,44 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+// src/app/_components/Price/index.tsx
+//
+// Renders a product's price.
+//
+// Amounts are integers in the currency's minor units and are formatted for
+// display only — see src/lib/domain/money.ts, which is the single place
+// minor-unit conversion happens. Nothing computed here is ever sent back to
+// the server as a price.
+//
+// A product with no price is not purchasable, so this renders nothing
+// rather than "$0.00".
 
-import { StorefrontPriceableProduct } from '../../_types/storefront'
+import React from 'react'
+
+import { formatMoney } from '../../../lib/domain/money'
+import type { StorefrontPriceableProduct } from '../../_types/storefront'
 
 import classes from './index.module.scss'
 
-export const priceFromJSON = (priceJSON: string, quantity: number = 1, raw?: boolean): string => {
-  let price = ''
-
-  if (priceJSON) {
-    try {
-      const parsed = JSON.parse(priceJSON)?.data[0]
-      const priceValue = parsed.unit_amount * quantity
-      const priceType = parsed.type
-
-      if (raw) return priceValue.toString()
-
-      price = (priceValue / 100).toLocaleString('en-US', {
-        style: 'currency',
-        currency: 'USD', // TODO: use `parsed.currency`
-      })
-
-      if (priceType === 'recurring') {
-        price += `/${
-          parsed.recurring.interval_count > 1
-            ? `${parsed.recurring.interval_count} ${parsed.recurring.interval}`
-            : parsed.recurring.interval
-        }`
-      }
-    } catch (e) {
-      console.error(`Cannot parse priceJSON`) // eslint-disable-line no-console
-    }
-  }
-
-  return price
-}
-
 export const Price: React.FC<{
-  // PHASE 13F-B: narrowed from the full `payload-types.ts` `Product` —
-  // this component only ever reads `priceJSON` (see StorefrontPriceableProduct's
-  // doc comment in src/app/_types/storefront.ts). Every existing caller
-  // already passes a real `Product` (or a native-adapter-built
-  // equivalent), which satisfies this narrower shape unchanged.
   product: StorefrontPriceableProduct
   quantity?: number
   button?: 'addToCart' | 'removeFromCart' | false
 }> = props => {
-  const { product, product: { priceJSON } = {}, button = 'addToCart', quantity } = props
+  const { product, quantity = 1 } = props
+  const price = product?.price
 
-  const [price, setPrice] = useState<{
-    actualPrice: string
-    withQuantity: string
-  }>(() => ({
-    actualPrice: priceFromJSON(priceJSON),
-    withQuantity: priceFromJSON(priceJSON, quantity),
-  }))
+  if (!price) return null
 
-  useEffect(() => {
-    setPrice({
-      actualPrice: priceFromJSON(priceJSON),
-      withQuantity: priceFromJSON(priceJSON, quantity),
-    })
-  }, [priceJSON, quantity])
+  const lineTotal = formatMoney({
+    amount: price.amount * (Number.isFinite(quantity) ? quantity : 1),
+    currency: price.currency,
+  })
 
   return (
     <div className={classes.actions}>
-      {typeof price?.actualPrice !== 'undefined' && price?.withQuantity !== '' && (
-        <div className={classes.price}>
-          <p>{price?.withQuantity}</p>
-        </div>
-      )}
+      <div className={classes.price}>
+        <p>{lineTotal}</p>
+      </div>
     </div>
   )
 }

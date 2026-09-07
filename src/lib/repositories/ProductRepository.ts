@@ -54,7 +54,7 @@ const toDomain = (doc: ProductDocument): Product => ({
   legacyStripeProductId: doc.legacyStripeProductId ?? doc.stripeProductID ?? null,
   legacyPriceJSON: doc.priceJSON ?? null,
   layout: doc.layout ?? [],
-  // PHASE 13A: same untyped Mixed-passthrough treatment as `layout` —
+  // same untyped Mixed-passthrough treatment as `layout` —
   // see Product.ts's model comment for why this used to be
   // deliberately omitted and why it's safe to read now.
   paywall: doc.paywall ?? [],

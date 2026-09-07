@@ -10,14 +10,6 @@ import { Button, Props } from '../Button'
 import classes from './index.module.scss'
 
 export const AddToCartButton: React.FC<{
-  // PHASE 13P — narrowed from the full `payload-types.ts` `Product` to
-  // `StorefrontCartProduct` (see that type's doc comment in
-  // src/app/_types/storefront.ts): this component only ever reads
-  // `product.id` (via `isProductInCart`) and forwards `product` whole
-  // into `addItemToCart`'s `CartItem` payload, which itself now expects
-  // `StorefrontCartProduct` (see `src/app/_providers/Cart/reducer.ts`).
-  // Every existing caller (`ProductHero`, passing a real `Product`)
-  // satisfies this unchanged.
   product: StorefrontCartProduct
   quantity?: number
   className?: string

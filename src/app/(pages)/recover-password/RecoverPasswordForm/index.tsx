@@ -2,7 +2,6 @@
 
 import React, { Fragment, useCallback, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import Link from 'next/link'
 
 import { Button } from '../../../_components/Button'
 import { Input } from '../../../_components/Input'
@@ -18,7 +17,7 @@ type FormData = {
 export const RecoverPasswordForm: React.FC = () => {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
-  const { forgotPassword, nativeAuthEnabled } = useAuth()
+  const { forgotPassword } = useAuth()
 
   const {
     register,
@@ -28,43 +27,17 @@ export const RecoverPasswordForm: React.FC = () => {
 
   const onSubmit = useCallback(
     async (data: FormData) => {
-      // PHASE 13B: native mode goes through AuthProvider's
-      // `forgotPassword` (POST /api/auth-native/forgot-password). Default
-      // (flag off) path below is unchanged.
-      if (nativeAuthEnabled) {
-        try {
-          await forgotPassword(data)
-          setSuccess(true)
-          setError('')
-        } catch (_) {
-          setError(
-            'There was a problem while attempting to send you a password reset email. Please try again.',
-          )
-        }
-        return
-      }
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_SERVER_URL}/api/users/forgot-password`,
-        {
-          method: 'POST',
-          body: JSON.stringify(data),
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        },
-      )
-
-      if (response.ok) {
+      try {
+        await forgotPassword(data)
         setSuccess(true)
         setError('')
-      } else {
+      } catch (_) {
         setError(
           'There was a problem while attempting to send you a password reset email. Please try again.',
         )
       }
     },
-    [forgotPassword, nativeAuthEnabled],
+    [forgotPassword],
   )
 
   return (

@@ -1,44 +1,40 @@
+// src/app/(pages)/orders/[id]/page.tsx
+
 import React, { Fragment } from 'react'
 import { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
-import { Order } from '../../../../payload/payload-types'
+import { fetchCustomerOrder } from '../../../_api/orders'
 import { Button } from '../../../_components/Button'
 import { Gutter } from '../../../_components/Gutter'
 import { HR } from '../../../_components/HR'
 import { Media } from '../../../_components/Media'
 import { Price } from '../../../_components/Price'
+import type { StorefrontOrderDetail } from '../../../_types/storefront'
 import { formatDateTime } from '../../../_utilities/formatDateTime'
+import { formatOrderTotal } from '../../../_utilities/formatOrderTotal'
 import { getMeUser } from '../../../_utilities/getMeUser'
 import { mergeOpenGraph } from '../../../_utilities/mergeOpenGraph'
 
 import classes from './index.module.scss'
 
-export default async function Order({ params: { id } }) {
-  const { token } = await getMeUser({
+export const dynamic = 'force-dynamic'
+
+export default async function OrderPage({ params: { id } }) {
+  const { user } = await getMeUser({
     nullUserRedirect: `/login?error=${encodeURIComponent(
       'You must be logged in to view this order.',
-    )}&redirect=${encodeURIComponent(`/order/${id}`)}`,
+    )}&redirect=${encodeURIComponent(`/orders/${id}`)}`,
   })
 
-  let order: Order | null = null
+  let order: StorefrontOrderDetail | null = null
 
   try {
-    order = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/orders/${id}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `JWT ${token}`,
-      },
-    })?.then(async res => {
-      if (!res.ok) notFound()
-      const json = await res.json()
-      if ('error' in json && json.error) notFound()
-      if ('errors' in json && json.errors) notFound()
-      return json
-    })
+    // Scoped to this customer: another customer's order reads as missing.
+    order = await fetchCustomerOrder(id, user.id)
   } catch (error) {
-    console.error(error) // eslint-disable-line no-console
+    console.error('order read failed:', error) // eslint-disable-line no-console
   }
 
   if (!order) {
@@ -49,76 +45,54 @@ export default async function Order({ params: { id } }) {
     <Gutter className={classes.orders}>
       <h1>
         {`Order`}
-        <span className={classes.id}>{`${order.id}`}</span>
+        <span className={classes.id}>{` ${order.orderNumber}`}</span>
       </h1>
       <div className={classes.itemMeta}>
-        <p>{`ID: ${order.id}`}</p>
-        <p>{`Payment Intent: ${order.stripePaymentIntentID}`}</p>
+        <p>{`Reference: ${order.orderNumber}`}</p>
+        <p>{`Status: ${order.status}`}</p>
+        {order.payment && <p>{`Payment: ${order.payment.provider} — ${order.payment.status}`}</p>}
         <p>{`Ordered On: ${formatDateTime(order.createdAt)}`}</p>
-        <p className={classes.total}>
-          {'Total: '}
-          {new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'usd',
-          }).format(order.total / 100)}
-        </p>
+        <p className={classes.total}>{`Total: ${formatOrderTotal(order)}`}</p>
       </div>
       <HR />
       <div className={classes.order}>
         <h4 className={classes.orderItems}>Items</h4>
-        {order.items?.map((item, index) => {
-          if (typeof item.product === 'object') {
-            const {
-              quantity,
-              product,
-              product: { id, title, meta, stripeProductID },
-            } = item
+        {order.items.map((item, index) => {
+          const isLast = index === order.items.length - 1
 
-            const isLast = index === (order?.items?.length || 0) - 1
-
-            const metaImage = meta?.image
-
-            return (
-              <Fragment key={index}>
-                <div className={classes.row}>
-                  <Link href={`/products/${product.slug}`} className={classes.mediaWrapper}>
-                    {!metaImage && <span className={classes.placeholder}>No image</span>}
-                    {metaImage && typeof metaImage !== 'string' && (
-                      <Media
-                        className={classes.media}
-                        imgClassName={classes.image}
-                        resource={metaImage}
-                        fill
-                      />
-                    )}
-                  </Link>
-                  <div className={classes.rowContent}>
-                    {!stripeProductID && (
-                      <p className={classes.warning}>
-                        {'This product is not yet connected to Stripe. To link this product, '}
-                        <Link
-                          href={`${process.env.NEXT_PUBLIC_SERVER_URL}/admin/collections/products/${id}`}
-                        >
-                          edit this product in the admin panel
-                        </Link>
-                        {'.'}
-                      </p>
-                    )}
-                    <h5 className={classes.title}>
-                      <Link href={`/products/${product.slug}`} className={classes.titleLink}>
-                        {title}
-                      </Link>
-                    </h5>
-                    <p>{`Quantity: ${quantity}`}</p>
-                    <Price product={product} button={false} quantity={quantity} />
-                  </div>
+          return (
+            <Fragment key={`${item.productId}-${index}`}>
+              <div className={classes.row}>
+                <Link href={`/products/${item.slug}`} className={classes.mediaWrapper}>
+                  {!item.image && <span className={classes.placeholder}>No image</span>}
+                  {item.image && typeof item.image !== 'string' && (
+                    <Media
+                      className={classes.media}
+                      imgClassName={classes.image}
+                      resource={item.image}
+                      fill
+                    />
+                  )}
+                </Link>
+                <div className={classes.rowContent}>
+                  <h5 className={classes.title}>
+                    <Link href={`/products/${item.slug}`} className={classes.titleLink}>
+                      {item.title}
+                    </Link>
+                  </h5>
+                  <p>{`Quantity: ${item.quantity}`}</p>
+                  {/* The price charged at the time of the order, never the
+                      product's current price. */}
+                  <Price
+                    product={{ price: { amount: item.unitPrice, currency: item.currency } }}
+                    button={false}
+                    quantity={item.quantity}
+                  />
                 </div>
-                {!isLast && <HR />}
-              </Fragment>
-            )
-          }
-
-          return null
+              </div>
+              {!isLast && <HR />}
+            </Fragment>
+          )
         })}
       </div>
       <HR />

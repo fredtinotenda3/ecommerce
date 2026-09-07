@@ -8,18 +8,6 @@ import RichText from '../../_components/RichText'
 
 import classes from './index.module.scss'
 
-// PHASE 13L: previously `Page['hero']` (from `payload-types.ts`) in full;
-// now `richText`/`links` come from the shared `StorefrontHeroLinksContent`
-// view model (`src/app/_types/storefront.ts`), narrowed the same way as
-// the other CMS block/hero components in this phase.
-//
-// PHASE 13V: `media` is now `string | StorefrontHeroMedia` instead of
-// `payload-types.ts`'s full `Media` — the Phase 13N audit established
-// `<Media resource={...} />` only reads the scalar fields
-// `StorefrontMediaItem` already models, and this component additionally
-// reads `media.caption` directly (below), which `StorefrontHeroMedia`
-// (Phase 13V) adds on top of `StorefrontMediaItem`. This drops the
-// `payload-types.ts` import from this file entirely.
 type Props = StorefrontHeroLinksContent & { media: string | StorefrontHeroMedia }
 
 export const HighImpactHero: React.FC<Props> = ({ richText, media, links }) => {

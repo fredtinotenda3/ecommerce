@@ -1,11 +1,11 @@
 // src/lib/db/models/Global.ts
 //
-// PHASE 13D — maps onto Payload's existing `globals` collection.
+// maps onto Payload's existing `globals` collection.
 //
-// Payload's @payloadcms/db-mongodb adapter stores ALL globals (Header,
+// The previous CMS stored ALL globals (Header,
 // Footer, Settings, ...) as separate documents in a single `globals`
 // collection, discriminated by a `globalType` field equal to the global's
-// slug (see node_modules/@payloadcms/db-mongodb/dist/models/buildGlobalModel.js
+// slug
 // — `discriminatorKey: 'globalType'`, `mongoose.model('globals', ...)`).
 //
 // The `link` field (src/payload/fields/link.ts) declares its `reference`

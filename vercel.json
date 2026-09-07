@@ -1,8 +1,5 @@
 {
-  "buildCommand": "yarn build",
-  "installCommand": "yarn install",
-  "framework": "nextjs",
-  "env": {
-    "NEXT_BUILD": "true"
-  }
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "framework": "nextjs"
 }

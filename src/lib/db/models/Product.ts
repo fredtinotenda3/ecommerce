@@ -2,7 +2,7 @@
 //
 // Maps onto the EXISTING `products` collection (same collection Payload's
 // `Products` config writes to — see src/payload/collections/Products/index.ts
-// and node_modules/@payloadcms/db-mongodb/dist/init.js, which registers
+// as the previous CMS's Mongo adapter, which registered
 // Payload's own model as `mongoose.model(collection.slug, schema, collection.slug)`,
 // i.e. collection name === slug, no pluralization).
 //
@@ -17,14 +17,14 @@
 // legacyStripeProductId) are optional/nullable so that documents written
 // before the backfill migration runs remain perfectly valid.
 //
-// PHASE 3 addition: `layout` and `meta` are declared here (as Mixed
+// addition: `layout` and `meta` are declared here (as Mixed
 // passthrough, same treatment as Page.ts) purely so this model's TS
 // interface documents their presence — `strict: false` already let
 // Mongoose read them without a declaration, but declaring them keeps
 // ProductRepository's `toDomain` mapping type-safe instead of reaching
 // into an untyped document.
 //
-// PHASE 13A addition: `paywall` is now declared/read here too (same
+// addition: `paywall` is now declared/read here too (same
 // Mixed-passthrough treatment as `layout`), closing the gap the Phase 3
 // comment above used to describe — see fetchPaywallNative.ts and
 // src/app/api/paywall/route.ts for the flag-gated (USE_NATIVE_REPOSITORY)

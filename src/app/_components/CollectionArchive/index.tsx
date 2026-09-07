@@ -1,11 +1,16 @@
 'use client'
 
-import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react'
-import qs from 'qs'
+// src/app/_components/CollectionArchive/index.tsx
+//
+// The product grid. Seeds from whatever the server rendered into the block,
+// then re-fetches from /api/products so category filters and paging work
+// client-side.
 
-import { Category, Product } from '../../../payload/payload-types'
+import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react'
+
 import type { ArchiveBlockProps } from '../../_blocks/ArchiveBlock/types'
 import { useFilter } from '../../_providers/Filter'
+import type { StorefrontProductCard } from '../../_types/storefront'
 import { Card } from '../Card'
 import { PageRange } from '../PageRange'
 import { Pagination } from '../Pagination'
@@ -13,14 +18,10 @@ import { Pagination } from '../Pagination'
 import classes from './index.module.scss'
 
 type Result = {
-  totalDocs: number
-  docs: Product[]
+  docs: StorefrontProductCard[]
   page: number
-  totalPages: number
-  hasPrevPage: boolean
+  limit: number
   hasNextPage: boolean
-  nextPage: number
-  prevPage: number
 }
 
 export type Props = {
@@ -28,7 +29,7 @@ export type Props = {
   relationTo?: 'products'
   populateBy?: 'collection' | 'selection'
   showPageRange?: boolean
-  onResultChange?: (result: Result) => void // eslint-disable-line no-unused-vars
+  onResultChange?: (result: Result) => void
   limit?: number
   populatedDocs?: ArchiveBlockProps['populatedDocs']
   populatedDocsTotal?: ArchiveBlockProps['populatedDocsTotal']
@@ -36,113 +37,56 @@ export type Props = {
 }
 
 export const CollectionArchive: React.FC<Props> = props => {
-  const { categoryFilters, sort } = useFilter()
+  const { categoryFilters } = useFilter()
 
-  const {
-    className,
-    relationTo,
-    showPageRange,
-    onResultChange,
-    limit = 10,
-    populatedDocs,
-    populatedDocsTotal,
-  } = props
+  const { className, showPageRange, onResultChange, limit = 10, populatedDocs } = props
 
   const [results, setResults] = useState<Result>({
-    totalDocs: typeof populatedDocsTotal === 'number' ? populatedDocsTotal : 0,
-    docs: (populatedDocs?.map(doc => doc.value) || []) as [],
+    docs: (populatedDocs?.map(doc => doc.value) || []) as StorefrontProductCard[],
     page: 1,
-    totalPages: 1,
-    hasPrevPage: false,
+    limit,
     hasNextPage: false,
-    prevPage: 1,
-    nextPage: 1,
   })
 
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | undefined>(undefined)
   const scrollRef = useRef<HTMLDivElement>(null)
-  const hasHydrated = useRef(false)
   const [page, setPage] = useState(1)
 
-  const scrollToRef = useCallback(() => {
-    const { current } = scrollRef
-    if (current) {
-      // current.scrollIntoView({
-      //   behavior: 'smooth',
-      // })
+  // A single category id, or none. The filter UI is single-select; sending
+  // a list would need the API to support it, which it deliberately does not
+  // yet.
+  const category = Array.isArray(categoryFilters) ? categoryFilters[0] : categoryFilters
+
+  const loadPage = useCallback(async () => {
+    // Only show the loader if the request is slow enough to notice.
+    const timer = setTimeout(() => setIsLoading(true), 500)
+
+    try {
+      const params = new URLSearchParams({ limit: String(limit), page: String(page) })
+      if (category) params.set('category', String(category))
+
+      const req = await fetch(`/api/products?${params.toString()}`)
+      if (!req.ok) throw new Error(`HTTP ${req.status}`)
+
+      const json = (await req.json()) as Result
+
+      if (Array.isArray(json.docs)) {
+        setResults(json)
+        setError(undefined)
+        onResultChange?.(json)
+      }
+    } catch (err) {
+      setError('Unable to load products at this time.')
+    } finally {
+      clearTimeout(timer)
+      setIsLoading(false)
     }
-  }, [])
+  }, [category, limit, page, onResultChange])
 
   useEffect(() => {
-    if (!isLoading && typeof results.page !== 'undefined') {
-      // scrollToRef()
-    }
-  }, [isLoading, scrollToRef, results])
-
-  useEffect(() => {
-    // hydrate the block with fresh content after first render
-    // don't show loader unless the request takes longer than x ms
-    // and don't show it during initial hydration
-    const timer: NodeJS.Timeout = setTimeout(() => {
-      if (hasHydrated) {
-        setIsLoading(true)
-      }
-    }, 500)
-
-    const searchQuery = qs.stringify(
-      {
-        sort,
-        where: {
-          ...(categoryFilters && categoryFilters?.length > 0
-            ? {
-                categories: {
-                  in:
-                    typeof categoryFilters === 'string'
-                      ? [categoryFilters]
-                      : categoryFilters.map((cat: string) => cat).join(','),
-                },
-              }
-            : {}),
-        },
-        limit,
-        page,
-        depth: 1,
-      },
-      { encode: false },
-    )
-
-    const makeRequest = async () => {
-      try {
-        const req = await fetch(
-          `${process.env.NEXT_PUBLIC_SERVER_URL}/api/${relationTo}?${searchQuery}`,
-        )
-        const json = await req.json()
-        clearTimeout(timer)
-        hasHydrated.current = true
-
-        const { docs } = json as { docs: Product[] }
-
-        if (docs && Array.isArray(docs)) {
-          setResults(json)
-          setIsLoading(false)
-          if (typeof onResultChange === 'function') {
-            onResultChange(json)
-          }
-        }
-      } catch (err) {
-        console.warn(err) // eslint-disable-line no-console
-        setIsLoading(false)
-        setError(`Unable to load "${relationTo} archive" data at this time.`)
-      }
-    }
-
-    makeRequest()
-
-    return () => {
-      if (timer) clearTimeout(timer)
-    }
-  }, [page, categoryFilters, relationTo, onResultChange, sort, limit])
+    loadPage()
+  }, [loadPage])
 
   return (
     <div className={[classes.collectionArchive, className].filter(Boolean).join(' ')}>
@@ -152,25 +96,25 @@ export const CollectionArchive: React.FC<Props> = props => {
         {showPageRange !== false && (
           <div className={classes.pageRange}>
             <PageRange
-              totalDocs={results.totalDocs}
+              totalDocs={results.docs.length}
               currentPage={results.page}
-              collection={relationTo}
-              limit={limit}
+              collection="products"
+              limit={results.limit}
             />
           </div>
         )}
 
         <div className={classes.grid}>
-          {results.docs?.map((result, index) => {
-            return <Card key={index} relationTo="products" doc={result} showCategories />
-          })}
+          {results.docs?.map(result => (
+            <Card key={result.id} relationTo="products" doc={result} showCategories />
+          ))}
         </div>
 
-        {results.totalPages > 1 && (
+        {(results.hasNextPage || results.page > 1) && (
           <Pagination
             className={classes.pagination}
             page={results.page}
-            totalPages={results.totalPages}
+            totalPages={results.hasNextPage ? results.page + 1 : results.page}
             onClick={setPage}
           />
         )}

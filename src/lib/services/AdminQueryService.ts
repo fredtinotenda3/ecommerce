@@ -1,6 +1,6 @@
 // src/lib/services/AdminQueryService.ts
 //
-// PHASE 6 — read-only query/shaping functions backing the native admin
+// read-only query/shaping functions backing the native admin
 // area's listing and detail views. Orchestration only (mirrors
 // AuthService.ts / fetchProductNative.ts's `buildStorefrontProduct`
 // split): every function here takes repository INTERFACES, never

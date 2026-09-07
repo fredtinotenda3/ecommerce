@@ -2,6 +2,9 @@ import { revalidateTag } from 'next/cache'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
+/** Reads request state (cookies/headers) — never statically rendered. */
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest): Promise<Response> {
   const collection = request.nextUrl.searchParams.get('collection')
   const slug = request.nextUrl.searchParams.get('slug')

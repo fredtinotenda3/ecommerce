@@ -5,7 +5,7 @@ import { StorefrontCMSLink } from '../../_types/storefront'
 import { Button, Props as ButtonProps } from '../Button'
 import { resolveCMSLinkHref } from './resolveHref'
 
-// PHASE 13K: previously a hand-written, standalone shape; now derived from
+// previously a hand-written, standalone shape; now derived from
 // `StorefrontCMSLink` (src/app/_types/storefront.ts), itself an
 // `Omit<NativeCMSLink, ...>` of the native domain type
 // (src/lib/domain/types.ts) — see that file's header comment for why
@@ -18,7 +18,6 @@ import { resolveCMSLinkHref } from './resolveHref'
 // `FooterComponent` does, directly off the nav item, not through
 // `CMSLink`) — same as the pre-13K shape. `children`/`className`/`invert`
 // are this component's own additions, unrelated to the CMS link shape.
-// Every existing caller already spreads a real Payload
 // `Page['hero']['links'][number]['link']` (or the Header/Footer nav item
 // equivalent), which satisfies this narrower shape unchanged.
 type CMSLinkType = Omit<StorefrontCMSLink, 'appearance' | 'label' | 'icon'> & {

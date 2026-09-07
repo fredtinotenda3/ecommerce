@@ -36,15 +36,6 @@ export interface InitiatePaymentOptions {
   resultUrl?: string
 }
 
-export interface RecordProviderInitiatedPaymentInput {
-  /** The provider's own identifier for a payment that was ALREADY
-   * created with the provider before this call (e.g. a Stripe
-   * PaymentIntent id) — see `recordProviderInitiatedPayment`'s doc
-   * comment for why this differs from `initiatePaymentForOrder`. */
-  providerReference: string
-  metadata?: Record<string, unknown>
-}
-
 export class PaymentService {
   private readonly paymentRepository: PaymentRepository
   private readonly provider: PaymentProvider
@@ -124,71 +115,6 @@ export class PaymentService {
         pollUrl: result.pollUrl,
         instructions: result.instructions,
       },
-    })
-
-    return updated ?? payment
-  }
-
-  /** PHASE 13F-A — records a Payment for an order whose payment was
-   * ALREADY initiated with the provider BEFORE the Order existed. This
-   * is the native Stripe checkout's shape: the PaymentIntent is created
-   * from the cart (StripeCheckoutService, via the customer's browser)
-   * up front, and the Order is only created afterwards, once the
-   * customer has confirmed payment client-side — the reverse order of
-   * the Paynow flow, where `initiatePaymentForOrder` creates the Order
-   * FIRST and then asks the provider to initiate payment for it.
-   *
-   * Unlike `initiatePaymentForOrder`, this NEVER calls
-   * `this.provider.createPayment()` — doing so here would create a
-   * SECOND, unused payment with the provider for the same order. It
-   * only writes the Payment record that ties this Order to the
-   * `providerReference` the caller already obtained, so the provider's
-   * own webhook/callback (see StripeWebhookService) has something to
-   * reconcile against.
-   *
-   * Same idempotency contract as `initiatePaymentForOrder`: calling this
-   * twice for the same order (same order number => same merchant
-   * reference) returns the existing Payment on the second call rather
-   * than creating a duplicate, including the same duplicate-key race
-   * handling. */
-  async recordProviderInitiatedPayment(
-    order: Order,
-    input: RecordProviderInitiatedPaymentInput,
-  ): Promise<Payment> {
-    if (!this.provider.supports(order.currency)) {
-      throw new UnsupportedCurrencyError(this.provider.name, order.currency)
-    }
-
-    const merchantReference = generateMerchantReference(order.orderNumber)
-
-    const existing = await this.paymentRepository.getByMerchantReference(merchantReference)
-    if (existing) {
-      return existing
-    }
-
-    let payment: Payment
-    try {
-      payment = await this.paymentRepository.create({
-        orderId: order.id,
-        provider: this.provider.name,
-        merchantReference,
-        amount: order.total,
-        currency: order.currency,
-      })
-    } catch (err: unknown) {
-      // Duplicate-key race: another concurrent request created the
-      // Payment between our check and our create — same idempotency
-      // guarantee as initiatePaymentForOrder, see its comment above.
-      const racedExisting = await this.paymentRepository.getByMerchantReference(merchantReference)
-      if (racedExisting) {
-        return racedExisting
-      }
-      throw err
-    }
-
-    const updated = await this.paymentRepository.updateStatus(payment.id, 'PENDING', {
-      providerReference: input.providerReference,
-      metadata: input.metadata ?? {},
     })
 
     return updated ?? payment

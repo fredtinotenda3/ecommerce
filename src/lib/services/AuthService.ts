@@ -1,30 +1,24 @@
 // src/lib/services/AuthService.ts
 //
-// PHASE 5 — native authentication service. Orchestration only (mirrors
-// the fetchXNative.ts / buildStorefrontX split from Phases 2-4): this
-// file takes an `AuthUserRepository` INTERFACE, not a concrete Mongo
-// class, so it's unit-testable with a fake repository and no database
-// (see tests/fakes/FakeAuthUserRepository.ts). DB wiring lives in
-// src/app/_api/authNative.ts, and cookie/HTTP concerns live in the
-// src/app/api/auth-native/*/route.ts handlers.
+// Authentication: registration, login, logout, session resolution and
+// password reset.
 //
-// NOT wired into the live login/registration/logout UX. Payload's own
-// `/api/users/*` auth remains the only auth path the frontend calls —
-// see src/app/_providers/Auth/index.tsx, which is unmodified. This
-// service exists so a future, separately-approved phase can switch the
-// frontend to call these endpoints instead.
+// Orchestration only — this file takes an `AuthUserRepository` INTERFACE,
+// not a concrete Mongo class, so it is unit-testable with a fake repository
+// and no database (see tests/fakes/FakeAuthUserRepository.ts). Connection
+// wiring lives in src/app/_api/auth.ts, and cookie/HTTP concerns in the
+// src/app/api/auth/*/route.ts handlers.
 //
-// Compatibility: passwords are hashed/verified via
-// `hashPasswordPayloadCompatible` / `verifyPasswordPayloadCompatible`
-// (src/lib/auth/password.ts), which reproduce Payload's own PBKDF2
-// scheme exactly. This means:
-//   - An EXISTING Payload user (created via the storefront's
-//     create-account page, or the admin UI) can log in here without any
-//     password reset.
-//   - A user registered here can also log in through Payload's own
-//     `/api/users/login` and the Payload admin UI, since the `hash`/
-//     `salt` fields this writes are indistinguishable from what Payload
-//     itself would have written.
+// Password storage uses PBKDF2 with the same parameters and the same
+// separate `hash`/`salt` fields the previous CMS wrote (see
+// src/lib/auth/password.ts). That compatibility is deliberate and load
+// bearing: every account that existed before the migration still logs in
+// with its original password, with no reset and no migration step.
+//
+// Two behaviours here are security decisions rather than incidental:
+//   - An unknown email and a wrong password produce the same error, so
+//     this cannot be used to enumerate registered addresses.
+//   - Repeated failures lock the account for LOCK_TIME_MS.
 
 import { randomBytes } from 'crypto'
 
