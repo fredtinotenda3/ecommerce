@@ -562,6 +562,62 @@ export interface StorefrontArchiveBlock {
 }
 
 // ---------------------------------------------------------------------------
+// PHASE 13U — ProductHero view model
+// ---------------------------------------------------------------------------
+//
+// `ProductHero` (`src/app/_heros/Product/index.tsx`) previously took the
+// full `payload-types.ts` `Product`. Tracing its actual reads: `title`
+// (heading), `categories[].title` (category chip list), `meta.description`
+// (description paragraph), `meta.image` (forwarded whole to `<Media
+// resource={...} />`), and `product` itself forwarded whole to both
+// `<Price product={product} />` (already `StorefrontPriceableProduct`,
+// Phase 13F-B) and `<AddToCartButton product={product} />` (already
+// `StorefrontCartProduct`, Phase 13P). `StorefrontProductHeroView` below
+// extends `StorefrontCartProduct` (which already supplies
+// `id`/`title`/`slug`/`priceJSON`/`meta.image` narrowed to
+// `StorefrontMediaRef`) and adds the two fields ProductHero itself reads
+// beyond that: `categories` and `meta.description`.
+//
+// `meta.image` here stays at `StorefrontCartProduct`'s existing narrow
+// `StorefrontMediaRef` (just `.url`) — this type is declared with `Omit<
+// StorefrontCartProduct, 'meta'> & { meta?: {...} }` rather than plain
+// interface extension specifically so `meta` can add `description`
+// alongside `image` without TypeScript's "weak type" check rejecting the
+// override (redeclaring `meta` as `{ description?: ... }` alone, with no
+// `image` key at all, has no properties in common with the base `{
+// image?: ... }` and is flagged as a likely mistake). `ProductHero` itself
+// widens `image` further still, to the full `payload-types.ts` `Media` —
+// see below.
+//
+// `meta.image` is deliberately NOT widened to the full `payload-types.ts`
+// `Media` here — same reasoning as `HighImpactHero`/`MediumImpactHero`/
+// `MediaBlock`'s `media` field (see the file-level PHASE 13L comment
+// above): `ProductHero` passes `meta.image` straight through to `<Media
+// resource={...} />`, which requires the full generated `Media` shape.
+// `ProductHero` keeps `meta.image` typed directly against
+// `payload-types.ts`'s `Media` in its own local prop type instead (an
+// `Omit<StorefrontProductHeroView, 'meta'> & { meta?: { image?: string |
+// Media; ... } }` override, matching `HighImpactHero`'s pattern exactly)
+// — see `src/app/_heros/Product/index.tsx`.
+//
+// `categories` mirrors `payload-types.ts`'s `Product['categories']`
+// (`string[] | Category[]`) structurally as `(string |
+// StorefrontProductCategoryRef)[]` (Phase 13S's category-ref view model,
+// reused rather than duplicated) — `ProductHero` only ever reads
+// `category.title` off a resolved entry (via a cast, since an unresolved
+// relation can still be a bare id string), which `StorefrontProductCategoryRef`
+// already models. Every real `payload-types.ts` `Product` satisfies
+// `StorefrontProductHeroView` unchanged — see
+// `tests/productHeroViewModel.test.ts`.
+export type StorefrontProductHeroView = Omit<StorefrontCartProduct, 'meta'> & {
+  categories?: (string | StorefrontProductCategoryRef)[]
+  meta?: {
+    image?: StorefrontMediaRef
+    description?: string | null
+  } | null
+}
+
+// ---------------------------------------------------------------------------
 // PHASE 13S — adapter/fetch compatibility boundary view models
 // ---------------------------------------------------------------------------
 //

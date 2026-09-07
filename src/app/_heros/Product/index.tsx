@@ -1,15 +1,32 @@
 import React, { Fragment } from 'react'
 
-import { Category, Product } from '../../../payload/payload-types'
+import { Media as MediaType } from '../../../payload/payload-types'
 import { AddToCartButton } from '../../_components/AddToCartButton'
 import { Gutter } from '../../_components/Gutter'
 import { Media } from '../../_components/Media'
 import { Price } from '../../_components/Price'
+import { StorefrontProductCategoryRef, StorefrontProductHeroView } from '../../_types/storefront'
 
 import classes from './index.module.scss'
 
+// PHASE 13U: previously the full `payload-types.ts` `Product`; now
+// `id`/`title`/`slug`/`priceJSON`/`categories` come from the shared
+// `StorefrontProductHeroView` view model (`src/app/_types/storefront.ts`).
+// `meta.image` stays typed directly against `payload-types.ts`'s `Media`
+// (via this `Omit<..., 'meta'> & { meta?: ... }` override) — it's passed
+// straight through to `<Media resource={...} />` below, which needs the
+// full shape for its responsive-image logic; same pattern as
+// `HighImpactHero`/`MediumImpactHero`'s `media` field. See
+// `StorefrontProductHeroView`'s own doc comment for why this is safe.
+type ProductHeroProduct = Omit<StorefrontProductHeroView, 'meta'> & {
+  meta?: {
+    image?: string | MediaType
+    description?: string | null
+  } | null
+}
+
 export const ProductHero: React.FC<{
-  product: Product
+  product: ProductHeroProduct
 }> = ({ product }) => {
   const { title, categories, meta: { image: metaImage, description } = {} } = product
 
@@ -28,7 +45,7 @@ export const ProductHero: React.FC<{
         <div className={classes.categoryWrapper}>
           <div className={classes.categories}>
             {categories?.map((category, index) => {
-              const { title: categoryTitle } = category as Category
+              const { title: categoryTitle } = category as StorefrontProductCategoryRef
 
               const titleToUse = categoryTitle || 'Generic'
               const isLast = index === categories.length - 1
