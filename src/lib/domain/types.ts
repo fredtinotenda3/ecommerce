@@ -79,12 +79,21 @@ export interface Product {
   updatedAt: Date
 }
 
+export type ProductSort = 'newest' | 'oldest' | 'price-asc' | 'price-desc' | 'title'
+
 export interface ProductListFilter {
   status?: 'draft' | 'published'
+  /** Single-category filter. Kept alongside `categoryIds` because most
+   * callers only ever filter by one. */
   categoryId?: string
+  /** Multi-category filter: a product matches if it belongs to ANY of
+   * these (union, not intersection — which is what a shopper ticking two
+   * boxes in a facet list expects). */
+  categoryIds?: string[]
   ids?: string[]
   limit?: number
   page?: number
+  sort?: ProductSort
 }
 
 // ---------------------------------------------------------------------------
@@ -501,6 +510,26 @@ export interface Settings {
   /** Id of the linked "products" Page. Resolution to a slug happens in the
    * storefront-read orchestrator (see fetchGlobalsNative.ts). */
   productsPageId: string | null
+  createdAt: Date
+  updatedAt: Date
+}
+
+// ---------------------------------------------------------------------------
+// Redirects
+// ---------------------------------------------------------------------------
+
+/** A managed redirect from one path on this site to another location.
+ *
+ * `from` is always a root-relative path (`/old-thing`). `to` is either
+ * another root-relative path or an absolute URL. `permanent` selects 308
+ * vs 307 — permanent redirects are cached hard by browsers, so the default
+ * is deliberately temporary and making one permanent is an explicit act. */
+export interface Redirect {
+  id: string
+  from: string
+  to: string
+  permanent: boolean
+  enabled: boolean
   createdAt: Date
   updatedAt: Date
 }

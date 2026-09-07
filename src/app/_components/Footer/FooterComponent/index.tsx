@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 import { StorefrontFooter, StorefrontMediaItem } from '../../../_types/storefront'
-import { inclusions, noHeaderFooterUrls, profileNavItems } from '../../../constants'
+import { inclusions, noHeaderFooterUrls } from '../../../constants'
 import { Button } from '../../Button'
 import { Gutter } from '../../Gutter'
 

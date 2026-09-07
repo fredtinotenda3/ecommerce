@@ -19,6 +19,13 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY package.json next.config.js csp.js redirects.js ./
+
+# Uploads live here. Mount a volume over it in production: a container
+# filesystem does not survive a redeploy, and neither would the media.
+ENV MEDIA_DIR=/app/media
+RUN mkdir -p /app/media && chown -R node:node /app/media
+VOLUME ["/app/media"]
+
 EXPOSE 3000
 USER node
 CMD ["npx", "next", "start"]

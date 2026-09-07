@@ -39,6 +39,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           <a href="/admin/customers">Customers</a>
           <a href="/admin/pages">Pages</a>
           <a href="/admin/media">Media</a>
+          <a href="/admin/globals">Globals</a>
+          <a href="/admin/redirects">Redirects</a>
         </nav>
       </header>
       <main>{children}</main>

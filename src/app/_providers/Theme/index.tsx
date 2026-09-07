@@ -31,6 +31,12 @@ export const ThemeProvider: React.FC<{ children?: React.ReactNode }> = ({ childr
     }
   }, [])
 
+  // Resolve the same way the inline init script does (see
+  // ./InitTheme): an explicit choice wins, then the OS preference, then
+  // the default. This used to resolve the preference and then apply
+  // `defaultTheme` regardless, which fought the init script — a visitor
+  // who had chosen dark got dark on first paint and then light a moment
+  // later, and the theme selector appeared to do nothing.
   useEffect(() => {
     let themeToSet: Theme = defaultTheme
     const preference = window.localStorage.getItem(themeLocalStorageKey)
@@ -45,15 +51,11 @@ export const ThemeProvider: React.FC<{ children?: React.ReactNode }> = ({ childr
       }
     }
 
-    document.documentElement.setAttribute('data-theme', defaultTheme)
-    setThemeState(defaultTheme)
+    document.documentElement.setAttribute('data-theme', themeToSet)
+    setThemeState(themeToSet)
   }, [])
 
-  return (
-    <ThemeContext.Provider value={{ theme: defaultTheme, setTheme }}>
-      {children}
-    </ThemeContext.Provider>
-  )
+  return <ThemeContext.Provider value={{ theme, setTheme }}>{children}</ThemeContext.Provider>
 }
 
 export const useTheme = (): ThemeContextType => useContext(ThemeContext)

@@ -11,7 +11,7 @@ import type { CategoryRepository } from '../../lib/repositories/CategoryReposito
 import type { MediaRepository } from '../../lib/repositories/MediaRepository'
 import type { PageRepository } from '../../lib/repositories/PageRepository'
 import type { ProductRepository } from '../../lib/repositories/ProductRepository'
-import type { Category as NativeCategory } from '../../lib/domain/types'
+import type { Category as NativeCategory, ProductSort } from '../../lib/domain/types'
 import type { StorefrontProductCard, StorefrontProductDetail } from '../_types/storefront'
 import { getRepositories } from './repositories'
 
@@ -85,43 +85,57 @@ export const fetchProduct = async (
 }
 
 export interface ProductListQuery {
-  categoryId?: string
+  /** Union filter: a product matches if it is in ANY of these categories,
+   * which is what ticking several boxes in a facet list means. */
+  categoryIds?: string[]
   limit?: number
   page?: number
+  sort?: ProductSort
 }
 
 export interface ProductListResult {
   docs: StorefrontProductCard[]
   page: number
   limit: number
+  total: number
+  totalPages: number
   hasNextPage: boolean
+  hasPrevPage: boolean
 }
 
 /** Orchestration only — see `buildStorefrontProduct` above.
  *
  * Published products only: an unpublished product must never be listed to
  * a customer, and the storefront list has no notion of draft preview.
- * Pagination fetches one extra record to decide `hasNextPage` without a
- * second count query. */
+ *
+ * The page and the total are fetched together against the same filter, so
+ * the count a customer sees always describes the list they are paging
+ * through. */
 export const buildStorefrontProductList = async (
   query: ProductListQuery,
   deps: { productRepository: ProductRepository; mediaRepository: MediaRepository },
 ): Promise<ProductListResult> => {
   const limit = Math.min(Math.max(query.limit ?? 10, 1), 100)
-  const page = Math.max(query.page ?? 1, 1)
+  const requestedPage = Math.max(query.page ?? 1, 1)
 
-  const products = await deps.productRepository.list({
-    status: 'published',
-    categoryId: query.categoryId,
-    limit: limit + 1,
-    page,
-  })
+  const filter = {
+    status: 'published' as const,
+    categoryIds: query.categoryIds?.length ? query.categoryIds : undefined,
+    sort: query.sort,
+  }
 
-  const hasNextPage = products.length > limit
-  const pageProducts = hasNextPage ? products.slice(0, limit) : products
+  const total = await deps.productRepository.count(filter)
+  const totalPages = total === 0 ? 0 : Math.ceil(total / limit)
+
+  // Clamp rather than 404: a customer who deep-links to page 5 and then
+  // narrows the filters should land on the last page of results, not an
+  // error.
+  const page = totalPages === 0 ? 1 : Math.min(requestedPage, totalPages)
+
+  const products = await deps.productRepository.list({ ...filter, limit, page })
 
   const docs = await Promise.all(
-    pageProducts.map(async product => {
+    products.map(async product => {
       const metaImage = product.meta.imageId
         ? await deps.mediaRepository.getById(product.meta.imageId)
         : null
@@ -129,7 +143,15 @@ export const buildStorefrontProductList = async (
     }),
   )
 
-  return { docs, page, limit, hasNextPage }
+  return {
+    docs,
+    page,
+    limit,
+    total,
+    totalPages,
+    hasNextPage: page < totalPages,
+    hasPrevPage: page > 1,
+  }
 }
 
 export const fetchProducts = async (query: ProductListQuery = {}): Promise<ProductListResult> => {

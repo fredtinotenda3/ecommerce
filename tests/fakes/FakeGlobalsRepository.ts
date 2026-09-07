@@ -1,5 +1,5 @@
 // tests/fakes/FakeGlobalsRepository.ts
-import type { Footer, Header, Settings } from '../../src/lib/domain/types'
+import type { Footer, Header, NavItem, Settings } from '../../src/lib/domain/types'
 import type { GlobalsRepository } from '../../src/lib/repositories/GlobalsRepository'
 
 export class FakeGlobalsRepository implements GlobalsRepository {
@@ -28,6 +28,37 @@ export class FakeGlobalsRepository implements GlobalsRepository {
   }
 
   async getSettings(): Promise<Settings | null> {
+    return this.settings
+  }
+
+  async saveHeader(input: { navItems: NavItem[] }): Promise<Header> {
+    this.header = {
+      id: this.header?.id ?? 'header',
+      navItems: input.navItems,
+      createdAt: this.header?.createdAt ?? new Date(),
+      updatedAt: new Date(),
+    }
+    return this.header
+  }
+
+  async saveFooter(input: { copyright: string | null; navItems: NavItem[] }): Promise<Footer> {
+    this.footer = {
+      id: this.footer?.id ?? 'footer',
+      copyright: input.copyright,
+      navItems: input.navItems,
+      createdAt: this.footer?.createdAt ?? new Date(),
+      updatedAt: new Date(),
+    }
+    return this.footer
+  }
+
+  async saveSettings(input: { productsPageId: string | null }): Promise<Settings> {
+    this.settings = {
+      id: this.settings?.id ?? 'settings',
+      productsPageId: input.productsPageId,
+      createdAt: this.settings?.createdAt ?? new Date(),
+      updatedAt: new Date(),
+    }
     return this.settings
   }
 }

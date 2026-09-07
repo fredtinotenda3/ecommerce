@@ -20,6 +20,7 @@ import { MongoOrderRepository } from '../../lib/repositories/OrderRepository'
 import { MongoPageRepository } from '../../lib/repositories/PageRepository'
 import { MongoPaymentRepository } from '../../lib/repositories/PaymentRepository'
 import { MongoProductRepository } from '../../lib/repositories/ProductRepository'
+import { MongoRedirectRepository } from '../../lib/repositories/RedirectRepository'
 import { MongoUserRepository } from '../../lib/repositories/UserRepository'
 
 export interface Repositories {
@@ -32,6 +33,7 @@ export interface Repositories {
   pages: MongoPageRepository
   payments: MongoPaymentRepository
   products: MongoProductRepository
+  redirects: MongoRedirectRepository
   users: MongoUserRepository
 }
 
@@ -51,6 +53,7 @@ export const getRepositories = async (): Promise<Repositories> => {
     pages: new MongoPageRepository(connection),
     payments: new MongoPaymentRepository(connection),
     products: new MongoProductRepository(connection),
+    redirects: new MongoRedirectRepository(connection),
     users: new MongoUserRepository(connection),
   }
 }

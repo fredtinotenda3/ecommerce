@@ -14,6 +14,14 @@ import { getRepositories } from './repositories'
 
 export const getAdminAccess = async (): Promise<AdminAccessResult> => {
   const token = extractSessionToken()
+
+  // Short-circuit before touching the database. An anonymous request can
+  // never be authorized, so opening a connection for it is wasted work —
+  // and it means an unauthenticated scan of the admin surface still gets a
+  // clean 404 when the database is unreachable, rather than a 500 that
+  // says something is there to break.
+  if (!token) return { authorized: false, user: null }
+
   const { authUsers } = await getRepositories()
   return resolveAdminAccess({ token }, { userRepository: authUsers })
 }

@@ -12,10 +12,17 @@ export const generateMeta = async (args: { doc: StorefrontMetaDoc }): Promise<Me
   const { doc } = args || {}
 
   const metaImage = doc?.meta?.image
-  const ogImage =
-    typeof metaImage === 'object' && metaImage !== null && metaImage.url
-      ? `${process.env.NEXT_PUBLIC_SERVER_URL}${metaImage.url}`
-      : undefined
+  const imageUrl = typeof metaImage === 'object' && metaImage !== null ? metaImage.url : null
+
+  // Open Graph requires an absolute URL. Stored media urls are
+  // root-relative (`/media/…`), so they are prefixed with the public
+  // origin — but a url that is already absolute is left alone rather than
+  // concatenated into nonsense.
+  const ogImage = imageUrl
+    ? /^https?:\/\//.test(imageUrl)
+      ? imageUrl
+      : `${process.env.NEXT_PUBLIC_SERVER_URL ?? ''}${imageUrl}`
+    : undefined
 
   return {
     title: doc?.meta?.title || 'Store',

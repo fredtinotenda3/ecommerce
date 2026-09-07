@@ -11,8 +11,14 @@ const Promotion = () => {
     seconds: 0,
   })
 
-  const targetDate = new Date()
-  targetDate.setDate(targetDate.getDate() + 3)
+  // Fixed on mount rather than recomputed each render: a target date that
+  // moves three days into the future on every render would leave the
+  // countdown frozen.
+  const [targetDate] = useState(() => {
+    const date = new Date()
+    date.setDate(date.getDate() + 3)
+    return date
+  })
 
   useEffect(() => {
     const timerInterval = setInterval(() => {
@@ -35,7 +41,7 @@ const Promotion = () => {
     return () => {
       clearInterval(timerInterval) // Cleanup the interval when the component unmounts.
     }
-  }, [])
+  }, [targetDate])
 
   return (
     <section className={classes.promotion}>

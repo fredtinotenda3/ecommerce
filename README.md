@@ -9,20 +9,25 @@ area and checkout.
 
 ```
 src/
+  middleware.ts     applies managed redirects to incoming requests
   app/
     (pages)/        storefront routes
     (admin)/admin/  admin area (session + admin role required)
     api/            route handlers (auth, products, orders, account,
                     checkout, payments, paywall)
-    _api/           server-side data access: repository wiring and the
-                    fetch/read helpers the routes and pages call
+    api/admin/      admin write API — every route gated by requireAdmin
+    media/          serves uploaded files at /media/<filename>
+    _api/           server-side data access: repository wiring, read
+                    helpers, and the admin mutation entry points
     _components/    UI
     _types/         storefront view models (what components render)
   lib/
     domain/         entities and money handling — no framework, no I/O
     db/             Mongoose connection and models
     repositories/   persistence, one per aggregate, behind an interface
-    services/       business rules (auth, orders, pricing, payments)
+    services/       business rules (auth, orders, pricing, payments,
+                    admin write validation)
+    media/          upload validation and filesystem storage
     payments/       Paynow provider adapter
     auth/           password hashing, session tokens, roles
 ```
@@ -41,6 +46,61 @@ Every amount is an integer in the currency's minor units, never a float.
 `src/lib/domain/money.ts` is the only place conversion and formatting
 happen. Prices are always re-derived server-side from current product
 records at checkout; nothing a client sends can influence what is charged.
+
+## Admin
+
+`/admin` requires a session whose user has the `admin` role. Everything
+under it, and every endpoint under `/api/admin`, is gated by one function
+(`requireAdmin`) which answers an unauthorized caller with 404 rather than
+403, so the admin surface is not advertised to someone probing for it.
+`tests/adminRouteAuthorization.test.ts` fails the build if a route is ever
+added without that gate.
+
+What it covers: products (create, edit, publish, price, categories, related
+products, layout blocks, SEO, delete), categories, pages (hero, layout,
+SEO, draft/published), media (upload, edit alt text, delete), orders (status
+transitions), customers (roles), the header/footer/settings globals, and
+redirects.
+
+Two write rules are worth knowing because they will refuse an operator:
+
+- An order can only be marked PAID once a payment for it has been confirmed
+  by the provider. Payment state belongs to the Paynow callback.
+- A category or media item that something still references cannot be
+  deleted; the error names what is in the way.
+
+Layout blocks and heroes are edited as JSON. Every block type the renderer
+supports is therefore editable, which a hand-built block builder would not
+have covered on day one; the field validates before submitting and the
+server validates again on save.
+
+## Media
+
+Uploads are written to `MEDIA_DIR` (default `./media`) and served by a route
+handler at `/media/<filename>` — deliberately not from `public/`, which the
+framework serves with no say from the application.
+
+Accepted: JPEG, PNG, GIF, WebP, AVIF, up to 10MB. The declared content type
+must match the file's own magic number. SVG is rejected: it can carry
+script and these files are served from this site's origin.
+
+Stored filenames are derived from the upload's name but always sanitised
+and suffixed with random bytes, so two uploads never collide and no part of
+a filename can escape the directory. Files already in `public/media` from
+before the migration still resolve.
+
+In production, point `MEDIA_DIR` at a persistent volume: a container
+filesystem does not survive a redeploy.
+
+## Redirects
+
+Managed at `/admin/redirects` and stored in MongoDB. `src/middleware.ts`
+applies them, caching the rule set for a minute — so a new redirect takes
+effect within a minute, without a rebuild. If the rules cannot be fetched,
+requests carry on unredirected rather than failing.
+
+`redirects.js` remains for redirects that belong to the deployment itself
+and must not depend on the database being up.
 
 ## Payments
 
@@ -68,8 +128,13 @@ npm run dev
 ```
 
 The admin area is at `/admin` and requires an account with the `admin`
-role. Self-registration only ever creates customers; `npm run seed:admin`
-is the only way to grant admin.
+role. Self-registration only ever creates customers, so `npm run seed:admin`
+is how the first administrator is created; after that, admins can promote
+others from `/admin/customers`.
+
+Draft content is previewed from the admin screens ("Preview draft"), which
+go through `/api/preview`. That endpoint requires an admin session; if
+`NEXT_PRIVATE_DRAFT_SECRET` is set, the link must carry it too.
 
 ## Scripts
 

@@ -1,26 +1,37 @@
 'use client'
 
+// src/app/_providers/Filter/index.tsx
+//
+// Product-listing filter state, shared between the Filters sidebar and the
+// CollectionArchive grid.
+//
+// `sort` uses the same tokens the products API accepts, so the value is
+// passed straight through rather than translated in the middle — a
+// translation layer is where the two ends drift apart.
+
 import { createContext, SetStateAction, useContext, useState } from 'react'
+
+import type { ProductSort } from '../../../lib/domain/types'
 
 interface IContextType {
   categoryFilters: string[]
   setCategoryFilters: React.Dispatch<SetStateAction<string[]>>
-  sort: string
-  setSort: React.Dispatch<SetStateAction<string>>
+  sort: ProductSort
+  setSort: React.Dispatch<SetStateAction<ProductSort>>
 }
 
-export const INITIAL_FILTER_DATA = {
+export const INITIAL_FILTER_DATA: IContextType = {
   categoryFilters: [],
   setCategoryFilters: () => [],
-  sort: '',
-  setSort: () => '',
+  sort: 'newest',
+  setSort: () => undefined,
 }
 
 const FilterContext = createContext<IContextType>(INITIAL_FILTER_DATA)
 
 export const FilterProvider = ({ children }: { children: React.ReactNode }) => {
-  const [categoryFilters, setCategoryFilters] = useState([])
-  const [sort, setSort] = useState('-createdAt')
+  const [categoryFilters, setCategoryFilters] = useState<string[]>([])
+  const [sort, setSort] = useState<ProductSort>('newest')
 
   return (
     <FilterContext.Provider
@@ -36,4 +47,4 @@ export const FilterProvider = ({ children }: { children: React.ReactNode }) => {
   )
 }
 
-export const useFilter = () => useContext(FilterContext)
+export const useFilter = (): IContextType => useContext(FilterContext)

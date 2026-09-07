@@ -34,6 +34,7 @@ export const Image: React.FC<MediaProps> = props => {
       width: fullWidth,
       height: fullHeight,
       filename: fullFilename,
+      url: urlFromResource,
       alt: altFromResource,
     } = resource
 
@@ -41,9 +42,13 @@ export const Image: React.FC<MediaProps> = props => {
     height = fullHeight
     alt = altFromResource
 
-    const filename = fullFilename
-
-    src = `${process.env.NEXT_PUBLIC_SERVER_URL}/media/${filename}`
+    // Prefer the record's own url, falling back to the filename for
+    // records written before urls were stored. Root-relative either way:
+    // an absolute URL built from NEXT_PUBLIC_SERVER_URL would break
+    // whenever the configured origin and the origin actually being served
+    // differ (a preview deployment, a proxy, local development on a
+    // different port).
+    src = urlFromResource || `/media/${fullFilename}`
   }
 
   // NOTE: this is used by the browser to determine which image to download at different screen sizes

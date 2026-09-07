@@ -25,6 +25,11 @@ export interface UserRepository {
    * be able to grant an account admin rights or an entitlement it did not
    * pay for. Those are admin/checkout operations and live elsewhere. */
   updateProfile(id: string, patch: { name?: string | null; email?: string }): Promise<User | null>
+  /** Replaces a user's roles wholesale. Separate from `updateProfile`
+   * precisely because it is a privilege change: nothing a customer can
+   * reach may call this, and the admin service enforces that an operator
+   * cannot strip their own admin role (see AdminContentService). */
+  updateRoles(id: string, roles: Role[]): Promise<User | null>
   appendPurchases(id: string, productIds: string[]): Promise<User | null>
 }
 
@@ -95,6 +100,14 @@ export class MongoUserRepository implements UserRepository {
       },
       { new: true },
     )
+      .lean<UserDocument>()
+      .exec()
+    return doc ? toDomain(doc as unknown as UserDocument) : null
+  }
+
+  async updateRoles(id: string, roles: Role[]): Promise<User | null> {
+    const Model = getUserModel(this.connection)
+    const doc = await Model.findByIdAndUpdate(id, { $set: { roles } }, { new: true })
       .lean<UserDocument>()
       .exec()
     return doc ? toDomain(doc as unknown as UserDocument) : null

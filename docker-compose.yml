@@ -9,6 +9,9 @@ services:
       - .env
     environment:
       DATABASE_URI: mongodb://mongo:27017/native-ecommerce
+      MEDIA_DIR: /app/media
+    volumes:
+      - media:/app/media
 
   mongo:
     image: mongo:7
@@ -21,3 +24,4 @@ services:
 
 volumes:
   data:
+  media:

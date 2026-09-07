@@ -4,7 +4,7 @@
 // `AuthUserRepository`) for unit tests that need customer/cart/order
 // lookups without a database.
 
-import type { CartItem, User } from '../../src/lib/domain/types'
+import type { CartItem, Role, User } from '../../src/lib/domain/types'
 import type { UserListFilter, UserRepository } from '../../src/lib/repositories/UserRepository'
 
 let counter = 0
@@ -38,6 +38,14 @@ export class FakeUserRepository implements UserRepository {
     const user = this.users.get(id)
     if (!user) return null
     const updated = { ...user, cart: items, updatedAt: new Date() }
+    this.users.set(id, updated)
+    return updated
+  }
+
+  async updateRoles(id: string, roles: Role[]): Promise<User | null> {
+    const user = this.users.get(id)
+    if (!user) return null
+    const updated = { ...user, roles, updatedAt: new Date() }
     this.users.set(id, updated)
     return updated
   }

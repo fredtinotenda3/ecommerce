@@ -1,19 +1,22 @@
 // src/app/(admin)/admin/customers/[id]/page.tsx
 //
-// read-only admin customer detail: profile, orders, and
-// purchases. Deliberately built from `AdminCustomerDetail` (see
-// AdminQueryService.ts), which is constructed field-by-field from the
-// storefront-safe `User` domain type — never from `AuthUserRecord` — so
-// there is no password hash/salt/reset-token field to accidentally
-// render here.
+// Customer detail: profile, orders, purchases, and the role control.
+//
+// Built from `AdminCustomerDetail` (see AdminQueryService.ts), which is
+// constructed field-by-field from the storefront-safe `User` domain type —
+// never from `AuthUserRecord` — so there is no password hash, salt or
+// reset token here to render by accident.
 
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 
 import { getAdminCustomerDetailNative } from '../../../../_api/adminQueries'
+import { AdminForm } from '../../_components/AdminForm'
+import { AdminSection } from '../../_components/AdminSection'
 
 export const dynamic = 'force-dynamic'
 
-export default async function NativeAdminCustomerDetailPage({
+export default async function AdminCustomerDetailPage({
   params: { id },
 }: {
   params: { id: string }
@@ -25,6 +28,9 @@ export default async function NativeAdminCustomerDetailPage({
 
   return (
     <>
+      <p>
+        <Link href="/admin/customers">← Customers</Link>
+      </p>
       <h1>{customer.name ?? 'Unnamed customer'}</h1>
       <dl>
         <dt>Email</dt>
@@ -63,6 +69,34 @@ export default async function NativeAdminCustomerDetailPage({
           ))}
         </ul>
       )}
+
+      <div style={{ marginTop: '2rem' }}>
+        <AdminSection
+          title="Roles"
+          description="Admins can reach /admin and every admin API. Customers cannot."
+        >
+          <AdminForm
+            action={`/api/admin/users/${customer.id}`}
+            method="PATCH"
+            submitLabel="Save roles"
+            successMessage="Roles updated."
+            fields={[
+              {
+                kind: 'multiselect',
+                name: 'roles',
+                label: 'Roles',
+                defaultValue: customer.roles,
+                options: [
+                  { value: 'customer', label: 'Customer' },
+                  { value: 'admin', label: 'Admin' },
+                ],
+                help: 'You cannot remove your own admin role, and the last administrator cannot be demoted.',
+              },
+            ]}
+          />
+        </AdminSection>
+      </div>
+
     </>
   )
 }

@@ -3,6 +3,7 @@
 
 import React from 'react'
 
+import type { ProductSort } from '../../../../lib/domain/types'
 import { StorefrontCategory } from '../../../_types/storefront'
 import { Checkbox } from '../../../_components/Checkbox'
 import { HR } from '../../../_components/HR'
@@ -23,7 +24,7 @@ const Filters = ({ categories }: { categories: StorefrontCategory[] }) => {
     }
   }
 
-  const handleSort = (value: string) => setSort(value)
+  const handleSort = (value: string) => setSort(value as ProductSort)
 
   const safeCategories = Array.isArray(categories) ? categories : []
 
@@ -50,15 +51,29 @@ const Filters = ({ categories }: { categories: StorefrontCategory[] }) => {
         <div className={classes.categories}>
           <RadioButton
             label="Latest"
-            value="-createdAt"
-            isSelected={sort === '-createdAt'}
+            value="newest"
+            isSelected={sort === 'newest'}
             onRadioChange={handleSort}
             groupName="sort"
           />
           <RadioButton
             label="Oldest"
-            value="createdAt"
-            isSelected={sort === 'createdAt'}
+            value="oldest"
+            isSelected={sort === 'oldest'}
+            onRadioChange={handleSort}
+            groupName="sort"
+          />
+          <RadioButton
+            label="Price: low to high"
+            value="price-asc"
+            isSelected={sort === 'price-asc'}
+            onRadioChange={handleSort}
+            groupName="sort"
+          />
+          <RadioButton
+            label="Price: high to low"
+            value="price-desc"
+            isSelected={sort === 'price-desc'}
             onRadioChange={handleSort}
             groupName="sort"
           />

@@ -1,9 +1,12 @@
 // scripts/seed/createAdminUser.ts
 //
 // Creates (or promotes) an administrator account, so a fresh deployment
-// has a way in to /admin. This is the only way an `admin` role is ever
-// granted: no HTTP endpoint can grant it, and self-registration always
-// produces a `customer`.
+// has a way in to /admin.
+//
+// This is the only way to create the FIRST administrator: self-registration
+// always produces a `customer`, and the admin API's role endpoint requires
+// an existing admin session. Once one admin exists, further admins are
+// promoted from /admin/customers.
 //
 // Usage:
 //   ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='…' npm run seed:admin
