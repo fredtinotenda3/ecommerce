@@ -27,7 +27,7 @@ describe('toStorefrontUser', () => {
     expect(result.purchases).toEqual(['product_1'])
   })
 
-  it('maps cart items from productId/quantity to the payload-types product/quantity shape', () => {
+  it('maps cart items from productId/quantity to the storefront product/quantity shape', () => {
     const user = buildTestUser({
       cart: [
         { productId: 'product_1', quantity: 2 },
@@ -43,23 +43,17 @@ describe('toStorefrontUser', () => {
     ])
   })
 
-  it('maps legacyStripeCustomerId to stripeCustomerID, undefined when null', () => {
-    expect(toStorefrontUser(buildTestUser({ legacyStripeCustomerId: 'cus_123' })).stripeCustomerID).toBe(
-      'cus_123',
-    )
-    expect(
-      toStorefrontUser(buildTestUser({ legacyStripeCustomerId: null })).stripeCustomerID,
-    ).toBeUndefined()
-  })
-
-  it('maps name: null to undefined (not null) to match the optional payload-types field', () => {
+  it('keeps a null name as null', () => {
     const user = buildTestUser({ name: null })
-    expect(toStorefrontUser(user).name).toBeUndefined()
+    expect(toStorefrontUser(user).name).toBeNull()
   })
 
-  it('never leaks a real password hash — always returns an empty string placeholder', () => {
-    const user = buildTestUser()
-    expect(toStorefrontUser(user).password).toBe('')
+  it('never carries a password hash, salt or reset token', () => {
+    const mapped = toStorefrontUser(buildTestUser()) as unknown as Record<string, unknown>
+    expect('password' in mapped).toBe(false)
+    expect('hash' in mapped).toBe(false)
+    expect('salt' in mapped).toBe(false)
+    expect('resetPasswordToken' in mapped).toBe(false)
   })
 
   it('serializes createdAt/updatedAt as ISO strings', () => {

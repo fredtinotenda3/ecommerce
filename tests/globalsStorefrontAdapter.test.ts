@@ -14,7 +14,7 @@ const emptyRelations = (): ResolvedNavRelations => ({
 })
 
 describe('toStorefrontHeader', () => {
-  it('matches the GraphQL HEADER query shape for a reference-type link', () => {
+  it('builds the header view model for a reference-type link', () => {
     const header = buildTestHeader({
       id: 'header1',
       navItems: [
@@ -40,7 +40,6 @@ describe('toStorefrontHeader', () => {
     const result = toStorefrontHeader(header, resolved)
 
     expect(result).toEqual({
-      id: 'header1',
       navItems: [
         {
           link: {
@@ -52,12 +51,10 @@ describe('toStorefrontHeader', () => {
           },
         },
       ],
-      createdAt: '2024-01-01T00:00:00.000Z',
-      updatedAt: '2024-01-02T00:00:00.000Z',
     })
   })
 
-  it('matches the GraphQL HEADER query shape for a custom-url link', () => {
+  it('builds the header view model for a custom-url link', () => {
     const header = buildTestHeader({
       navItems: [
         { link: { type: 'custom', label: 'External', url: 'https://example.com', newTab: true } },
@@ -118,7 +115,7 @@ describe('toStorefrontHeader', () => {
 })
 
 describe('toStorefrontFooter', () => {
-  it('matches the GraphQL FOOTER query shape, including copyright', () => {
+  it('builds the footer view model, including copyright', () => {
     const footer = buildTestFooter({
       id: 'footer1',
       copyright: '© 2024 Test Store',
@@ -130,11 +127,8 @@ describe('toStorefrontFooter', () => {
     const result = toStorefrontFooter(footer, emptyRelations())
 
     expect(result).toEqual({
-      id: 'footer1',
       copyright: '© 2024 Test Store',
       navItems: [{ link: { type: 'custom', url: 'https://instagram.com', label: 'Instagram' } }],
-      createdAt: '2024-01-01T00:00:00.000Z',
-      updatedAt: '2024-01-02T00:00:00.000Z',
     })
   })
 
@@ -146,7 +140,7 @@ describe('toStorefrontFooter', () => {
 })
 
 describe('toStorefrontSettings', () => {
-  it('matches the GraphQL SETTINGS query shape when the products page resolves', () => {
+  it('builds the settings view model when the products page resolves', () => {
     const settings = buildTestSettings({
       id: 'settings1',
       productsPageId: 'page1',
@@ -157,10 +151,7 @@ describe('toStorefrontSettings', () => {
     const result = toStorefrontSettings(settings, 'products')
 
     expect(result).toEqual({
-      id: 'settings1',
       productsPage: { slug: 'products' },
-      createdAt: '2024-01-01T00:00:00.000Z',
-      updatedAt: '2024-01-02T00:00:00.000Z',
     })
   })
 

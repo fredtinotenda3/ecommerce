@@ -1,7 +1,7 @@
 // tests/generateMeta.test.ts
 //
 // PHASE 13G — `generateMeta`'s `doc` argument was narrowed from the
-// full `payload-types.ts` `Page | Product` to `StorefrontMetaDoc`
+// `StorefrontMetaDoc`
 // (`{ slug?; meta?: { title?; description?; image? } }`, see
 // src/app/_types/storefront.ts). `generateMeta` itself wasn't
 // modified, but — same as `priceFromJSON` in Phase 13F-B — it had no
@@ -24,10 +24,10 @@ describe('generateMeta', () => {
     process.env.NEXT_PUBLIC_SERVER_URL = ORIGINAL_SERVER_URL
   })
 
-  it('falls back to "Payload" when no meta.title is present', async () => {
+  it('falls back to a generic title when no meta.title is present', async () => {
     const result = await generateMeta({ doc: {} })
-    expect(result.title).toEqual('Payload')
-    expect(result.openGraph?.title).toEqual('Payload')
+    expect(result.title).toEqual('Store')
+    expect(result.openGraph?.title).toEqual('Store')
   })
 
   it('uses meta.title and meta.description when present', async () => {
@@ -60,12 +60,12 @@ describe('generateMeta', () => {
   it('does not set an ogImage when meta.image is an unpopulated id string', async () => {
     const result = await generateMeta({ doc: { meta: { image: 'media-id-123' } } })
     // falls back to mergeOpenGraph's default images
-    expect(result.openGraph?.images).toEqual([{ url: 'https://payloadcms.com/images/og-image.jpg' }])
+    expect(result.openGraph?.images).toEqual([{ url: '/static-image.jpg' }])
   })
 
   it('does not set an ogImage when meta.image is absent', async () => {
     const result = await generateMeta({ doc: {} })
-    expect(result.openGraph?.images).toEqual([{ url: 'https://payloadcms.com/images/og-image.jpg' }])
+    expect(result.openGraph?.images).toEqual([{ url: '/static-image.jpg' }])
   })
 
   it('accepts a plain narrow object with none of the other Page/Product fields', async () => {

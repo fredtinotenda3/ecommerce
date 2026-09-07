@@ -14,7 +14,7 @@
 //     silent-failure risk ("degrades to any/unknown ... without a
 //     visible error, given strict: false")
 //
-// No import from `payload-types.ts` or `src/payload/**` anywhere in this
+// No import from any CMS-generated type anywhere in this
 // file — only `src/lib/domain/types.ts`.
 
 import { describe, expect, it } from 'vitest'

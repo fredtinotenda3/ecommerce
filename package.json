@@ -35,7 +35,6 @@
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "^13.5.2",
-    "@swc/core": "^1.16.2",
     "@types/escape-html": "^1.0.2",
     "@types/node": "18.11.3",
     "@types/qs": "^6.9.8",

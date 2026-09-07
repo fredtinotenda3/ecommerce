@@ -1,9 +1,8 @@
 // tests/fakes/FakeUserRepository.ts
 //
-// PHASE 6 — in-memory `UserRepository` (the storefront-safe one, NOT
-// `AuthUserRepository`), for unit-testing AdminQueryService's
-// customer/order lookups without a database. No fake previously existed
-// for this repository since nothing needed it before Phase 6.
+// In-memory `UserRepository` (the storefront-safe one, NOT
+// `AuthUserRepository`) for unit tests that need customer/cart/order
+// lookups without a database.
 
 import type { CartItem, User } from '../../src/lib/domain/types'
 import type { UserListFilter, UserRepository } from '../../src/lib/repositories/UserRepository'
@@ -39,6 +38,22 @@ export class FakeUserRepository implements UserRepository {
     const user = this.users.get(id)
     if (!user) return null
     const updated = { ...user, cart: items, updatedAt: new Date() }
+    this.users.set(id, updated)
+    return updated
+  }
+
+  async updateProfile(
+    id: string,
+    patch: { name?: string | null; email?: string },
+  ): Promise<User | null> {
+    const user = this.users.get(id)
+    if (!user) return null
+    const updated = {
+      ...user,
+      name: 'name' in patch ? patch.name ?? null : user.name,
+      email: typeof patch.email === 'string' ? patch.email : user.email,
+      updatedAt: new Date(),
+    }
     this.users.set(id, updated)
     return updated
   }

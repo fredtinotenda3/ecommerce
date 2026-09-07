@@ -2,7 +2,7 @@
 //
 // Unit tests for the native auth orchestration layer
 // (src/lib/services/AuthService.ts), using FakeAuthUserRepository so no
-// database is required — same pattern as fetchPageNative.test.ts etc.
+// database is required — same pattern as fetchPage.test.ts etc.
 
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 

@@ -103,7 +103,8 @@ describe('resolveStorefrontLayout', () => {
         id: 'prod1',
         slug: 'trail-boots',
         title: 'Trail Boots',
-        legacyPriceJSON: '{"data":[{"unit_amount":4999}]}',
+        price: 4999,
+        currency: 'USD',
       }),
     )
 
@@ -125,7 +126,7 @@ describe('resolveStorefrontLayout', () => {
       id: 'prod1',
       slug: 'trail-boots',
       title: 'Trail Boots',
-      priceJSON: '{"data":[{"unit_amount":4999}]}',
+      price: { amount: 4999, currency: 'USD' },
     })
   })
 

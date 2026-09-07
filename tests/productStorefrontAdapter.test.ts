@@ -12,6 +12,8 @@ describe('toStorefrontProduct', () => {
       slug: 'trail-boots',
       status: 'published',
       enablePaywall: false,
+      price: 4999,
+      currency: 'USD',
       legacyStripeProductId: 'prod_stripe_1',
       legacyPriceJSON: '{"data":[{"unit_amount":4999,"type":"one_time"}]}',
       meta: { title: 'Trail Boots | Store', description: 'Rugged trail boots.', imageId: 'media1' },
@@ -31,10 +33,9 @@ describe('toStorefrontProduct', () => {
     expect(result.title).toBe('Trail Boots')
     expect(result.slug).toBe('trail-boots')
     expect(result._status).toBe('published')
-    expect(result.stripeProductID).toBe('prod_stripe_1')
-    // The exact field ProductHero/Price/AddToCartButton read for display —
-    // must be the raw legacy JSON string, untouched.
-    expect(result.priceJSON).toBe('{"data":[{"unit_amount":4999,"type":"one_time"}]}')
+    // What ProductHero/Price/AddToCartButton read for display: the
+    // authoritative native price, never a legacy value.
+    expect(result.price).toEqual({ amount: 4999, currency: 'USD' })
     expect(result.enablePaywall).toBe(false)
     expect(result.categories).toEqual([{ id: 'cat1', title: 'Footwear' }])
     expect(result.meta).toMatchObject({
@@ -44,11 +45,11 @@ describe('toStorefrontProduct', () => {
     })
   })
 
-  it('never derives priceJSON from the authoritative native price/currency fields', () => {
+  it('exposes no price at all when the product has none, rather than defaulting to zero', () => {
     const product = buildTestProduct({
-      price: 4999,
-      currency: 'USD',
-      legacyPriceJSON: null,
+      price: null,
+      currency: null,
+      legacyPriceJSON: '{"data":[{"unit_amount":4999,"type":"one_time"}]}',
     })
 
     const result = toStorefrontProduct(product, {
@@ -58,11 +59,10 @@ describe('toStorefrontProduct', () => {
       relatedProducts: [],
     })
 
-    // Even though the product HAS an authoritative native price, the
-    // storefront-facing priceJSON must stay undefined rather than being
-    // synthesized from `price`/`currency` — the native path must never
-    // fall back to (or invent) legacy-shaped price data.
-    expect(result.priceJSON).toBeUndefined()
+    // A product with no authoritative price is not purchasable. It must
+    // never fall back to legacy price data, which is display-only history
+    // and may not match what the store would actually charge.
+    expect(result.price).toBeNull()
   })
 
   it('omits category breadcrumbs and only forwards id/title (intentionally not resolved)', () => {
