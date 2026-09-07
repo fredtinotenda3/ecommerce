@@ -560,3 +560,116 @@ export interface StorefrontArchiveBlock {
   blockName?: string
   blockType?: 'archive'
 }
+
+// ---------------------------------------------------------------------------
+// PHASE 13S — adapter/fetch compatibility boundary view models
+// ---------------------------------------------------------------------------
+//
+// `StorefrontPage`/`StorefrontProductDetail` below are the return shapes for
+// `pageStorefrontAdapter.ts`'s `toStorefrontPage` and
+// `productStorefrontAdapter.ts`'s `toStorefrontProduct` — the two functions
+// that assemble a fully relation-resolved native Page/Product for the
+// storefront's CMS page route (`src/app/(pages)/[slug]/page.tsx`) and
+// Product detail route (`src/app/(pages)/products/[slug]/page.tsx`).
+//
+// Each field reuses whichever narrower Storefront view model already exists
+// for that field's real downstream reader, instead of the matching
+// `payload-types.ts` field type: `hero`/`layout` reuse the Phase 13Q
+// dispatcher view models (`StorefrontHero`/`StorefrontLayoutBlock` — the
+// same types `Hero`/`Blocks` themselves are already typed against), and
+// `meta.image` reuses the Phase 13H media view model
+// (`StorefrontMediaItem`).
+//
+// `categories`/`relatedProducts` are intentionally NOT narrowed as far as
+// they could be:
+//   - `categories` is `StorefrontProductCategoryRef[]` (id/title only) —
+//     mirrors `ResolvedProductRelations.categories` exactly (see that
+//     interface's own doc comment in `productStorefrontAdapter.ts` for why
+//     only id/title are ever populated).
+//   - `relatedProducts` is left `unknown[]` — same reasoning as
+//     `StorefrontArchiveRelation.value` above: the one place it's actually
+//     read (`RelatedProducts`/`Card`, `src/app/_blocks/RelatedProducts/
+//     index.tsx`, `src/app/_components/Card/index.tsx`) still declares its
+//     own props against the full `payload-types.ts` `Product` today — both
+//     files are `_blocks/*`/`_components/*` leaf renderers this phase does
+//     not touch (see this phase's own DO NOT list). Narrowing this field's
+//     type here wouldn't reflect anything actually enforced yet, and
+//     `unknown` avoids re-introducing a `payload-types.ts` import into this
+//     dedicated non-Payload types file for a field this phase doesn't
+//     change the consumer of.
+//
+// `toStorefrontPage`/`toStorefrontProduct` themselves now return exactly
+// these two types, built with no per-field `payload-types.ts` cast anywhere
+// inside `pageStorefrontAdapter.ts`/`productStorefrontAdapter.ts`. The one
+// remaining conversion back to `payload-types.ts`'s `Page`/`Product` —
+// still needed because `ProductHero`/`Card`/`RelatedProducts` (out of this
+// phase's scope) declare their own props against the full generated types
+// — now lives ONLY at the outermost `fetchPageNative.ts`/
+// `fetchProductNative.ts` compatibility-boundary functions
+// (`buildStorefrontPage`/`buildStorefrontProduct`), as a single, documented
+// conversion, replacing the several per-field `as PayloadPage[...]`/
+// `as PayloadProduct[...]` casts that used to live inside the adapter files
+// themselves. See those two files' own PHASE 13S comments.
+
+/** The subset of `payload-types.ts`'s `Page` that `toStorefrontPage`
+ * assembles — mirrors the `PAGE` GraphQL query field-for-field (see
+ * `pageStorefrontAdapter.ts`'s own file header): id, title, slug, _status,
+ * hero, layout, meta, updatedAt, createdAt. `hero`/`layout` are typed
+ * against the Phase 13Q dispatcher view models rather than
+ * `payload-types.ts`'s `Page['hero']`/`Page['layout']` discriminated
+ * unions — see the file-level PHASE 13S comment above. */
+export interface StorefrontPage {
+  id: string
+  title: string
+  slug?: string | null
+  _status?: 'draft' | 'published' | null
+  hero: StorefrontHero & Record<string, unknown>
+  layout: StorefrontLayoutBlock[]
+  meta?: {
+    title?: string | null
+    description?: string | null
+    image?: StorefrontMediaItem
+  } | null
+  updatedAt: string
+  createdAt: string
+}
+
+/** A single entry in `StorefrontProductDetail.categories` — mirrors
+ * `ResolvedProductRelations.categories` (`productStorefrontAdapter.ts`):
+ * only `id`/`title` are ever populated by the caller (see that interface's
+ * own doc comment for why — `ProductHero` never reads more than
+ * `category.title`). */
+export interface StorefrontProductCategoryRef {
+  id: string
+  title?: string | null
+}
+
+/** The subset of `payload-types.ts`'s `Product` that `toStorefrontProduct`
+ * assembles — mirrors the `PRODUCT` GraphQL query field-for-field (see
+ * `productStorefrontAdapter.ts`'s own file header): id, title,
+ * stripeProductID, categories, layout, priceJSON, enablePaywall,
+ * relatedProducts, meta. `categories`/`layout` are typed against
+ * `StorefrontProductCategoryRef`/`StorefrontLayoutBlock` rather than
+ * `payload-types.ts`'s stricter unions — see the file-level PHASE 13S
+ * comment above for `layout`, and `relatedProducts`' own doc comment above
+ * for why it stays opaque. */
+export interface StorefrontProductDetail {
+  id: string
+  title: string
+  slug?: string | null
+  _status?: 'draft' | 'published' | null
+  stripeProductID?: string
+  priceJSON?: string
+  enablePaywall?: boolean
+  categories: StorefrontProductCategoryRef[]
+  layout: StorefrontLayoutBlock[]
+  /** Left opaque — see the file-level PHASE 13S comment above. */
+  relatedProducts: unknown[]
+  meta?: {
+    title?: string | null
+    description?: string | null
+    image?: StorefrontMediaItem
+  } | null
+  updatedAt: string
+  createdAt: string
+}

@@ -38,7 +38,19 @@ export interface PageNativeDeps {
  * classes) so it can be unit tested with the existing fake-repository
  * pattern (see tests/fakes) without a database. All DB wiring lives in
  * `fetchPageNative` below. Mirrors `buildStorefrontCategories`'s shape
- * from Phase 2 (see fetchCategoriesNative.ts). */
+ * from Phase 2 (see fetchCategoriesNative.ts).
+ *
+ * PHASE 13S: `toStorefrontPage` now builds and returns the narrower
+ * `StorefrontPage` view model (`src/app/_types/storefront.ts`) with no
+ * per-field `payload-types.ts` cast inside `pageStorefrontAdapter.ts` — see
+ * that file's own PHASE 13S comment. `buildStorefrontPage`'s own return
+ * type stays `PayloadPage | null` unchanged, because
+ * `src/app/(pages)/[slug]/page.tsx` (this function's one real caller)
+ * still declares its `page` variable against the full generated `Page`
+ * type. The conversion below is the single, contained boundary cast this
+ * now requires, replacing the several `as PayloadPage[...]` casts that
+ * previously lived inside `pageStorefrontAdapter.ts`/
+ * `layoutRelationsAdapter.ts` themselves. */
 export const buildStorefrontPage = async (
   slug: string,
   deps: PageNativeDeps,
@@ -58,7 +70,9 @@ export const buildStorefrontPage = async (
     resolveStorefrontLayout(page.layout, layoutDeps),
   ])
 
-  return toStorefrontPage(page, { hero, layout, metaImage })
+  const storefrontPage = toStorefrontPage(page, { hero, layout, metaImage })
+
+  return storefrontPage as unknown as PayloadPage
 }
 
 /** Native equivalent of `fetchDoc<Page>({ collection: 'pages', slug,

@@ -36,7 +36,20 @@ export interface ProductNativeDeps {
  * classes) so it can be unit tested with the existing fake-repository
  * pattern (see tests/fakes) without a database. All DB wiring lives in
  * `fetchProductNative` below. Mirrors `buildStorefrontCategories`'s shape
- * from Phase 2 (see fetchCategoriesNative.ts). */
+ * from Phase 2 (see fetchCategoriesNative.ts).
+ *
+ * PHASE 13S: `toStorefrontProduct` now builds and returns the narrower
+ * `StorefrontProductDetail` view model (`src/app/_types/storefront.ts`)
+ * with no per-field `payload-types.ts` cast inside
+ * `productStorefrontAdapter.ts` — see that file's own PHASE 13S comment.
+ * `buildStorefrontProduct`'s own return type stays `PayloadProduct | null`
+ * unchanged, because `src/app/(pages)/products/[slug]/page.tsx` (this
+ * function's one real caller) passes its `product` straight into
+ * `ProductHero`, which still declares its prop against the full generated
+ * `Product` type. The conversion below is the single, contained boundary
+ * cast this now requires, replacing the `as PayloadProduct[...]` casts
+ * that previously lived inside `productStorefrontAdapter.ts`/
+ * `layoutRelationsAdapter.ts` themselves. */
 export const buildStorefrontProduct = async (
   slug: string,
   deps: ProductNativeDeps,
@@ -76,7 +89,14 @@ export const buildStorefrontProduct = async (
     )
   ).filter((related): related is PayloadProduct => Boolean(related))
 
-  return toStorefrontProduct(product, { categories, metaImage, layout, relatedProducts })
+  const storefrontProduct = toStorefrontProduct(product, {
+    categories,
+    metaImage,
+    layout,
+    relatedProducts,
+  })
+
+  return storefrontProduct as unknown as PayloadProduct
 }
 
 /** Native equivalent of `fetchDoc<Product>({ collection: 'products', slug,

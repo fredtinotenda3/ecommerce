@@ -17,8 +17,38 @@
 // `relatedProducts` are already-resolved by the caller (see
 // fetchProductNative.ts), same division of responsibility as
 // `categoryStorefrontAdapter.ts`.
+//
+// ---------------------------------------------------------------------
+// PHASE 13S — return a `StorefrontProductDetail` view model instead of
+// `PayloadProduct`
+// ---------------------------------------------------------------------
+//
+// `toStorefrontProduct` used to build a `PayloadProduct` (`payload-types.ts`)
+// directly, which needed an `as PayloadProduct['categories']` cast for the
+// mapped `{ id, title }` category array (it doesn't match the full,
+// generated `Category[]`/`string[]` union) and an
+// `as PayloadProduct['layout']` cast for the same reason `pageStorefrontAdapter.ts`
+// needed one (`resolved.layout` is `unknown[]`, straight from
+// `layoutRelationsAdapter.ts`).
+//
+// This function now returns `StorefrontProductDetail`
+// (`src/app/_types/storefront.ts`) instead — `categories` is typed against
+// the dedicated `StorefrontProductCategoryRef` view model (an exact match
+// for the `{ id, title }` shape actually built below, so no cast is needed
+// at all any more) and `layout` against the Phase 13Q `StorefrontLayoutBlock`
+// dispatcher view model, same as `pageStorefrontAdapter.ts`. This drops the
+// `Product as PayloadProduct` import from this file entirely.
+//
+// The caller (`fetchProductNative.ts`'s `buildStorefrontProduct`) is
+// responsible for the one remaining conversion back to `payload-types.ts`'s
+// `Product` — still needed today because `ProductHero`
+// (`src/app/_heros/Product/index.tsx`) declares its `product` prop against
+// the full generated type — see that file's own PHASE 13S comment.
 
-import type { Product as PayloadProduct } from '../../../payload/payload-types'
+import type {
+  StorefrontProductCategoryRef,
+  StorefrontProductDetail,
+} from '../../../app/_types/storefront'
 import type {
   Category as NativeCategory,
   Media as NativeMedia,
@@ -36,15 +66,23 @@ export interface ResolvedProductRelations {
    * layoutRelationsAdapter.ts. */
   layout: unknown[]
   /** Already mapped via `buildMinimalStorefrontProduct` — see
-   * minimalProductAdapter.ts. */
-  relatedProducts: PayloadProduct[]
+   * minimalProductAdapter.ts. Left opaque (`unknown[]`) rather than typed
+   * against `payload-types.ts`'s `Product[]` — see `StorefrontProductDetail`'s
+   * own `relatedProducts` doc comment (`src/app/_types/storefront.ts`) for
+   * why. */
+  relatedProducts: unknown[]
 }
 
 export const toStorefrontProduct = (
   product: NativeProduct,
   resolved: ResolvedProductRelations,
-): PayloadProduct => {
-  const result: PayloadProduct = {
+): StorefrontProductDetail => {
+  const categories: StorefrontProductCategoryRef[] = resolved.categories.map(category => ({
+    id: category.id,
+    title: category.title,
+  }))
+
+  const result: StorefrontProductDetail = {
     id: product.id,
     title: product.title,
     slug: product.slug,
@@ -59,16 +97,9 @@ export const toStorefrontProduct = (
 
     enablePaywall: product.enablePaywall,
 
-    // Cast needed because we intentionally only populate `id`/`title`
-    // (see `ResolvedProductRelations.categories` doc comment above) —
-    // not the full `updatedAt`/`createdAt`/`breadcrumbs` a real Category
-    // carries, since `ProductHero` never reads them.
-    categories: resolved.categories.map(category => ({
-      id: category.id,
-      title: category.title,
-    })) as PayloadProduct['categories'],
+    categories,
 
-    layout: resolved.layout as PayloadProduct['layout'],
+    layout: resolved.layout as StorefrontProductDetail['layout'],
 
     relatedProducts: resolved.relatedProducts,
 

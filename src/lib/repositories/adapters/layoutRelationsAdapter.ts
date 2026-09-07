@@ -45,11 +45,12 @@
 //
 // UNCHANGED by this phase, on purpose (per the phase's own scope):
 //   - The EXTERNAL return shape of `resolveStorefrontLayout` /
-//     `resolveStorefrontHero` — still `unknown[]` / `RawBlock | null`,
-//     still Payload-shaped once the caller (`pageStorefrontAdapter.ts`,
-//     `productStorefrontAdapter.ts`) applies its own `as PayloadPage[...]`
-//     cast. That cast itself is NOT touched this phase — see
-//     docs/native-cms-layout-plan.md §5 step 2 vs. step 8.
+//     `resolveStorefrontHero` — still `unknown[]` / `RawBlock | null`. The
+//     caller (`pageStorefrontAdapter.ts`, `productStorefrontAdapter.ts`)
+//     now casts the result to a `StorefrontPage`/`StorefrontProductDetail`
+//     field type (`src/app/_types/storefront.ts`) instead of a
+//     `payload-types.ts` one — see PHASE 13S below and each of those two
+//     files' own comments.
 //   - Every *resolved* field's actual content for well-formed input
 //     (media/link/archive resolution logic is behaviorally identical to
 //     before this phase — see tests/layoutRelationsAdapter.test.ts,
@@ -57,11 +58,28 @@
 //   - `archive.categories`/`archive.selectedDocs` remain unresolved (Phase
 //     3's documented scope limit — see the file header above and
 //     docs/native-cms-layout-plan.md §3.6).
+//
+// ---------------------------------------------------------------------
+// PHASE 13S — drop the `payload-types.ts` import from this file
+// ---------------------------------------------------------------------
+//
+// Before this phase, `resolveMediaField`'s return type and
+// `resolveArchivePopulatedDocs`'s resolved `value` field were annotated/cast
+// against `payload-types.ts`'s `Media`/`Product` (`PayloadMedia`/
+// `PayloadProduct`), even though neither annotation was load-bearing:
+// `toStorefrontMedia`/`buildMinimalStorefrontProduct` (this file's own
+// callees) already produce a value structurally compatible with those
+// types without any cast. `resolveMediaField` now returns the dedicated
+// `StorefrontMediaItem` view model (`src/app/_types/storefront.ts`) instead
+// — every value `toStorefrontMedia` produces still satisfies it unchanged
+// — and the `as PayloadProduct` in `resolveArchivePopulatedDocs` is simply
+// removed (the surrounding `RawBlock`'s `value: any` accepted it either
+// way). This drops the `Media as PayloadMedia`/`Product as PayloadProduct`
+// import entirely; nothing about either function's runtime behavior
+// changes — see tests/layoutRelationsAdapter.test.ts, unchanged and still
+// passing.
 
-import type {
-  Media as PayloadMedia,
-  Product as PayloadProduct,
-} from '../../../payload/payload-types'
+import type { StorefrontMediaItem } from '../../../app/_types/storefront'
 import type {
   Media as NativeMedia,
   NativeCMSLink,
@@ -168,13 +186,13 @@ const isReferenceLink = (
 const resolveMediaField = async (
   value: unknown,
   mediaRepository: MediaRepository,
-): Promise<PayloadMedia | undefined> => {
+): Promise<StorefrontMediaItem | undefined> => {
   if (value == null) return undefined
 
   // Defensive: if something upstream already populated this to an
   // object shape, pass it through rather than trying to re-resolve it.
   if (isPlainObject(value) && 'mimeType' in value) {
-    return value as PayloadMedia
+    return value as StorefrontMediaItem
   }
 
   const id = idToString(value)
@@ -239,7 +257,7 @@ const resolveArchivePopulatedDocs = async (
 
       return {
         relationTo: entry.relationTo,
-        value: buildMinimalStorefrontProduct(product, metaImage) as PayloadProduct,
+        value: buildMinimalStorefrontProduct(product, metaImage),
       }
     }),
   )
