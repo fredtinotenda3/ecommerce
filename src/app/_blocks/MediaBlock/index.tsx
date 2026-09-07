@@ -1,8 +1,7 @@
 import React from 'react'
 import { StaticImageData } from 'next/image'
 
-import { Media as MediaType } from '../../../payload/payload-types'
-import { StorefrontMediaLayoutBlock } from '../../_types/storefront'
+import { StorefrontHeroMedia, StorefrontMediaLayoutBlock } from '../../_types/storefront'
 import { Gutter } from '../../_components/Gutter'
 import { Media } from '../../_components/Media'
 import RichText from '../../_components/RichText'
@@ -14,14 +13,15 @@ import classes from './index.module.scss'
 // `invertBackground`/`position`/`id`/`blockName`/`blockType` come from the
 // shared `StorefrontMediaLayoutBlock` view model
 // (`src/app/_types/storefront.ts`) — same pattern as
-// `CallToActionBlock`/`ContentBlock` (Phase 13L). `media` stays typed
-// directly against `payload-types.ts`'s `Media` — it's passed straight
-// through to `<Media resource={media} />` below, which needs the full
-// shape; see that view model's header comment for why. `payload-types.ts`
-// is still imported for this one field only, not for the rest of the
-// block's shape.
+// `CallToActionBlock`/`ContentBlock` (Phase 13L).
+//
+// PHASE 13V: `media` is now `string | StorefrontHeroMedia` instead of
+// `payload-types.ts`'s full `Media` — this component reads `media.caption`
+// directly (below), same as `HighImpactHero`, so it needs
+// `StorefrontHeroMedia` (Phase 13V) rather than plain `StorefrontMediaItem`.
+// This drops the `payload-types.ts` import from this file entirely.
 type Props = StorefrontMediaLayoutBlock & {
-  media: string | MediaType
+  media: string | StorefrontHeroMedia
   staticImage?: StaticImageData
   id?: string
 }

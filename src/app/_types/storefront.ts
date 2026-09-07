@@ -114,15 +114,19 @@ export interface StorefrontFooter {
 //
 // `media` is deliberately NOT included in any hero type here.
 // `HighImpactHero`/`MediumImpactHero` pass their hero's `media` field
-// straight through to the `<Media resource={...} />` display component,
-// which requires the FULL `payload-types.ts` `Media` shape (specifically
-// `.sizes`, for its responsive `srcset` logic — see `Media/types.ts`,
-// which Phase 13L does not touch, same as every prior phase). Narrowing
-// `media` the way `icon`/`reference.value` are narrowed elsewhere would
-// make it unsafe to pass to `<Media />`. Those two hero components keep
-// `media` typed directly against `payload-types.ts`'s `Media` in their own
-// local prop type instead of through a shared view model here — see
-// `src/app/_heros/HighImpact/index.tsx` / `MediumImpact/index.tsx`.
+// straight through to the `<Media resource={...} />` display component.
+// Prior to Phase 13V that required the full `payload-types.ts` `Media`
+// shape (`Media/types.ts`'s `resource` prop wasn't narrowed yet); as of
+// Phase 13V, `Media/types.ts`'s `resource` prop itself is
+// `string | StorefrontMediaItem`, so those two hero components now type
+// `media` directly against `StorefrontMediaItem`/`StorefrontHeroMedia`
+// (Phase 13V) in their own local prop type — see
+// `src/app/_heros/HighImpact/index.tsx` / `MediumImpact/index.tsx` — still
+// not through a shared field on `StorefrontHeroLinksContent` here, since
+// `HighImpactHero` additionally reads `media.caption` (needing
+// `StorefrontHeroMedia`) while `MediumImpactHero` doesn't (plain
+// `StorefrontMediaItem` suffices), so the two components still don't share
+// one exact `media` type between them.
 // `CustomHero` never passes `media` to the `Media` component (it only
 // reads `.filename` for a CSS `background-image` URL), so it narrows
 // `media` to `string | StorefrontMediaItem` locally instead.
@@ -244,10 +248,15 @@ export type StorefrontMediaRef = string | { url?: string | null } | null | undef
  * This means `Media`'s `Props.resource` (`src/app/_components/Media/
  * types.ts`) could, in principle, be safely narrowed from `string |
  * payload-types.ts Media` to `string | StorefrontMediaItem` without
- * changing what it renders. Phase 13N deliberately does NOT make that
- * change — see that phase's report ("Remaining Blockers" /
- * "Recommended Next Phase") for why it's left as a single, explicit,
- * separately-tested follow-up rather than folded into this audit. */
+ * changing what it renders. Phase 13N deliberately did NOT make that
+ * change — it was left as a single, explicit, separately-tested follow-up
+ * rather than folded into that audit. PHASE 13V is that follow-up:
+ * `Media/types.ts`'s `Props.resource` is now `string | StorefrontMediaItem`
+ * (see that file), and `ProductHero`/`MediumImpactHero` (plain
+ * `StorefrontMediaItem`) and `HighImpactHero`/`MediaBlock` (which also
+ * read `.caption`, so `StorefrontHeroMedia` below) type their `media`/
+ * `meta.image` fields against it directly instead of `payload-types.ts`'s
+ * `Media`. */
 export interface StorefrontMediaItem {
   url?: string | null
   width?: number | null
@@ -255,6 +264,21 @@ export interface StorefrontMediaItem {
   alt?: string | null
   filename?: string | null
   mimeType?: string | null
+}
+
+/** PHASE 13V — `StorefrontMediaItem` plus the one additional field a
+ * populated `payload-types.ts` `Media` object carries that some (not all)
+ * `<Media resource={...} />` callers *also* read directly off the same
+ * object, alongside forwarding it to `<Media />` itself: `caption`, a
+ * Lexical/Slate-style rich text array (mirrors `StorefrontRichText` above)
+ * rendered through `<RichText content={media.caption} />`
+ * (`HighImpactHero`) or `<RichText content={caption} />` (`MediaBlock`).
+ * `MediumImpactHero`/`ProductHero` never read `.caption`, so they stay on
+ * plain `StorefrontMediaItem` instead of this type. Every real
+ * `payload-types.ts` `Media` object satisfies this unchanged (same as
+ * `StorefrontMediaItem`) — see `tests/mediaResourceViewModel.test.ts`. */
+export interface StorefrontHeroMedia extends StorefrontMediaItem {
+  caption?: StorefrontRichText
 }
 
 /** The subset of `payload-types.ts`'s `Product` that `Price` (and its
@@ -484,12 +508,12 @@ export interface StorefrontHero {
  *
  * `media` is deliberately NOT included here — same reasoning as
  * `StorefrontHeroLinksContent` excluding it above (see the file-level
- * PHASE 13L comment): `MediaBlock` passes `media` straight through to
- * `<Media resource={media} />` (`src/app/_components/Media/index.tsx`),
- * which requires the full `payload-types.ts` `Media` shape (see
- * `Media/types.ts`, which this phase does not touch). `MediaBlock` keeps
- * `media` typed directly against `payload-types.ts`'s `Media` in its own
- * local prop type instead — see `src/app/_blocks/MediaBlock/index.tsx`. */
+ * PHASE 13L comment, updated by PHASE 13V): `MediaBlock` passes `media`
+ * straight through to `<Media resource={media} />`
+ * (`src/app/_components/Media/index.tsx`) and also reads `media.caption`
+ * directly, so it types `media` against `StorefrontHeroMedia` (Phase 13V)
+ * in its own local prop type instead of through this shared block view
+ * model — see `src/app/_blocks/MediaBlock/index.tsx`. */
 export interface StorefrontMediaLayoutBlock {
   invertBackground?: boolean
   position?: 'default' | 'fullscreen'
@@ -586,19 +610,21 @@ export interface StorefrontArchiveBlock {
 // override (redeclaring `meta` as `{ description?: ... }` alone, with no
 // `image` key at all, has no properties in common with the base `{
 // image?: ... }` and is flagged as a likely mistake). `ProductHero` itself
-// widens `image` further still, to the full `payload-types.ts` `Media` —
-// see below.
+// widens `image` further still, to `StorefrontMediaItem` — see below.
 //
-// `meta.image` is deliberately NOT widened to the full `payload-types.ts`
-// `Media` here — same reasoning as `HighImpactHero`/`MediumImpactHero`/
-// `MediaBlock`'s `media` field (see the file-level PHASE 13L comment
-// above): `ProductHero` passes `meta.image` straight through to `<Media
-// resource={...} />`, which requires the full generated `Media` shape.
-// `ProductHero` keeps `meta.image` typed directly against
-// `payload-types.ts`'s `Media` in its own local prop type instead (an
-// `Omit<StorefrontProductHeroView, 'meta'> & { meta?: { image?: string |
-// Media; ... } }` override, matching `HighImpactHero`'s pattern exactly)
-// — see `src/app/_heros/Product/index.tsx`.
+// PHASE 13V: `meta.image` is deliberately NOT widened to
+// `StorefrontMediaItem` here (only as far as `StorefrontMediaRef`, `.url`
+// only) — `StorefrontCartProduct` (Phase 13P) already documents why its
+// own narrow `.url`-only ref is sufficient for the one place *it's* read
+// through `<Media resource={...} />` (a plain, untyped `CartItem`
+// component). `ProductHero` reads `meta.image` through a typed
+// `<Media resource={...} fill />` call of its own and keeps `meta.image`
+// typed directly against `StorefrontMediaItem` (Phase 13V) in its own
+// local prop type instead (an `Omit<StorefrontProductHeroView, 'meta'> &
+// { meta?: { image?: string | StorefrontMediaItem; ... } }` override) —
+// see `src/app/_heros/Product/index.tsx`. Since `payload-types.ts`'s
+// `Media` satisfies `StorefrontMediaItem` unchanged (Phase 13V), this no
+// longer requires importing `payload-types.ts` into that file at all.
 //
 // `categories` mirrors `payload-types.ts`'s `Product['categories']`
 // (`string[] | Category[]`) structurally as `(string |

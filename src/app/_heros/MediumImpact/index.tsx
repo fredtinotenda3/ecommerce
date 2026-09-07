@@ -1,7 +1,6 @@
 import React from 'react'
 
-import { Media as MediaType } from '../../../payload/payload-types'
-import { StorefrontHeroLinksContent } from '../../_types/storefront'
+import { StorefrontHeroLinksContent, StorefrontMediaItem } from '../../_types/storefront'
 import { Gutter } from '../../_components/Gutter'
 import { CMSLink } from '../../_components/Link'
 import { Media } from '../../_components/Media'
@@ -12,10 +11,15 @@ import classes from './index.module.scss'
 // PHASE 13L: previously `Page['hero']` (from `payload-types.ts`) in full;
 // now `richText`/`links` come from the shared `StorefrontHeroLinksContent`
 // view model (`src/app/_types/storefront.ts`) — same reasoning as
-// `HighImpactHero`. `media` stays typed directly against
-// `payload-types.ts`'s `Media` because it's passed straight through to
-// `<Media resource={media} />` below, which needs the full shape.
-type Props = StorefrontHeroLinksContent & { media: string | MediaType }
+// `HighImpactHero`.
+//
+// PHASE 13V: `media` is now `string | StorefrontMediaItem` instead of
+// `payload-types.ts`'s full `Media` — unlike `HighImpactHero`, this
+// component never reads `media.caption`, so the plain scalar-subset
+// `StorefrontMediaItem` (Phase 13H) is sufficient; no need for
+// `StorefrontHeroMedia`. This drops the `payload-types.ts` import from
+// this file entirely.
+type Props = StorefrontHeroLinksContent & { media: string | StorefrontMediaItem }
 
 export const MediumImpactHero: React.FC<Props> = props => {
   const { richText, media, links } = props

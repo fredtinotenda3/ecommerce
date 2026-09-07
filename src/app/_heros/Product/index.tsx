@@ -1,26 +1,35 @@
 import React, { Fragment } from 'react'
 
-import { Media as MediaType } from '../../../payload/payload-types'
 import { AddToCartButton } from '../../_components/AddToCartButton'
 import { Gutter } from '../../_components/Gutter'
 import { Media } from '../../_components/Media'
 import { Price } from '../../_components/Price'
-import { StorefrontProductCategoryRef, StorefrontProductHeroView } from '../../_types/storefront'
+import {
+  StorefrontMediaItem,
+  StorefrontProductCategoryRef,
+  StorefrontProductHeroView,
+} from '../../_types/storefront'
 
 import classes from './index.module.scss'
 
 // PHASE 13U: previously the full `payload-types.ts` `Product`; now
 // `id`/`title`/`slug`/`priceJSON`/`categories` come from the shared
 // `StorefrontProductHeroView` view model (`src/app/_types/storefront.ts`).
-// `meta.image` stays typed directly against `payload-types.ts`'s `Media`
-// (via this `Omit<..., 'meta'> & { meta?: ... }` override) — it's passed
-// straight through to `<Media resource={...} />` below, which needs the
-// full shape for its responsive-image logic; same pattern as
-// `HighImpactHero`/`MediumImpactHero`'s `media` field. See
-// `StorefrontProductHeroView`'s own doc comment for why this is safe.
+//
+// PHASE 13V: `meta.image` is now `string | StorefrontMediaItem` instead of
+// `payload-types.ts`'s full `Media` — the Phase 13N audit established
+// `<Media resource={...} />` only reads the scalar fields
+// `StorefrontMediaItem` already models (see that type's own doc comment).
+// This is stricter than `StorefrontProductHeroView`'s own `meta.image`
+// (inherited from `StorefrontCartProduct`'s `StorefrontMediaRef`, just
+// `.url` — sufficient for the Cart row's plain thumbnail use, but not
+// self-documenting enough for `<Media resource={...} fill />`'s actual
+// field reads here), hence this `Omit<..., 'meta'> & { meta?: ... }`
+// override, same pattern as the Phase 13U original. This drops the
+// `payload-types.ts` import from this file entirely.
 type ProductHeroProduct = Omit<StorefrontProductHeroView, 'meta'> & {
   meta?: {
-    image?: string | MediaType
+    image?: string | StorefrontMediaItem
     description?: string | null
   } | null
 }
