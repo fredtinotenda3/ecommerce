@@ -462,3 +462,101 @@ export interface StorefrontLayoutBlock {
 export interface StorefrontHero {
   type: NativeHeroType
 }
+
+// ---------------------------------------------------------------------------
+// PHASE 13R — MediaBlock / ArchiveBlock view models
+// ---------------------------------------------------------------------------
+//
+// These two follow the exact pattern Phase 13L used for
+// `StorefrontCallToActionBlock`/`StorefrontContentBlock`: a structural
+// subset of the real `payload-types.ts` `Page['layout'][number]` variant
+// shape (`mediaBlock`/`archive`) AND of the matching native domain type
+// (`NativeMediaLayoutBlock`/`NativeArchiveBlock`, `src/lib/domain/types.ts`),
+// containing only the fields the leaf component itself reads. Every real
+// Payload `mediaBlock`/`archive` block, and everything a future native
+// block producer would build to match `NativeMediaLayoutBlock`/
+// `NativeArchiveBlock`, satisfies these unchanged.
+
+/** The subset of `payload-types.ts`'s `Page['layout'][number]` (the
+ * `mediaBlock` variant) that `MediaBlock` itself reads —
+ * `invertBackground`/`position`/`id`/`blockName`/`blockType` only. Mirrors
+ * `NativeMediaLayoutBlock` minus `media`.
+ *
+ * `media` is deliberately NOT included here — same reasoning as
+ * `StorefrontHeroLinksContent` excluding it above (see the file-level
+ * PHASE 13L comment): `MediaBlock` passes `media` straight through to
+ * `<Media resource={media} />` (`src/app/_components/Media/index.tsx`),
+ * which requires the full `payload-types.ts` `Media` shape (see
+ * `Media/types.ts`, which this phase does not touch). `MediaBlock` keeps
+ * `media` typed directly against `payload-types.ts`'s `Media` in its own
+ * local prop type instead — see `src/app/_blocks/MediaBlock/index.tsx`. */
+export interface StorefrontMediaLayoutBlock {
+  invertBackground?: boolean
+  position?: 'default' | 'fullscreen'
+  id?: string
+  blockName?: string
+  blockType?: 'mediaBlock'
+}
+
+/** A single entry in `archive.populatedDocs` — the only relation field
+ * `ArchiveBlock`/`CollectionArchive` actually read (`selectedDocs` is never
+ * destructured by `ArchiveBlock`, so it's omitted from
+ * `StorefrontArchiveBlock` below entirely, unlike `NativeArchiveBlock`
+ * which models it for domain-layer completeness).
+ *
+ * `value` is left as an opaque `string | Record<string, unknown>` in the
+ * resolved case, rather than a duplicated "full Product" shape, because
+ * neither `ArchiveBlock` nor `CollectionArchive` reads any field off a
+ * resolved `value` today: `CollectionArchive` only ever forwards
+ * `populatedDocs?.map(doc => doc.value)` into its initial result state,
+ * immediately behind an `as []` cast that already discards whatever type
+ * that expression has (see `src/app/_components/CollectionArchive/
+ * index.tsx`) — never rendering a resolved `value` through `<Card />`
+ * (which needs the full `payload-types.ts` `Product`; that only happens
+ * for docs `CollectionArchive` gets back from its own API fetch, a runtime
+ * `Product[]` unrelated to `populatedDocs`).
+ *
+ * `value` is typed `unknown` rather than `Record<string, unknown>` —
+ * `payload-types.ts`'s generated `Product` interface has no index
+ * signature, so (a TypeScript-specific quirk) it is not assignable to
+ * `Record<string, unknown>` even though it's a plain object; `unknown`
+ * accepts both the unresolved id string and any resolved object without
+ * that pitfall. Every real Payload `populatedDocs` entry (`{ relationTo:
+ * 'products'; value: string | Product }`) satisfies this unchanged. */
+export interface StorefrontArchiveRelation {
+  relationTo: 'products'
+  value: unknown
+}
+
+/** The subset of `payload-types.ts`'s `Page['layout'][number]` (the
+ * `archive` variant) that `ArchiveBlock` (and, through it,
+ * `CollectionArchive` — see `src/app/_blocks/ArchiveBlock/types.ts`,
+ * which re-exports this as `ArchiveBlockProps`) actually reads:
+ * `introContent`/`populateBy`/`relationTo`/`categories`/`limit`/
+ * `populatedDocs`/`populatedDocsTotal`, plus `id`/`blockName`/`blockType`
+ * for parity with the other block view models. Mirrors
+ * `NativeArchiveBlock` minus `selectedDocs` (see
+ * `StorefrontArchiveRelation` above for why).
+ *
+ * `categories` is widened to `string[] | StorefrontCategory[]` rather than
+ * `NativeArchiveBlock`'s `string[]`-only modelling — the native domain type
+ * can get away with `string[]` only because nothing constructs a resolved
+ * native `categories` today (see that type's own doc comment), but a real
+ * `payload-types.ts` archive block's `categories` field can genuinely be
+ * `Category[]` (populated), which a `string[]`-only type would reject.
+ * `StorefrontCategory` (Phase 13F-B) already models exactly the fields
+ * `CategoryCard`/`Categories`/`Filters` read off a populated `Category`,
+ * so it's reused here rather than duplicated — every real `Category`
+ * satisfies it unchanged, same as everywhere else it's used. */
+export interface StorefrontArchiveBlock {
+  introContent: StorefrontRichText
+  populateBy?: 'collection' | 'selection'
+  relationTo?: 'products'
+  categories?: string[] | StorefrontCategory[]
+  limit?: number
+  populatedDocs?: StorefrontArchiveRelation[]
+  populatedDocsTotal?: number
+  id?: string
+  blockName?: string
+  blockType?: 'archive'
+}
