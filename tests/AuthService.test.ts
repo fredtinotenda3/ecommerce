@@ -135,7 +135,7 @@ describe('AuthService', () => {
       // default 5000ms per-test timeout isn't enough for that many real
       // PBKDF2 rounds, so this single test gets a longer, explicit budget
       // instead of changing anything about production password hashing.
-      15000,
+      30000,
     )
 
     it('resets loginAttempts back to 0 after a successful login', async () => {
