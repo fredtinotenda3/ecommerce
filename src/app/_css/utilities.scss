@@ -74,3 +74,213 @@
     animation: none;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Section furniture
+//
+// Every band on the storefront introduces itself the same way: a small caps
+// eyebrow, a heading, an optional lede, and an optional link on the right.
+// These placeholders are what keep six different sections from arriving at
+// six different answers.
+// ---------------------------------------------------------------------------
+
+/// A major page band.
+%th-section {
+  padding-block: var(--th-section);
+}
+
+/// A band that belongs with the one above it.
+%th-section-tight {
+  padding-block: var(--th-section-tight);
+}
+
+/// Heading + optional trailing link, aligned along their baselines.
+%th-section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--th-space-8);
+  margin-bottom: var(--th-space-12);
+
+  @media (max-width: 767px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--th-space-4);
+    margin-bottom: var(--th-space-8);
+  }
+}
+
+%th-section-title {
+  font-size: var(--th-text-h2);
+  line-height: var(--th-leading-snug);
+  letter-spacing: var(--th-tracking-heading);
+  font-weight: var(--th-weight-bold);
+  margin: 0;
+  max-width: 20ch;
+}
+
+%th-section-lede {
+  margin: var(--th-space-4) 0 0;
+  font-size: var(--th-text-lead);
+  line-height: var(--th-leading-normal);
+  color: var(--th-muted);
+  max-width: var(--th-measure-narrow);
+}
+
+/// The "See all →" link that sits opposite a section heading.
+%th-section-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--th-space-2);
+  font-size: var(--th-text-sm);
+  font-weight: var(--th-weight-semibold);
+  letter-spacing: var(--th-tracking-normal);
+  color: var(--th-brand-text);
+  text-decoration: none;
+  white-space: nowrap;
+  padding-block: var(--th-space-2);
+
+  svg {
+    transition: transform var(--th-transition);
+  }
+
+  &:hover {
+    color: var(--th-brand-text);
+
+    svg {
+      transform: translateX(4px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    svg,
+    &:hover svg {
+      transition: none;
+      transform: none;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Buttons
+//
+// One shape, three emphases. Defined here rather than per-component because
+// the hero, the product page, the cart and the empty states were each
+// growing their own call-to-action with slightly different padding, radius
+// and hover — which is exactly what makes a site feel assembled rather than
+// designed.
+//
+// 48px minimum height clears the WCAG 2.5.5 target size on touch.
+// ---------------------------------------------------------------------------
+
+%th-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--th-space-2);
+  min-height: 48px;
+  padding: 0 var(--th-space-7);
+  border: 1px solid transparent;
+  border-radius: var(--th-radius-pill);
+  font-family: inherit;
+  font-size: var(--th-text-sm);
+  font-weight: var(--th-weight-semibold);
+  letter-spacing: var(--th-tracking-normal);
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--th-transition),
+    border-color var(--th-transition),
+    color var(--th-transition),
+    box-shadow var(--th-transition),
+    transform var(--th-transition);
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  &:disabled,
+  &[aria-disabled='true'] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+
+    &:active:not(:disabled) {
+      transform: none;
+    }
+  }
+}
+
+%th-btn-primary {
+  @extend %th-btn;
+  background-color: var(--th-brand-fill);
+  color: var(--th-on-brand);
+  box-shadow: var(--th-shadow-brand);
+
+  &:hover:not(:disabled) {
+    background-color: var(--th-brand-fill-hover);
+    color: var(--th-on-brand);
+  }
+}
+
+%th-btn-secondary {
+  @extend %th-btn;
+  background-color: var(--th-surface);
+  border-color: var(--th-line-strong);
+  color: var(--th-ink);
+
+  &:hover:not(:disabled) {
+    border-color: var(--th-ink);
+    color: var(--th-ink);
+  }
+}
+
+/// Sits on a dark/inverse panel.
+%th-btn-on-dark {
+  @extend %th-btn;
+  background-color: var(--th-on-inverse);
+  color: var(--th-inverse);
+
+  &:hover:not(:disabled) {
+    background-color: #fff;
+    color: var(--th-inverse);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--th-on-inverse);
+    outline-offset: 3px;
+  }
+}
+
+%th-btn-ghost-on-dark {
+  @extend %th-btn;
+  background-color: transparent;
+  border-color: var(--th-inverse-line);
+  color: var(--th-on-inverse);
+
+  &:hover:not(:disabled) {
+    border-color: var(--th-on-inverse);
+    background-color: var(--th-inverse-raised);
+    color: var(--th-on-inverse);
+  }
+}
+
+/// A large button — the primary purchase action.
+%th-btn-lg {
+  min-height: 56px;
+  padding: 0 var(--th-space-8);
+  font-size: var(--th-text-body);
+}
+
+/// Running text at a comfortable measure.
+%th-prose {
+  max-width: var(--th-measure);
+  line-height: var(--th-leading-relaxed);
+  color: var(--th-muted);
+}

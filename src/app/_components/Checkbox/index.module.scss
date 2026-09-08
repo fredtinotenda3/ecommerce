@@ -1,36 +1,90 @@
 @import '../../_css/common';
 
+// The native input is visually hidden but still the real control: it keeps
+// keyboard behaviour, form semantics and screen-reader announcements, while
+// the adjacent span draws the box. `appearance: none` on the input itself
+// (the previous approach) cannot render a focus ring that follows the
+// custom shape.
 .checkboxWrapper {
   display: flex;
   align-items: center;
-  gap: 10px;
-  white-space: nowrap;
+  gap: var(--th-space-3);
+  padding: var(--th-space-2) 0;
+  // Comfortably tappable without looking like a button.
+  min-height: 36px;
   cursor: pointer;
+  font-size: var(--th-text-sm);
+  color: var(--th-ink-soft);
+  transition: color var(--th-transition);
+
+  &:hover {
+    color: var(--th-ink);
+
+    .box {
+      border-color: var(--th-line-strong);
+    }
+  }
+}
+
+.selected {
+  color: var(--th-ink);
+  font-weight: var(--th-weight-medium);
 }
 
 .checkbox {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 24px;
-  height: 24px;
-  border-radius: 5px;
-  background-color: white;
-  border: 2px solid var(--color-dark-500);
-  outline: none;
-  cursor: pointer;
-}
-
-.checkbox:checked {
-  background-color: var(--color-dark-500);
-  position: relative;
-}
-
-.checkbox:checked::before {
-  content: '\2713';
-  font-size: 14px;
-  font-weight: bold;
-  color: #fff;
   position: absolute;
-  right: 5px;
-  top: 0;
+  opacity: 0;
+  width: 0;
+  height: 0;
+
+  &:focus-visible + .box {
+    outline: var(--th-focus-outline);
+    outline-offset: 2px;
+  }
+
+  &:checked + .box {
+    background-color: var(--th-brand-fill);
+    border-color: var(--th-brand-fill);
+    color: var(--th-on-brand);
+
+    svg {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
+
+.box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--th-radius-sm);
+  border: 1.5px solid var(--th-line-strong);
+  background-color: var(--th-surface);
+  color: transparent;
+  transition:
+    background-color var(--th-transition),
+    border-color var(--th-transition);
+
+  svg {
+    opacity: 0;
+    transform: scale(0.7);
+    transition:
+      opacity var(--th-transition),
+      transform var(--th-transition);
+  }
+}
+
+.label {
+  min-width: 0;
+}
+
+.count {
+  margin-left: auto;
+  font-size: var(--th-text-xs);
+  color: var(--th-muted-soft);
+  font-variant-numeric: tabular-nums;
 }

@@ -1,52 +1,121 @@
 @import '../../../_css/common';
 
 .items {
-  margin: 30px 0;
+  margin: var(--th-space-8) 0 var(--th-space-10);
 }
 
 .header {
   display: grid;
-  grid-template-columns: 80px 5fr 1fr;
-  gap: 24px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--color-dark-50);
+  grid-template-columns: 1fr 120px 120px;
+  gap: var(--th-space-4);
+  padding-bottom: var(--th-space-4);
+  border-bottom: 1px solid var(--th-line);
+
+  p {
+    @extend %label;
+    color: var(--th-muted);
+    margin: 0;
+  }
 
   @include small-break {
     display: none;
   }
 }
 
-.headerItemDetails {
-  display: grid;
-  grid-template-columns: 4fr 1fr;
-}
-
-.headersubtotal {
-  text-align: end;
-}
-
+.quantity,
 .subtotal {
+  text-align: right;
+}
+
+.totals {
+  max-width: 26rem;
+  margin-left: auto;
+  margin-top: var(--th-space-8);
+  padding: var(--th-space-6);
+  border-radius: var(--th-radius-lg);
+  background-color: var(--th-surface-subtle);
+  border: 1px solid var(--th-line);
+
+  @include small-break {
+    max-width: none;
+  }
+}
+
+.totalsRow {
   display: flex;
-  justify-content: flex-end;
   align-items: center;
+  justify-content: space-between;
+  gap: var(--th-space-4);
+  padding: var(--th-space-2) 0;
+  font-size: var(--th-text-sm);
+  color: var(--th-muted);
+
+  span:last-child {
+    color: var(--th-ink);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.free {
+  color: var(--th-success) !important;
+  font-weight: var(--th-weight-semibold);
 }
 
 .orderTotal {
-  margin-top: var(--base);
-  font-weight: 600;
-  text-align: end;
   display: flex;
+  align-items: baseline;
   justify-content: space-between;
-  padding: 24px;
-  margin-bottom: 60px;
-  background-color: var(--color-dark-50);
+  gap: var(--th-space-4);
+  margin-top: var(--th-space-3);
+  padding-top: var(--th-space-4);
+  border-top: 1px solid var(--th-line);
+  font-weight: var(--th-weight-semibold);
+}
+
+.orderTotalValue {
+  font-size: var(--th-text-h3);
+  letter-spacing: var(--th-tracking-heading);
+  font-variant-numeric: tabular-nums;
+}
+
+// --- Payment ----------------------------------------------------------------
+
+.payPanel {
+  max-width: 26rem;
+  margin-left: auto;
+  margin-bottom: var(--th-section);
+  display: flex;
+  flex-direction: column;
+  gap: var(--th-space-4);
+
+  @include small-break {
+    max-width: none;
+  }
+}
+
+.payNote {
+  margin: 0;
+  font-size: var(--th-text-xs);
+  line-height: var(--th-leading-relaxed);
+  color: var(--th-muted);
+}
+
+.backToCart {
+  align-self: flex-start;
+  font-size: var(--th-text-sm);
+  color: var(--th-muted);
+
+  &:hover {
+    color: var(--th-ink);
+    text-decoration: underline;
+  }
 }
 
 .payment {
-  margin-bottom: 40px;
+  margin-bottom: var(--th-space-10);
 }
 
 .loading,
 .error {
-  margin-top: calc(var(--block-padding) - var(--base));
+  margin-top: var(--th-space-8);
 }

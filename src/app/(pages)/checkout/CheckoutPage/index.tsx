@@ -13,6 +13,7 @@ import React, { Fragment, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
+import { EmptyState } from '../../../_components/EmptyState'
 import { useAuth } from '../../../_providers/Auth'
 import { useCart } from '../../../_providers/Cart'
 import type { StorefrontSettingsLike } from '../../../_types/storefront'
@@ -41,27 +42,27 @@ export const CheckoutPage: React.FC<{
 
   return (
     <Fragment>
+      {/* Reached only in the instant before the effect above redirects to
+          the cart. A designed state rather than a bare sentence, because a
+          slow redirect should still look like part of the shop. */}
       {cartIsEmpty && (
-        <div>
-          {'Your '}
-          <Link href="/cart">cart</Link>
-          {' is empty.'}
-          {typeof productsPage === 'object' && productsPage?.slug && (
-            <Fragment>
-              {' '}
-              <Link href={`/${productsPage.slug}`}>Continue shopping?</Link>
-            </Fragment>
-          )}
-        </div>
+        <EmptyState
+          title="There is nothing to check out"
+          description="Your cart is empty, so there is nothing to pay for yet."
+          action={{
+            label: 'Browse the shop',
+            href:
+              typeof productsPage === 'object' && productsPage?.slug
+                ? `/${productsPage.slug}`
+                : '/products',
+          }}
+        />
       )}
       {!cartIsEmpty && (
         <div className={classes.items}>
           <div className={classes.header}>
-            <p>Products</p>
-            <div className={classes.headerItemDetails}>
-              <p></p>
-              <p className={classes.quantity}>Quantity</p>
-            </div>
+            <p>Item</p>
+            <p className={classes.quantity}>Quantity</p>
             <p className={classes.subtotal}>Subtotal</p>
           </div>
 
@@ -84,14 +85,40 @@ export const CheckoutPage: React.FC<{
                 </Fragment>
               )
             })}
-            <div className={classes.orderTotal}>
-              <p>Order Total</p>
-              <p>{cartTotal.formatted}</p>
-            </div>
           </ul>
+
+          <div className={classes.totals}>
+            <div className={classes.totalsRow}>
+              <span>Subtotal</span>
+              <span>{cartTotal.formatted}</span>
+            </div>
+            <div className={classes.totalsRow}>
+              <span>Delivery</span>
+              <span className={classes.free}>Free</span>
+            </div>
+            <div className={classes.orderTotal}>
+              <span>Order total</span>
+              <span className={classes.orderTotalValue}>{cartTotal.formatted}</span>
+            </div>
+          </div>
         </div>
       )}
-      {!cartIsEmpty && <PaynowCheckoutButton />}
+
+      {!cartIsEmpty && (
+        <div className={classes.payPanel}>
+          <PaynowCheckoutButton />
+
+          <p className={classes.payNote}>
+            You will be taken to Paynow to complete payment with EcoCash, OneMoney, Visa or
+            Mastercard. Your order is confirmed only once Paynow confirms the payment — we never
+            see or store your card details.
+          </p>
+
+          <Link href="/cart" className={classes.backToCart}>
+            Back to cart
+          </Link>
+        </div>
+      )}
     </Fragment>
   )
 }

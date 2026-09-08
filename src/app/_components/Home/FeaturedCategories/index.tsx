@@ -35,10 +35,13 @@ export const FeaturedCategories: React.FC<{ categories: StorefrontCategory[] }> 
       <Gutter>
         <div className={classes.header}>
           <div>
-            <p className={classes.eyebrow}>Categories</p>
+            <p className={classes.eyebrow}>Browse</p>
             <h2 id="categories-heading" className={classes.heading}>
               Start with what you need
             </h2>
+            <p className={classes.lede}>
+              Six categories, everything in stock and ready to ship the same day.
+            </p>
           </div>
           <Link href="/products" className={classes.seeAll}>
             See everything
@@ -66,7 +69,15 @@ export const FeaturedCategories: React.FC<{ categories: StorefrontCategory[] }> 
                 <Link href={href} className={classes.tile}>
                   <span className={classes.tileMedia}>
                     {image && typeof image !== 'string' ? (
-                      <Media resource={image} fill imgClassName={classes.tileImage} />
+                      <Media
+                        resource={image}
+                        fill
+                        alt=""
+                        imgClassName={classes.tileImage}
+                        // Compact tiles: roughly a sixth of the content
+                        // column on desktop, half a phone screen.
+                        sizes="(max-width: 640px) 42vw, (max-width: 1024px) 28vw, 180px"
+                      />
                     ) : (
                       <span className={classes.tilePlaceholder} aria-hidden="true" />
                     )}

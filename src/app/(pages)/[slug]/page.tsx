@@ -3,9 +3,16 @@
 // The CMS-driven page route. Reads directly from MongoDB through the
 // repository layer — there is no HTTP hop for storefront reads.
 //
-// The homepage is a fixed composition rather than a stack of CMS blocks:
-// hero, categories, new arrivals, the monthly deal, testimonials and the
-// newsletter. That is a deliberate trade. A branded landing page assembled
+// The homepage is a fixed composition rather than a stack of CMS blocks,
+// and the order is the argument it makes:
+//
+//   brand (hero) → discovery (categories) → product (new arrivals) →
+//   offer (deals) → why us (value) → proof (testimonials) → conversion
+//
+// A second product band sorted by ascending price used to sit after the
+// deals panel. It was dropped: "our cheapest things" is not a reason to
+// buy, it repeated a grid the visitor had just scrolled past, and it pushed
+// the only section answering "why you?" below the fold. That is a deliberate trade. A branded landing page assembled
 // from generic blocks looks assembled from generic blocks, and — more
 // importantly — a fresh install with an empty `pages` collection would
 // otherwise have no homepage at all. The `home` page document still owns
@@ -28,6 +35,7 @@ import { FeaturedProducts } from '../../_components/Home/FeaturedProducts'
 import { HomeHero } from '../../_components/Home/Hero'
 import { NewsletterBand } from '../../_components/Home/NewsletterBand'
 import { Testimonials } from '../../_components/Home/Testimonials'
+import { ValueProps } from '../../_components/Home/ValueProps'
 import { fallbackHome } from '../../_data/fallbackPages'
 import type {
   StorefrontCategory,
@@ -50,7 +58,6 @@ export default async function Page({ params: { slug = 'home' } }) {
   let page: StorefrontPage | null = null
   let categories: StorefrontCategory[] = []
   let newest: StorefrontProductCard[] = []
-  let bestValue: StorefrontProductCard[] = []
 
   try {
     page = await fetchPage(slug, statusFor(isDraftMode))
@@ -58,15 +65,13 @@ export default async function Page({ params: { slug = 'home' } }) {
     // Only the homepage needs the catalogue reads; every other page pays
     // nothing for them.
     if (isHome) {
-      const [categoryList, newestPage, cheapestPage] = await Promise.all([
+      const [categoryList, newestPage] = await Promise.all([
         fetchCategories(),
         fetchProducts({ limit: 4, sort: 'newest' }),
-        fetchProducts({ limit: 4, sort: 'price-asc' }),
       ])
 
       categories = categoryList
       newest = newestPage.docs
-      bestValue = cheapestPage.docs
     }
   } catch (error) {
     // Render whatever is available rather than failing the request: a
@@ -92,17 +97,12 @@ export default async function Page({ params: { slug = 'home' } }) {
           id="new-arrivals"
           eyebrow="Just in"
           title="New arrivals"
+          lede="The most recent additions to the shop, all in stock today."
           href="/products?sort=newest"
           products={newest}
         />
         <Deals />
-        <FeaturedProducts
-          id="best-value"
-          eyebrow="Everyday extras"
-          title="Small things worth having"
-          href="/products?sort=price-asc"
-          products={bestValue}
-        />
+        <ValueProps />
         <Testimonials />
         <NewsletterBand />
 

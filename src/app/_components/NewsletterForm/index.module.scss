@@ -1,72 +1,124 @@
+@import '../../_css/common';
+
 .form {
   width: 100%;
 }
 
+// The field and the button read as one control rather than two adjacent
+// ones: a shared pill-shaped shell with the button nested inside it. It is
+// the single change that most distinguishes a designed sign-up from a
+// default form row.
 .row {
   display: flex;
+  align-items: center;
   gap: var(--th-space-2);
+  padding: 6px 6px 6px var(--th-space-5);
+  border: 1px solid var(--th-line-strong);
+  border-radius: var(--th-radius-pill);
+  background: var(--th-surface);
+  transition:
+    border-color var(--th-transition),
+    box-shadow var(--th-transition);
 
-  @media (max-width: 480px) {
+  // The ring goes on the shell, not on the input — otherwise focusing the
+  // field draws a ring inside another rounded box.
+  &:focus-within {
+    border-color: var(--th-brand-500);
+    box-shadow: var(--th-focus-ring);
+  }
+
+  @include extra-small-break {
     flex-direction: column;
+    align-items: stretch;
+    padding: var(--th-space-3);
+    border-radius: var(--th-radius-lg);
   }
 }
 
 .input {
   flex: 1 1 auto;
   min-width: 0;
-  padding: 11px 14px;
-  border-radius: var(--th-radius);
-  border: 1px solid var(--th-line);
-  background: var(--th-surface);
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: var(--th-ink);
   font-family: inherit;
-  font-size: 14px;
+  font-size: var(--th-text-sm);
 
+  &::placeholder {
+    color: var(--th-muted-soft);
+  }
+
+  // Suppressed because the shell above owns the focus indicator.
   &:focus {
     outline: none;
-    border-color: var(--th-brand-500);
-    box-shadow: var(--th-focus-ring);
+  }
+
+  @include extra-small-break {
+    height: 40px;
+    padding-inline: var(--th-space-3);
   }
 }
 
 .submit {
-  padding: 11px 18px;
-  border: none;
-  border-radius: var(--th-radius);
-  background: var(--th-brand-600);
-  color: #fff;
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background var(--th-transition);
-
-  &:hover {
-    background: var(--th-brand-700);
-  }
+  @extend %th-btn-primary;
+  min-height: 44px;
+  padding: 0 var(--th-space-6);
+  box-shadow: none;
+  flex-shrink: 0;
 }
 
 .error {
-  margin-top: 6px;
-  font-size: 13px;
+  margin-top: var(--th-space-3);
+  font-size: var(--th-text-xs);
   color: var(--th-danger);
 }
 
+// The confirmation replaces the form, so it must be at least as visible as
+// what it replaced — a one-line grey "thanks" reads as a failure.
 .done {
-  font-size: 14px;
-  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: var(--th-space-3);
+  padding: var(--th-space-4) var(--th-space-5);
+  border-radius: var(--th-radius-pill);
+  background: var(--th-success-bg);
   color: var(--th-success);
+  font-size: var(--th-text-sm);
+  font-weight: var(--th-weight-semibold);
+  margin: 0;
 }
 
+.doneIcon {
+  flex-shrink: 0;
+}
+
+// --- On a dark panel --------------------------------------------------------
+
 .dark {
+  .row {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.18);
+
+    &:focus-within {
+      border-color: rgba(255, 255, 255, 0.5);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.14);
+    }
+  }
+
   .input {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.16);
     color: #fff;
 
     &::placeholder {
-      color: #767d89;
+      color: rgba(255, 255, 255, 0.45);
     }
+  }
+
+  .submit {
+    @extend %th-btn-on-dark;
+    min-height: 44px;
+    padding: 0 var(--th-space-6);
   }
 
   .error {
@@ -74,18 +126,11 @@
   }
 
   &.done {
+    background: rgba(74, 222, 128, 0.14);
     color: #86efac;
   }
 }
 
 .srOnly {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
+  @extend %th-visually-hidden;
 }

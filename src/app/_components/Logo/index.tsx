@@ -3,9 +3,22 @@
 // The Tech Haven lockup: a mark plus the supplied wordmark.
 //
 // The mark is inline SVG rather than a file so it inherits `currentColor`
-// and works on both the light header and the dark footer without shipping
-// two assets. The wordmark stays an image because it is the supplied
-// brand asset.
+// and works on any surface without shipping two assets.
+//
+// The wordmark is the supplied brand asset and exists only as two fixed
+// files, one black and one white. `variant` picks between them for surfaces
+// whose colour is fixed regardless of theme (the footer is always dark, so
+// it always wants the white mark).
+//
+// `variant="auto"` — the header's case — is the interesting one. The surface
+// behind it flips with the theme, and the active theme is only known in the
+// browser, so choosing the file in JavaScript would mean either rendering
+// the wrong one on the server (a visible flash, plus a hydration mismatch)
+// or rendering nothing until mount (a hole in the header on first paint).
+// Instead BOTH files are rendered and CSS reveals the right one. It costs
+// one extra request for a ~1KB SVG and is correct at first paint in either
+// theme — which is what the previous version got wrong: the header always
+// used the black wordmark, so in dark mode the brand name was invisible.
 
 import React from 'react'
 import Image from 'next/image'
@@ -38,19 +51,49 @@ export const LogoMark: React.FC<{ size?: number; className?: string }> = ({
 )
 
 export const Logo: React.FC<{
-  /** `dark` renders the white wordmark, for use on dark surfaces. */
-  variant?: 'light' | 'dark'
+  /**
+   * `light` — dark wordmark, for a surface that is always light.
+   * `dark`  — white wordmark, for a surface that is always dark.
+   * `auto`  — follows the active theme. Use anywhere the surface behind the
+   *           logo changes with the theme, such as the header.
+   */
+  variant?: 'light' | 'dark' | 'auto'
   className?: string
-}> = ({ variant = 'light', className }) => (
-  <span className={[classes.logo, classes[variant], className].filter(Boolean).join(' ')}>
-    <LogoMark className={classes.mark} />
-    <Image
-      src={variant === 'dark' ? '/logo-white.svg' : '/logo-black.svg'}
-      alt="Tech Haven"
-      width={150}
-      height={25}
-      className={classes.wordmark}
-      priority
-    />
-  </span>
-)
+  /** The header logo is above the fold; everything else is not. */
+  priority?: boolean
+}> = ({ variant = 'light', className, priority = false }) => {
+  const showBoth = variant === 'auto'
+
+  return (
+    <span className={[classes.logo, classes[variant], className].filter(Boolean).join(' ')}>
+      <LogoMark className={classes.mark} />
+
+      {(showBoth || variant === 'light') && (
+        <Image
+          src="/logo-black.svg"
+          // Only one of the pair is ever visible, so only one carries the
+          // accessible name; the other is decorative.
+          alt={showBoth ? '' : 'Tech Haven'}
+          aria-hidden={showBoth || undefined}
+          width={150}
+          height={25}
+          className={[classes.wordmark, showBoth && classes.wordmarkLight]
+            .filter(Boolean)
+            .join(' ')}
+          priority={priority}
+        />
+      )}
+
+      {(showBoth || variant === 'dark') && (
+        <Image
+          src="/logo-white.svg"
+          alt="Tech Haven"
+          width={150}
+          height={25}
+          className={[classes.wordmark, showBoth && classes.wordmarkDark].filter(Boolean).join(' ')}
+          priority={priority}
+        />
+      )}
+    </span>
+  )
+}

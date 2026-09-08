@@ -1,92 +1,189 @@
 @import '../../../_css/common';
 
+// A three-column row on desktop, matching the header above the list; on a
+// phone it becomes a two-column card with the image beside a stacked block,
+// and each value labels itself because the column headers are hidden there.
 .item {
   display: grid;
-  grid-template-columns: 100px 2fr 1fr;
-  padding: 24px 0;
-  gap: 24px;
-  border-bottom: 1px solid var(--color-dark-50);
+  grid-template-columns: 120px 1fr 140px 120px;
+  gap: var(--th-space-5);
+  align-items: center;
+  padding: var(--th-space-6) 0;
+  border-bottom: 1px solid var(--th-line);
+
+  @include small-break {
+    grid-template-columns: 88px 1fr;
+    grid-template-areas:
+      'media details'
+      'qty   subtotal';
+    gap: var(--th-space-4);
+    align-items: start;
+  }
 }
 
 .mediaWrapper {
   position: relative;
-  min-height: 100px;
-  padding: 16px;
-  background-color: var(--color-dark-50);
-}
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  padding: var(--th-space-3);
+  border-radius: var(--th-radius);
+  background-color: var(--th-surface-subtle);
+  overflow: hidden;
 
-.media {
-  position: relative;
-  height: 100%;
+  @include small-break {
+    grid-area: media;
+  }
 }
 
 .image {
   object-fit: contain;
-  max-width: 100%;
-  aspect-ratio: 1 / 1;
+}
+
+.placeholder {
+  font-size: var(--th-text-micro);
+  color: var(--th-muted-soft);
+  text-align: center;
 }
 
 .itemDetails {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 16px;
-  align-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--th-space-2);
+  min-width: 0;
 
   @include small-break {
-    grid-template-columns: 1fr;
+    grid-area: details;
   }
 }
 
-.titleWrapper {
-  white-space: nowrap;
+.title {
+  font-size: var(--th-text-sm);
+  font-weight: var(--th-weight-semibold);
+  line-height: 1.4;
+  color: var(--th-ink);
+
+  &:hover {
+    color: var(--th-brand-text);
+  }
+}
+
+.unitPrice {
+  display: flex;
+  align-items: baseline;
+  gap: var(--th-space-2);
+  // The line price is the number that matters; the unit price is context.
+  --th-price-size: var(--th-text-sm);
+  color: var(--th-muted);
+}
+
+.unitLabel {
+  font-size: var(--th-text-xs);
+  color: var(--th-muted-soft);
+}
+
+.remove {
+  margin-top: var(--th-space-1);
+}
+
+.quantityCell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--th-space-2);
+
+  @include small-break {
+    grid-area: qty;
+    align-items: flex-start;
+  }
+}
+
+.subtotalCell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--th-space-2);
+  --th-price-size: var(--th-text-h4);
+
+  @include small-break {
+    grid-area: subtotal;
+    align-items: flex-end;
+    justify-content: flex-start;
+  }
+}
+
+// Visible only where the table headers are hidden.
+.cellLabel {
+  @extend %label;
+  color: var(--th-muted);
+  display: none;
+
+  @include small-break {
+    display: block;
+  }
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  border: 1px solid var(--th-line-strong);
+  border-radius: var(--th-radius-pill);
   overflow: hidden;
-  text-overflow: ellipsis;
-  
-  h6 {
-    line-height: 20px;
-    margin-bottom: 8px;
+  background-color: var(--th-surface);
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 100%;
+    border: 0;
+    background: transparent;
+    color: var(--th-ink);
+    cursor: pointer;
+    transition: background-color var(--th-transition);
+
+    &:hover:not(:disabled) {
+      background-color: var(--th-surface-sunken);
+    }
+
+    &:disabled {
+      color: var(--th-muted-soft);
+      cursor: not-allowed;
+    }
+
+    &:focus-visible {
+      outline: var(--th-focus-outline);
+      outline-offset: -2px;
+    }
   }
-}
 
-.quantity {
-  border: 1px solid var(--color-dark-500);
-  display: grid;
-  grid-template-columns: 45px 1fr 45px;
-  border-radius: 10px;
-  align-items: center;
-  height: 45px;
-  width: 100%;
-  max-width: 120px;
-}
+  input {
+    width: 40px;
+    height: 100%;
+    border: 0;
+    background: transparent;
+    color: var(--th-ink);
+    font-family: inherit;
+    font-size: var(--th-text-sm);
+    font-weight: var(--th-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
 
-.quantityBtn {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  cursor: pointer;
-}
+    &:focus-visible {
+      outline: var(--th-focus-outline);
+      outline-offset: -2px;
+    }
 
-.quantityInput {
-  text-align: center;
-  height: 100%;
-  width: 100%;
-  min-width: 30px;
-  border: none;
-  outline: none;
-  font-size: 16px;
-  font-weight: 700;
-}
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+      appearance: none;
+      margin: 0;
+    }
 
-.subtotalWrapper {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 60px;
-
-  @include small-break {
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: end;
+    appearance: textfield;
   }
 }

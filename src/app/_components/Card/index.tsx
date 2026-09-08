@@ -72,9 +72,17 @@ export const Card: React.FC<{
           </div>
         )}
 
-        {!metaImage && <div className={classes.placeholder}>No image</div>}
+        {!metaImage && <div className={classes.placeholder}>Image coming soon</div>}
         {metaImage && typeof metaImage !== 'string' && (
-          <Media imgClassName={classes.image} resource={metaImage} fill />
+          <Media
+            imgClassName={classes.image}
+            resource={metaImage}
+            fill
+            // The grid is 4-up on desktop, 2-up on tablet, 1-up on a phone.
+            // Declared accurately so the browser fetches a tile-sized
+            // rendition rather than a full-width one.
+            sizes="(max-width: 640px) 92vw, (max-width: 1024px) 44vw, 22vw"
+          />
         )}
       </div>
 
@@ -86,7 +94,11 @@ export const Card: React.FC<{
           </div>
         )}
 
-        {doc && !isUnavailable && <Price product={doc} />}
+        {doc && !isUnavailable && (
+          <div className={classes.priceRow}>
+            <Price product={doc} />
+          </div>
+        )}
         {isUnavailable && <p className={classes.unavailable}>Currently unavailable</p>}
       </div>
     </Link>

@@ -1,21 +1,13 @@
 @import '../../_css/common';
 
 .pageRange {
-  display: flex;
-  align-items: center;
-  font-weight: 600;
-}
+  margin: 0;
+  font-size: var(--th-text-sm);
+  color: var(--th-muted);
 
-.content {
-  display: flex;
-  align-items: center;
-  margin: 0 var(--base(0.5));
-}
-
-.divider {
-  margin: 0 2px;
-}
-
-.hyperlink {
-  display: flex;
+  strong {
+    color: var(--th-ink);
+    font-weight: var(--th-weight-semibold);
+    font-variant-numeric: tabular-nums;
+  }
 }

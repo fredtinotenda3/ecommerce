@@ -70,6 +70,8 @@ export const Deals: React.FC = () => {
     <section className={classes.section} aria-labelledby="deals-heading">
       <Gutter>
         <div className={classes.panel}>
+          <div className={classes.panelWash} aria-hidden="true" />
+
           {/* Floated rather than laid out in a grid: the brief asks for the
               image to sit right with the copy wrapping around it, which is
               what a float does and what a grid column does not. It becomes
@@ -80,28 +82,30 @@ export const Deals: React.FC = () => {
               alt="14-inch MacBook Pro in space black"
               width={1914}
               height={1148}
-              sizes="(max-width: 1024px) 90vw, 40vw"
+              sizes="(max-width: 767px) 88vw, 42vw"
+              quality={88}
               className={classes.artImage}
             />
           </div>
 
-          <p className={classes.eyebrow}>Deals of the month</p>
+          <p className={classes.eyebrow}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M13 2 4.5 13.5H11l-1 8.5 8.5-11.5H12l1-8.5Z" />
+            </svg>
+            Deals of the month
+          </p>
 
           <h2 id="deals-heading" className={classes.heading}>
             Up to 15% off selected MacBooks and iPhones
           </h2>
 
           <p className={classes.copy}>
-            Every reduction on this page is against the price we were charging last month, not
-            against a recommended retail price nobody pays. The two-year Tech Haven warranty and
-            free delivery over $150 apply to discounted stock exactly as they do to everything
-            else.
+            Every reduction is measured against the price we charged last month — not against a
+            recommended retail price nobody pays. Warranty and free delivery apply to discounted
+            stock exactly as they do to everything else.
           </p>
 
-          <p className={classes.copy}>
-            Prices return to normal at the end of the month. If a model you want is not reduced,
-            ask — we would rather tell you to wait than sell you the wrong thing today.
-          </p>
+          <span className={classes.countdownLabel}>Offer ends in</span>
 
           <ul className={classes.countdown} aria-label="Time remaining in this month's offer">
             <Unit value={remaining?.days ?? null} label="Days" />
@@ -110,9 +114,14 @@ export const Deals: React.FC = () => {
             <Unit value={remaining?.seconds ?? null} label="Seconds" />
           </ul>
 
-          <Link href="/products?sort=price-asc" className={classes.cta}>
-            See what is reduced
-          </Link>
+          <div className={classes.actions}>
+            <Link href="/products?sort=price-asc" className={classes.cta}>
+              See what is reduced
+            </Link>
+            <Link href="/products" className={classes.ctaGhost}>
+              Shop everything
+            </Link>
+          </div>
         </div>
       </Gutter>
     </section>

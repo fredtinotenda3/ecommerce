@@ -1,38 +1,25 @@
 @import '../../_css/common';
 
+// ---------------------------------------------------------------------------
+// Price.
+//
+// The price is the number a shopper scans for, so it carries more weight
+// than the product title above it — the opposite of the usual instinct to
+// make the title the heading. Tabular figures keep a column of prices
+// aligned down a grid.
+// ---------------------------------------------------------------------------
+
 .actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   flex-wrap: wrap;
-  gap: calc(var(--base) / 2);
-
-  @include mid-break {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+  gap: var(--th-space-2);
 }
 
 .price {
-  font-weight: 400;
-  line-height: 1;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  font-size: 18px;
-
-  > * {
-    margin: 0;
-  }
-
-  @include small-break {
-    grid-template-colums: 1fr;
-    font-size: 16p;
-  }
-}
-
-.priceBreakdown {
-  color: var(--theme-elevation-500);
+  min-width: 0;
 }
 
 .amount {
@@ -41,29 +28,41 @@
   flex-wrap: wrap;
   gap: var(--th-space-2);
   margin: 0;
-  font-weight: 600;
+  // Callers can scale the price by setting --th-price-size on any ancestor
+  // (the product page does). Defaults to the card size.
+  font-size: var(--th-price-size, var(--th-text-h4));
+  font-weight: var(--th-weight-semibold);
+  letter-spacing: var(--th-tracking-normal);
   color: var(--th-ink);
+  font-variant-numeric: tabular-nums;
 }
 
-// The current price when it is a reduced one: emphasised so the eye lands
-// on what the customer will actually pay, not on the struck-through figure.
+// The current price when it is a reduced one: the eye should land on what
+// the customer actually pays, not on the struck-through figure.
 .discounted {
   color: var(--th-danger);
 }
 
 .compareAt {
-  font-size: 0.85em;
-  font-weight: 400;
-  color: var(--th-muted);
+  font-size: var(--th-text-sm);
+  font-weight: var(--th-weight-regular);
+  color: var(--th-muted-soft);
+  text-decoration-thickness: 1px;
 }
 
 .saving {
   @extend %th-pill;
   background-color: var(--th-danger-bg);
   color: var(--th-danger);
-  font-size: 11px;
+  font-size: var(--th-text-micro);
+  font-weight: var(--th-weight-semibold);
+  letter-spacing: var(--th-tracking-wide);
 }
 
 .srOnly {
   @extend %th-visually-hidden;
+}
+
+.priceBreakdown {
+  color: var(--th-muted);
 }

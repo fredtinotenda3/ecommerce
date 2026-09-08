@@ -2,50 +2,121 @@
 
 .hero {
   position: relative;
+  isolation: isolate;
   overflow: hidden;
+  background-color: var(--th-surface);
+}
+
+// Two overlapping radial washes rather than one linear gradient: a linear
+// gradient across a full-width band reads as a coloured stripe, while
+// off-centre radials read as light falling on the scene. Very low opacity —
+// the products are the subject, this is only the room they stand in.
+.wash {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
   background:
-    radial-gradient(120% 90% at 85% 0%, var(--th-brand-50) 0%, transparent 60%),
-    var(--th-surface);
-  border-bottom: 1px solid var(--th-line);
+    radial-gradient(58% 78% at 78% 18%, color-mix(in srgb, var(--th-brand-500) 22%, transparent) 0%, transparent 62%),
+    radial-gradient(46% 62% at 8% 92%, color-mix(in srgb, var(--th-accent-500) 12%, transparent) 0%, transparent 60%);
+}
+
+// A hairline rather than a hard border: it separates the hero from the band
+// below without drawing a line across the design.
+.hero::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--th-line) 18%, var(--th-line) 82%, transparent);
 }
 
 .wrap {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  // The copy column is narrower than the image column on purpose. Equal
+  // columns make a hero feel like a two-up comparison; an unequal split
+  // tells the eye which side is the subject.
+  grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
   align-items: center;
-  gap: var(--th-space-12);
-  padding-top: var(--th-space-16);
-  padding-bottom: var(--th-space-16);
+  gap: clamp(2rem, 4vw, 5rem);
+  padding-block: clamp(3.5rem, 2rem + 6vw, 7.5rem);
 
-  @include large-break {
+  @include mid-break {
     grid-template-columns: 100%;
     gap: var(--th-space-10);
-    padding-top: var(--th-space-12);
-    padding-bottom: var(--th-space-12);
+    padding-block: var(--th-space-12) var(--th-space-10);
+    text-align: center;
+    justify-items: center;
   }
 }
 
 .copy {
-  max-width: 34rem;
+  max-width: 32rem;
+  min-width: 0;
 }
 
 .eyebrow {
-  @extend %th-eyebrow;
-  margin: 0 0 var(--th-space-4);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--th-space-2);
+  margin: 0 0 var(--th-space-6);
+  padding: var(--th-space-2) var(--th-space-4) var(--th-space-2) var(--th-space-3);
+  border: 1px solid var(--th-line);
+  border-radius: var(--th-radius-pill);
+  background-color: var(--th-surface);
+  box-shadow: var(--th-shadow-sm);
+
+  font-size: var(--th-text-xs);
+  font-weight: var(--th-weight-semibold);
+  letter-spacing: var(--th-tracking-wide);
+  color: var(--th-ink-soft);
+}
+
+.eyebrowDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--th-success);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--th-success) 22%, transparent);
+  flex-shrink: 0;
 }
 
 .heading {
-  margin: 0 0 var(--th-space-5);
-  font-size: clamp(2.25rem, 5vw, 3.75rem);
-  line-height: 1.05;
-  letter-spacing: -0.03em;
+  margin: 0 0 var(--th-space-6);
+  font-size: var(--th-text-display);
+  line-height: var(--th-leading-tight);
+  letter-spacing: var(--th-tracking-display);
+  font-weight: var(--th-weight-bold);
+  // The headline is the one place a hard cap on measure matters most: a
+  // display line running to 60 characters stops reading as a statement.
+  max-width: 15ch;
+
+  @include mid-break {
+    max-width: 18ch;
+    margin-inline: auto;
+  }
+}
+
+// The second clause is set in the muted ink rather than the brand colour.
+// Colouring half a headline is the most common way a hero starts looking
+// like a landing-page template; a weight-and-tone shift does the same job
+// quietly.
+.headingAccent {
+  color: var(--th-muted);
+  font-weight: var(--th-weight-medium);
 }
 
 .lede {
   margin: 0 0 var(--th-space-8);
-  font-size: clamp(1rem, 1.4vw, 1.125rem);
-  line-height: 1.65;
+  font-size: var(--th-text-lead);
+  line-height: var(--th-leading-normal);
   color: var(--th-muted);
+  max-width: 42ch;
+
+  @include mid-break {
+    margin-inline: auto;
+  }
 }
 
 .actions {
@@ -53,56 +124,52 @@
   flex-wrap: wrap;
   gap: var(--th-space-3);
   margin-bottom: var(--th-space-8);
-}
 
-%cta {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 14px var(--th-space-7);
-  border-radius: var(--th-radius-pill);
-  font-weight: 600;
-  text-decoration: none;
-  transition:
-    background-color var(--th-transition),
-    color var(--th-transition),
-    border-color var(--th-transition);
+  @include mid-break {
+    justify-content: center;
+  }
 
-  &:focus-visible {
-    outline: var(--th-focus-outline);
-    outline-offset: 2px;
+  @include small-break {
+    // Full-width stacked buttons on a phone: two pills side by side end up
+    // too narrow to read and too small to hit.
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    max-width: 22rem;
+    margin-inline: auto;
   }
 }
 
 .primaryCta {
-  @extend %cta;
-  background-color: var(--th-brand-600);
-  color: #fff;
-  border: 1px solid var(--th-brand-600);
+  @extend %th-btn-primary;
+  @extend %th-btn-lg;
 
-  &:hover {
-    background-color: var(--th-brand-700);
-    border-color: var(--th-brand-700);
-    color: #fff;
+  svg {
+    transition: transform var(--th-transition);
+  }
+
+  &:hover svg {
+    transform: translateX(3px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    svg,
+    &:hover svg {
+      transition: none;
+      transform: none;
+    }
   }
 }
 
 .secondaryCta {
-  @extend %cta;
-  background-color: transparent;
-  color: var(--th-ink);
-  border: 1px solid var(--th-line);
-
-  &:hover {
-    border-color: var(--th-brand-600);
-    color: var(--th-brand-700);
-  }
+  @extend %th-btn-secondary;
+  @extend %th-btn-lg;
 }
 
 .proof {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--th-space-5);
+  gap: var(--th-space-3) var(--th-space-6);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -111,8 +178,8 @@
     display: inline-flex;
     align-items: center;
     gap: var(--th-space-2);
-    font-size: 14px;
-    font-weight: 500;
+    font-size: var(--th-text-xs);
+    font-weight: var(--th-weight-medium);
     color: var(--th-muted);
 
     svg {
@@ -120,40 +187,57 @@
       flex-shrink: 0;
     }
   }
+
+  @include mid-break {
+    justify-content: center;
+  }
 }
+
+// --- The product photograph -------------------------------------------------
 
 .art {
   position: relative;
   min-width: 0;
-}
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-.artPrimary {
-  border-radius: var(--th-radius-xl);
-  overflow: hidden;
-  background-color: var(--th-surface-sunken);
-  box-shadow: var(--th-shadow-lg);
-}
+  // Lets the photograph run slightly past the content column toward the
+  // screen edge. A hero image that stops politely at the same gutter as the
+  // body text always looks inset; a little bleed is what makes it feel
+  // art-directed.
+  margin-right: clamp(-4rem, -2vw, 0rem);
 
-// The second shot is decorative framing, not information. It is dropped
-// entirely below the large breakpoint so a phone downloads one image, not
-// two.
-.artSecondary {
-  position: absolute;
-  right: calc(var(--th-space-8) * -1);
-  bottom: calc(var(--th-space-10) * -1);
-  width: 42%;
-  border-radius: var(--th-radius-lg);
-  overflow: hidden;
-  border: 6px solid var(--th-surface);
-  box-shadow: var(--th-shadow);
-
-  @include large-break {
-    display: none;
+  @include mid-break {
+    margin-right: 0;
+    width: 100%;
+    max-width: 40rem;
   }
+}
+
+.artGlow {
+  position: absolute;
+  inset: 6% 2% 2%;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    color-mix(in srgb, var(--th-brand-500) 26%, transparent) 0%,
+    transparent 70%
+  );
+  filter: blur(28px);
 }
 
 .artImage {
   display: block;
   width: 100%;
   height: auto;
+  // A soft contact shadow under a cutout that has none of its own. Applied
+  // as a filter rather than a box-shadow so it follows the product's
+  // silhouette instead of its bounding box.
+  filter: drop-shadow(0 26px 42px rgba(9, 11, 16, 0.22));
+
+  :root[data-theme='dark'] & {
+    filter: drop-shadow(0 26px 46px rgba(0, 0, 0, 0.6));
+  }
 }

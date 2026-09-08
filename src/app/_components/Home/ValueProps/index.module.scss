@@ -1,0 +1,72 @@
+@import '../../../_css/common';
+
+.section {
+  @extend %th-section;
+  padding-top: 0; // follows the deals panel directly
+}
+
+.header {
+  margin-bottom: var(--th-space-10);
+  max-width: var(--th-measure-narrow);
+}
+
+.eyebrow {
+  @extend %label;
+  margin: 0 0 var(--th-space-3);
+  color: var(--th-brand-text);
+}
+
+.heading {
+  @extend %th-section-title;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--th-space-8) var(--th-space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  @include mid-break {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include small-break {
+    grid-template-columns: 100%;
+    gap: var(--th-space-6);
+  }
+}
+
+.item {
+  // A hairline rule above each item rather than four boxes: it groups them
+  // as one system and keeps the page from becoming a wall of cards.
+  padding-top: var(--th-space-5);
+  border-top: 1px solid var(--th-line);
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: var(--th-space-4);
+  border-radius: var(--th-radius);
+  background-color: var(--th-brand-50);
+  color: var(--th-brand-text);
+}
+
+.itemTitle {
+  margin: 0 0 var(--th-space-2);
+  font-size: var(--th-text-h4);
+  font-weight: var(--th-weight-semibold);
+  letter-spacing: var(--th-tracking-normal);
+}
+
+.itemCopy {
+  margin: 0;
+  font-size: var(--th-text-sm);
+  line-height: var(--th-leading-relaxed);
+  color: var(--th-muted);
+}

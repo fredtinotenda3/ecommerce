@@ -19,6 +19,8 @@ export const NewsletterBand: React.FC = () => (
   <section className={classes.section} aria-labelledby="newsletter-heading">
     <Gutter>
       <div className={classes.panel}>
+        <div className={classes.panelWash} aria-hidden="true" />
+
         <div className={classes.copy}>
           <h2 id="newsletter-heading" className={classes.heading}>
             One email a month. Genuine price drops only.
@@ -30,7 +32,7 @@ export const NewsletterBand: React.FC = () => (
         </div>
 
         <div className={classes.form}>
-          <NewsletterForm />
+          <NewsletterForm variant="dark" />
         </div>
       </div>
     </Gutter>

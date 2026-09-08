@@ -8,3 +8,21 @@
     margin-top: 30px;
   }
 }
+.intro {
+  padding: var(--th-space-12) 0 var(--th-space-8);
+  max-width: 56ch;
+}
+
+.heading {
+  margin: 0 0 var(--th-space-3);
+  font-size: var(--th-text-h1);
+  line-height: var(--th-leading-tight);
+  letter-spacing: var(--th-tracking-display);
+  font-weight: var(--th-weight-bold);
+}
+
+.introCopy {
+  margin: 0;
+  color: var(--th-muted);
+  line-height: var(--th-leading-relaxed);
+}

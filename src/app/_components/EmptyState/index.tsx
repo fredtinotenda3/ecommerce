@@ -14,8 +14,6 @@
 import React from 'react'
 import Link from 'next/link'
 
-import { Button } from '../Button'
-
 import classes from './index.module.scss'
 
 export interface EmptyStateAction {
@@ -79,12 +77,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           {action.label}
         </Link>
       ) : (
-        <Button
-          label={action.label}
-          appearance="primary"
-          onClick={action.onClick}
-          className={classes.action}
-        />
+        <button type="button" className={classes.action} onClick={action.onClick}>
+          {action.label}
+        </button>
       ))}
   </div>
 )

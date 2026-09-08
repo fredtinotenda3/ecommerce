@@ -1,35 +1,26 @@
 @import '../../_css/common';
 
 .relatedProducts {
-  width: 100%;
-  padding-top: var(--base);
+  @extend %th-section;
+  border-top: 1px solid var(--th-line);
 }
 
-.introContent {
-  position: relative;
-  margin-bottom: calc(var(--base) * 2);
-
-  @include mid-break {
-    margin-bottom: var(--base);
-  }
+.title {
+  @extend %th-section-title;
+  margin-bottom: var(--th-space-10);
 }
 
 .grid {
   display: grid;
-  padding: 0;
-  grid-template-columns: repeat(3, minmax(30%, 1fr));
-  gap: 30px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(var(--th-space-5), 2.4vw, var(--th-space-8));
 
   @include mid-break {
-    gap: 20px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   @include small-break {
-    grid-template-columns: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--th-space-4);
   }
-}
-
-.title {
-  font-weight: 400;
-  margin-bottom: 30px;
 }

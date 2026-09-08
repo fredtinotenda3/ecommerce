@@ -34,6 +34,16 @@ export default async function Checkout() {
   return (
     <div className={classes.checkout}>
       <Gutter>
+        {/* The page had no <h1> at all: the first heading a screen-reader
+            user met was "Payment Details" inside a sub-component. */}
+        <header className={classes.intro}>
+          <h1 className={classes.heading}>Checkout</h1>
+          <p className={classes.introCopy}>
+            Check the order below, then pay with Paynow. Nothing is charged until you confirm on
+            the Paynow page.
+          </p>
+        </header>
+
         <CheckoutPage settings={settings} />
       </Gutter>
     </div>

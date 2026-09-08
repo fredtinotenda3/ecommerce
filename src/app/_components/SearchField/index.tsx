@@ -51,7 +51,7 @@ export const SearchField: React.FC<{ className?: string; autoFocus?: boolean }> 
         id="site-search"
         type="search"
         className={classes.input}
-        placeholder="Search MacBooks, iPhones…"
+        placeholder="Search products"
         value={value}
         autoFocus={autoFocus}
         onChange={event => setValue(event.target.value)}

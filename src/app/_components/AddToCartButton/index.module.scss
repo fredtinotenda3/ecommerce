@@ -1,14 +1,41 @@
-.addToCartButton {
-  visibility: visible;
-  opacity: 1;
-  transition: opacity 100ms linear;
+@import '../../_css/common';
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--th-space-3);
+  transition: opacity 120ms linear;
 }
 
-.green {
-  color: var(--theme-success-700);
-}
-
+// Hidden, not removed, until the cart has hydrated from storage: the label
+// depends on cart contents, so rendering it early would flash the wrong
+// state. Reserving the space keeps the layout from jumping.
 .hidden {
   visibility: hidden;
   opacity: 0;
+}
+
+.button {
+  @extend %th-btn-primary;
+  width: 100%;
+}
+
+.large {
+  @extend %th-btn-lg;
+}
+
+.viewCart {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--th-space-2);
+  min-height: 32px;
+  font-size: var(--th-text-sm);
+  font-weight: var(--th-weight-medium);
+  color: var(--th-success);
+
+  &:hover {
+    color: var(--th-success);
+    text-decoration: underline;
+  }
 }

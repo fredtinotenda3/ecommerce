@@ -1,7 +1,19 @@
-.placeholder-color-light {
-  background-color: rgba(0, 0, 0, 0.05);
+// Images fade in once decoded rather than appearing as a hard swap. The
+// container behind them already carries a tinted surface, so there is no
+// layout shift and no grey flash — just a settle.
+.image {
+  opacity: 1;
+  transition: opacity 300ms ease;
 }
 
-.placeholder {
-  background-color: var(--theme-elevation-50);
+.loading {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .image,
+  .loading {
+    opacity: 1;
+    transition: none;
+  }
 }

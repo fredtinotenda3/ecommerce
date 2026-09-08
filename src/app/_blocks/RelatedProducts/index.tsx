@@ -10,26 +10,35 @@ export type RelatedProductsProps = {
   blockType: 'relatedProducts'
   blockName: string
   introContent?: any
+  /** Section heading. Defaults to "You might also like". */
+  heading?: string
   docs?: (string | StorefrontProductCard)[]
   relationTo: 'products'
 }
 
 export const RelatedProducts: React.FC<RelatedProductsProps> = props => {
-  const { docs, relationTo } = props
+  const { docs, relationTo, heading = 'You might also like' } = props
+
+  // Nothing to relate to: render nothing rather than a heading over an
+  // empty row.
+  const resolved = (docs || []).filter(
+    (doc): doc is StorefrontProductCard => typeof doc !== 'string' && Boolean(doc),
+  )
+
+  if (resolved.length === 0) return null
 
   return (
-    <div className={classes.relatedProducts}>
+    <section className={classes.relatedProducts} aria-labelledby="related-heading">
       <Gutter>
-        <h3 className={classes.title}>Related Products</h3>
+        <h2 id="related-heading" className={classes.title}>
+          {heading}
+        </h2>
         <div className={classes.grid}>
-          {docs?.map(doc => {
-            // An unresolved relation is a bare id — nothing to render.
-            if (typeof doc === 'string') return null
-
-            return <Card key={doc.id} relationTo={relationTo} doc={doc} showCategories />
-          })}
+          {resolved.map(doc => (
+            <Card key={doc.id} relationTo={relationTo} doc={doc} />
+          ))}
         </div>
       </Gutter>
-    </div>
+    </section>
   )
 }

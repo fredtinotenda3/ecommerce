@@ -53,12 +53,7 @@ export default async function ProductPage({ params: { slug } }) {
               blockType: 'relatedProducts',
               blockName: 'Related Products',
               relationTo: 'products',
-              introContent: [
-                {
-                  type: 'h2',
-                  children: [{ text: 'You might also like' }],
-                },
-              ],
+              heading: 'You might also like',
               docs: relatedProducts,
             },
           ]}

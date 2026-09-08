@@ -23,6 +23,8 @@ export interface FeaturedProductsProps {
   eyebrow: string
   /** Where "see all" points. Omit to hide the link. */
   href?: string
+  /** Optional supporting line under the heading. */
+  lede?: string
   id: string
 }
 
@@ -31,6 +33,7 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
   title,
   eyebrow,
   href,
+  lede,
   id,
 }) => {
   if (!Array.isArray(products) || products.length === 0) return null
@@ -44,6 +47,7 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
             <h2 id={`${id}-heading`} className={classes.heading}>
               {title}
             </h2>
+            {lede && <p className={classes.lede}>{lede}</p>}
           </div>
 
           {href && (

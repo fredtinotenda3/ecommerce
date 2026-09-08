@@ -56,7 +56,23 @@ export const NewsletterForm: React.FC<{ variant?: 'light' | 'dark' }> = ({
   if (isDone) {
     return (
       <p className={[classes.done, classes[variant]].join(' ')} role="status">
-        Thanks — we&apos;ll be in touch.
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+          className={classes.doneIcon}
+        >
+          <path
+            d="m5 12.5 4.5 4.5L19 7.5"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        You&apos;re on the list — see you next month.
       </p>
     )
   }
@@ -71,7 +87,9 @@ export const NewsletterForm: React.FC<{ variant?: 'light' | 'dark' }> = ({
           id={`newsletter-${variant}`}
           type="email"
           className={classes.input}
-          placeholder="you@example.com"
+          placeholder="Your email address"
+          autoComplete="email"
+          inputMode="email"
           value={email}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? `newsletter-error-${variant}` : undefined}

@@ -1,43 +1,56 @@
 @import '../../../_css/common';
 
 .section {
-  padding: 0 0 var(--th-section);
+  @extend %th-section;
+  padding-top: 0;
 }
 
 .panel {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
   align-items: center;
-  gap: var(--th-space-10);
-  padding: var(--th-space-12);
-  border-radius: var(--th-radius-xl);
-  background:
-    radial-gradient(80% 140% at 0% 0%, var(--th-brand-100) 0%, transparent 60%),
-    var(--th-surface-subtle);
-  border: 1px solid var(--th-line);
+  gap: clamp(2rem, 4vw, 4.5rem);
+  padding: clamp(2.5rem, 1.5rem + 3vw, 4.5rem);
+  border-radius: var(--th-radius-2xl);
+  background-color: var(--th-inverse);
+  color: var(--th-on-inverse);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
 
-  @include large-break {
+  @include mid-break {
     grid-template-columns: 100%;
     gap: var(--th-space-6);
     padding: var(--th-space-8) var(--th-space-6);
+    border-radius: var(--th-radius-xl);
   }
 }
 
+.panelWash {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(60% 100% at 100% 0%, rgba(99, 102, 241, 0.28) 0%, transparent 62%);
+}
+
 .copy {
-  max-width: 40ch;
+  max-width: 38ch;
 }
 
 .heading {
   margin: 0 0 var(--th-space-3);
-  font-size: clamp(1.5rem, 2.6vw, 2.125rem);
-  line-height: 1.2;
-  letter-spacing: -0.02em;
+  font-size: var(--th-text-h2);
+  line-height: var(--th-leading-snug);
+  letter-spacing: var(--th-tracking-heading);
+  font-weight: var(--th-weight-bold);
+  color: var(--th-on-inverse);
 }
 
 .lede {
   margin: 0;
-  color: var(--th-muted);
-  line-height: 1.65;
+  font-size: var(--th-text-sm);
+  line-height: var(--th-leading-relaxed);
+  color: var(--th-on-inverse-muted);
 }
 
 .form {

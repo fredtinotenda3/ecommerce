@@ -1,131 +1,151 @@
 @import '../../../_css/common';
 
+// ---------------------------------------------------------------------------
+// Shop-by-category tiles.
+//
+// Sizing note, because it constrains the design rather than following from
+// it: the supplied category artwork is small once the transparent padding is
+// cropped away — the subjects are 158–398px across in the source files.
+// Rendering them at 300px+ would mean upscaling, which trades real detail
+// for a bigger number and looks soft.
+//
+// So the tiles are deliberately compact (a ~190px image well), which is both
+// honest about the assets and a good pattern in its own right: six
+// categories fit in one row, and the row reads as a filter bar rather than
+// as six competing hero cards. The larger product photography carries the
+// visual weight in the bands below.
+// ---------------------------------------------------------------------------
+
 .section {
-  padding: var(--th-section) 0;
+  @extend %th-section;
+  padding-bottom: 0; // the products band below supplies its own top space
 }
 
 .header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--th-space-6);
-  margin-bottom: var(--th-space-8);
-
-  @include mid-break {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--th-space-4);
-  }
+  @extend %th-section-head;
 }
 
 .eyebrow {
-  @extend %th-eyebrow;
-  margin: 0 0 var(--th-space-2);
+  @extend %label;
+  margin: 0 0 var(--th-space-3);
+  color: var(--th-brand-text);
 }
 
 .heading {
-  margin: 0;
-  font-size: clamp(1.75rem, 3vw, 2.5rem);
-  line-height: 1.15;
-  letter-spacing: -0.02em;
+  @extend %th-section-title;
+}
+
+.lede {
+  @extend %th-section-lede;
 }
 
 .seeAll {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--th-space-2);
-  font-weight: 600;
-  color: var(--th-brand-600);
-  text-decoration: none;
-  white-space: nowrap;
-
-  svg {
-    transition: transform var(--th-transition);
-  }
-
-  &:hover svg {
-    transform: translateX(3px);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    svg {
-      transition: none;
-    }
-
-    &:hover svg {
-      transform: none;
-    }
-  }
+  @extend %th-section-link;
 }
 
 .grid {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: var(--th-space-5);
+  gap: var(--th-space-4);
   margin: 0;
   padding: 0;
   list-style: none;
 
-  @include large-break {
+  @include mid-break {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--th-space-3);
   }
 
   @include small-break {
+    // Two across on a phone rather than a single column: these are
+    // navigation targets, and a six-item vertical stack pushes the products
+    // an entire screen further down.
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--th-space-3);
   }
 }
 
 .tile {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: var(--th-space-3);
+  padding: var(--th-space-4) var(--th-space-3) var(--th-space-5);
+  border-radius: var(--th-radius-lg);
+  border: 1px solid transparent;
   text-decoration: none;
   color: inherit;
+  transition:
+    background-color var(--th-transition),
+    border-color var(--th-transition),
+    transform var(--th-transition);
 
-  &:hover .tileMedia {
-    border-color: var(--th-brand-300);
-    box-shadow: var(--th-shadow);
-  }
+  &:hover {
+    background-color: var(--th-surface-subtle);
+    border-color: var(--th-line);
+    transform: translateY(-2px);
 
-  &:hover .tileTitle {
-    color: var(--th-brand-700);
+    .tileImage {
+      transform: scale(1.06);
+    }
+
+    .tileTitle {
+      color: var(--th-brand-text);
+    }
   }
 
   &:focus-visible {
     outline: var(--th-focus-outline);
-    outline-offset: 4px;
-    border-radius: var(--th-radius);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+
+    &:hover {
+      transform: none;
+
+      .tileImage {
+        transform: none;
+      }
+    }
   }
 }
 
 .tileMedia {
   position: relative;
   display: block;
-  aspect-ratio: 31 / 36; // matches the supplied 620x720 category artwork
-  border-radius: var(--th-radius-lg);
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  padding: var(--th-space-3);
+  border-radius: var(--th-radius);
+  background-color: var(--th-surface-subtle);
   overflow: hidden;
-  background-color: var(--th-surface-sunken);
-  border: 1px solid var(--th-line);
-  transition:
-    border-color var(--th-transition),
-    box-shadow var(--th-transition);
+  transition: background-color var(--th-transition);
+
+  .tile:hover & {
+    background-color: var(--th-surface-sunken);
+  }
 }
 
 .tileImage {
-  object-fit: cover;
+  // `contain`, not `cover`: these are cutouts on transparency, and cropping
+  // one to fill a square removes the product.
+  object-fit: contain;
+  transition: transform var(--th-transition-slow);
 }
 
 .tilePlaceholder {
   display: block;
   width: 100%;
   height: 100%;
-  background: linear-gradient(140deg, var(--th-surface-sunken), var(--th-line));
+  border-radius: var(--th-radius);
+  background: linear-gradient(140deg, var(--th-surface-subtle), var(--th-surface-sunken));
 }
 
 .tileTitle {
-  font-weight: 600;
-  font-size: 15px;
+  font-size: var(--th-text-xs);
+  font-weight: var(--th-weight-semibold);
+  letter-spacing: var(--th-tracking-normal);
   text-align: center;
   transition: color var(--th-transition);
 }

@@ -1,59 +1,293 @@
-@use '../../_css/common.scss' as *;
+@import '../../_css/common';
+
+// --- Breadcrumb -------------------------------------------------------------
+
+.breadcrumb {
+  padding: var(--th-space-6) 0 var(--th-space-8);
+
+  ol {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--th-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--th-text-xs);
+    color: var(--th-muted);
+  }
+
+  a {
+    color: var(--th-muted);
+
+    &:hover {
+      color: var(--th-ink);
+      text-decoration: underline;
+    }
+  }
+}
+
+.crumbSep {
+  color: var(--th-muted-soft);
+}
+
+.crumbCurrent {
+  color: var(--th-ink);
+  font-weight: var(--th-weight-medium);
+  // Long product names must not push the breadcrumb into three lines.
+  max-width: 40ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// --- Layout -----------------------------------------------------------------
 
 .productHero {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 30px;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: clamp(2rem, 4vw, 4.5rem);
+  align-items: start;
   width: 100%;
+  padding-bottom: var(--th-space-16);
 
-  @include small-break {
-    grid-template-columns: 1fr;
+  @include mid-break {
+    grid-template-columns: 100%;
+    gap: var(--th-space-8);
+  }
+}
+
+.mediaColumn {
+  // Sticks while the description scrolls past on a long page — the product
+  // should stay in view while its details are being read.
+  position: sticky;
+  top: calc(var(--th-header-height) + var(--th-space-6));
+
+  @include mid-break {
+    position: static;
   }
 }
 
 .mediaWrapper {
   position: relative;
-  min-height: 400px;
-  background-color: var(--color-dark-50);
-
-  @include small-break {
-    min-height: 250px;
-  }
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  padding: clamp(1.5rem, 3vw, 3.5rem);
+  border-radius: var(--th-radius-xl);
+  background-color: var(--th-surface-subtle);
+  overflow: hidden;
 }
 
 .image {
-  padding: 24px;
   object-fit: contain;
-  aspect-ratio: 1/1;
-  max-width: 100%;
 }
+
+.placeholder {
+  color: var(--th-muted-soft);
+  font-size: var(--th-text-sm);
+}
+
+// --- Details ----------------------------------------------------------------
 
 .details {
   display: flex;
   flex-direction: column;
-  margin-top: 10px;
+  min-width: 0;
+  padding-top: var(--th-space-2);
 }
 
-.categoryWrapper {
+.eyebrow {
+  @extend %label;
+  margin: 0 0 var(--th-space-3);
+  color: var(--th-brand-text);
+}
+
+.title {
+  margin: 0 0 var(--th-space-4);
+  font-size: var(--th-text-h2);
+  line-height: var(--th-leading-snug);
+  letter-spacing: var(--th-tracking-heading);
+  font-weight: var(--th-weight-bold);
+}
+
+.summary {
+  margin: 0 0 var(--th-space-6);
+  font-size: var(--th-text-lead);
+  line-height: var(--th-leading-normal);
+  color: var(--th-muted);
+  max-width: 46ch;
+}
+
+// The price is set larger here than anywhere else on the site: on a product
+// page it is the single most-looked-for number.
+//
+// Sized through a custom property rather than by reaching into the Price
+// component's hashed class names — a CSS-module class is private to its
+// module, and a selector that guesses at one breaks silently on the next
+// build.
+.priceBlock {
+  margin-bottom: var(--th-space-4);
+  --th-price-size: 1.75rem;
+}
+
+.available,
+.unavailable {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--th-space-2);
+  margin: 0 0 var(--th-space-8);
+  font-size: var(--th-text-sm);
+  font-weight: var(--th-weight-medium);
+}
+
+.available {
+  color: var(--th-success);
+}
+
+.unavailable {
+  color: var(--th-muted);
+}
+
+.availableDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: currentColor;
+  flex-shrink: 0;
+}
+
+// --- Buy row ----------------------------------------------------------------
+
+.buyRow {
   display: flex;
-  justify-content: flex-start;
-  margin-bottom: 16px;
-  margin-top: 8px;
+  align-items: flex-start;
+  gap: var(--th-space-4);
+  margin-bottom: var(--th-space-8);
+
+  @include extra-small-break {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
-.category {
-  font-size: 16px;
+.quantity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--th-space-2);
+  flex-shrink: 0;
 }
 
-.stock {
-  color: var(--color-green-500);
+.quantityLabel {
+  @extend %label;
+  color: var(--th-muted);
 }
 
-.separator {
-  color: var(--color-gray-500);
-  padding: 0 10px;
+.stepper {
+  display: flex;
+  align-items: center;
+  height: 56px; // matches the large button beside it
+  border: 1px solid var(--th-line-strong);
+  border-radius: var(--th-radius-pill);
+  overflow: hidden;
+  background-color: var(--th-surface);
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 100%;
+    border: 0;
+    background: transparent;
+    color: var(--th-ink);
+    cursor: pointer;
+    transition: background-color var(--th-transition);
+
+    &:hover:not(:disabled) {
+      background-color: var(--th-surface-sunken);
+    }
+
+    &:disabled {
+      color: var(--th-muted-soft);
+      cursor: not-allowed;
+    }
+
+    &:focus-visible {
+      outline: var(--th-focus-outline);
+      outline-offset: -2px;
+    }
+  }
+
+  input {
+    width: 44px;
+    height: 100%;
+    border: 0;
+    background: transparent;
+    color: var(--th-ink);
+    font-family: inherit;
+    font-size: var(--th-text-body);
+    font-weight: var(--th-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+
+    &:focus-visible {
+      outline: var(--th-focus-outline);
+      outline-offset: -2px;
+    }
+
+    // The native spinners duplicate the buttons either side of the field
+    // and are too small to hit reliably.
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+      appearance: none;
+      margin: 0;
+    }
+
+    appearance: textfield;
+  }
 }
 
-.description {
-  padding: 30px 0;
+.addToCartButton {
+  // Fills the space beside the stepper.
+  flex: 1 1 auto;
+}
+
+// --- Assurances -------------------------------------------------------------
+
+.assurances {
+  display: flex;
+  flex-direction: column;
+  gap: var(--th-space-4);
+  margin: 0;
+  padding: var(--th-space-6) 0 0;
+  border-top: 1px solid var(--th-line);
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--th-space-3);
+    font-size: var(--th-text-sm);
+
+    > svg {
+      flex-shrink: 0;
+      margin-top: 1px;
+      color: var(--th-success);
+    }
+
+    strong {
+      display: block;
+      font-weight: var(--th-weight-semibold);
+      color: var(--th-ink);
+    }
+  }
+}
+
+.assuranceDetail {
+  display: block;
+  font-size: var(--th-text-xs);
+  color: var(--th-muted);
+  margin-top: 1px;
 }

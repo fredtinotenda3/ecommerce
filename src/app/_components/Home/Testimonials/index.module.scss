@@ -1,19 +1,19 @@
 @import '../../../_css/common';
 
 .section {
-  padding: 0 0 var(--th-section);
+  @extend %th-section;
+  padding-top: 0;
 }
 
 .eyebrow {
-  @extend %th-eyebrow;
-  margin: 0 0 var(--th-space-2);
+  @extend %label;
+  margin: 0 0 var(--th-space-3);
+  color: var(--th-brand-text);
 }
 
 .heading {
-  margin: 0 0 var(--th-space-8);
-  font-size: clamp(1.75rem, 3vw, 2.5rem);
-  line-height: 1.15;
-  letter-spacing: -0.02em;
+  @extend %th-section-title;
+  margin-bottom: var(--th-space-10);
 }
 
 .grid {
@@ -21,22 +21,28 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--th-space-5);
 
-  @include large-break {
+  @include mid-break {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include small-break {
     grid-template-columns: 100%;
   }
 }
 
 .card {
-  @extend %th-card;
   display: flex;
   flex-direction: column;
-  gap: var(--th-space-4);
+  gap: var(--th-space-5);
   margin: 0;
-  padding: var(--th-space-7);
+  padding: var(--th-space-8);
+  border-radius: var(--th-radius-lg);
+  background-color: var(--th-surface-subtle);
+  border: 1px solid var(--th-line);
 }
 
 .quoteMark {
-  color: var(--th-brand-200);
+  color: var(--th-brand-300);
   flex-shrink: 0;
 }
 
@@ -46,7 +52,12 @@
 
   p {
     margin: 0;
-    line-height: 1.7;
+    // Slightly larger than body text: a pull quote that is the same size as
+    // everything around it is just a paragraph in a box.
+    font-size: var(--th-text-lead);
+    line-height: var(--th-leading-normal);
+    letter-spacing: var(--th-tracking-normal);
+    color: var(--th-ink-soft);
   }
 }
 
@@ -54,15 +65,16 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding-top: var(--th-space-4);
+  padding-top: var(--th-space-5);
   border-top: 1px solid var(--th-line);
 }
 
 .name {
-  font-weight: 600;
+  font-size: var(--th-text-sm);
+  font-weight: var(--th-weight-semibold);
 }
 
 .role {
-  font-size: 14px;
+  font-size: var(--th-text-xs);
   color: var(--th-muted);
 }

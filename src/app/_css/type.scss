@@ -1,103 +1,96 @@
 @use 'queries' as *;
 
+// ---------------------------------------------------------------------------
+// Type placeholders.
+//
+// These back the bare `h1`–`h6` and body rules in app.scss. They are driven
+// entirely by the scale in brand.scss, so the fluid sizing, the tracking and
+// the weights are one decision rather than six.
+//
+// What changed from the template's version, and why it matters:
+//
+//   - Every heading was `font-weight: 700`. A page where the hero, the
+//     section headings and the product titles are all bold has no
+//     hierarchy — only sizes. Weight now steps down as the scale descends,
+//     which is what lets a 17px product title sit under a 24px section
+//     heading and still read as subordinate.
+//   - No letter-spacing at any size. Large type set at default tracking is
+//     the clearest single tell of an undesigned page; display sizes now
+//     tighten to -0.035em and small caps labels open up to +0.13em.
+//   - Fixed px sizes with one mid-break override, so everything between
+//     640px and 1024px got the phone treatment. The scale is now fluid.
+// ---------------------------------------------------------------------------
+
 %h1,
 %h2,
 %h3,
 %h4,
 %h5,
 %h6 {
-  font-weight: 700;
   margin: 0;
+  text-wrap: balance; // progressive enhancement; ignored where unsupported
 }
 
 %h1 {
-  font-size: 64px;
-  line-height: 70px;
-  font-weight: bold;
-
-  @include mid-break {
-    font-size: 42px;
-    line-height: 42px;
-  }
+  font-size: var(--th-text-h1);
+  line-height: var(--th-leading-tight);
+  letter-spacing: var(--th-tracking-display);
+  font-weight: var(--th-weight-bold);
 }
 
 %h2 {
-  font-size: 48px;
-  line-height: 54px;
-  font-weight: bold;
-
-  @include mid-break {
-    font-size: 32px;
-    line-height: 40px;
-  }
+  font-size: var(--th-text-h2);
+  line-height: var(--th-leading-snug);
+  letter-spacing: var(--th-tracking-heading);
+  font-weight: var(--th-weight-bold);
 }
 
 %h3 {
-  font-size: 32px;
-  line-height: 40px;
-  font-weight: bold;
-
-  @include mid-break {
-    font-size: 26px;
-    line-height: 32px;
-  }
+  font-size: var(--th-text-h3);
+  line-height: var(--th-leading-snug);
+  letter-spacing: var(--th-tracking-heading);
+  font-weight: var(--th-weight-semibold);
 }
 
 %h4 {
-  font-size: 30px;
-  line-height: 43px;
-  font-weight: 400;
-  letter-spacing: 0em;
-
-  @include mid-break {
-    font-size: 22px;
-    line-height: 30px;
-  }
+  font-size: var(--th-text-h4);
+  line-height: 1.35;
+  letter-spacing: var(--th-tracking-normal);
+  font-weight: var(--th-weight-semibold);
 }
 
 %h5 {
-  font-size: 22px;
-  line-height: 30px;
-  font-weight: bold;
-
-  @include mid-break {
-    font-size: 18px;
-    line-height: 24px;
-  }
+  font-size: var(--th-text-body);
+  line-height: 1.4;
+  letter-spacing: var(--th-tracking-normal);
+  font-weight: var(--th-weight-semibold);
 }
 
 %h6 {
-  font-size: inherit;
-  line-height: inherit;
-  font-weight: bold;
+  font-size: var(--th-text-sm);
+  line-height: 1.4;
+  letter-spacing: var(--th-tracking-normal);
+  font-weight: var(--th-weight-semibold);
 }
 
 %body {
-  font-size: 18px;
-  line-height: 32px;
-
-  @include mid-break {
-    font-size: 15px;
-    line-height: 24px;
-  }
+  font-size: var(--th-text-body);
+  line-height: var(--th-leading-relaxed);
+  letter-spacing: var(--th-tracking-normal);
 }
 
 %large-body {
-  font-size: 25px;
-  line-height: 32px;
-
-  @include mid-break {
-    font-size: 22px;
-    line-height: 30px;
-  }
+  font-size: var(--th-text-lead);
+  line-height: var(--th-leading-normal);
+  letter-spacing: var(--th-tracking-normal);
 }
 
+/// Small uppercase label. Uppercase at default tracking is unreadable, so
+/// the tracking is part of the definition rather than left to call sites.
 %label {
-  font-size: 16px;
-  line-height: 24px;
+  font-size: var(--th-text-xs);
+  line-height: 1.4;
+  font-weight: var(--th-weight-semibold);
+  letter-spacing: var(--th-tracking-caps);
   text-transform: uppercase;
-
-  @include mid-break {
-    font-size: 13px;
-  }
 }

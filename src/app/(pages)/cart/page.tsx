@@ -36,7 +36,14 @@ export default async function Cart() {
   return (
     <div className={classes.container}>
       <Gutter>
-        <h3>Cart</h3>
+        <header className={classes.intro}>
+          <h1 className={classes.heading}>Your cart</h1>
+          <p className={classes.introCopy}>
+            Items stay here in this browser until you sign in, after which your cart follows your
+            account across devices.
+          </p>
+        </header>
+
         <CartPage settings={settings} />
       </Gutter>
       <Blocks blocks={page?.layout} disableBottomPadding />

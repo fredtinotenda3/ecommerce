@@ -38,7 +38,7 @@
   align-items: start;
   padding-bottom: var(--th-section);
 
-  @include large-break {
+  @include mid-break {
     grid-template-columns: 100%;
     gap: 32px;
   }

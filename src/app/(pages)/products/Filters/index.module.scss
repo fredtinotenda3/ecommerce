@@ -1,63 +1,82 @@
 @import '../../../_css/common';
 
 .filters {
-  margin-top: 50px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--th-space-8);
+  // Follows the grid on a long results page, so the filters stay reachable
+  // without scrolling back to the top.
+  position: sticky;
+  top: calc(var(--th-header-height) + var(--th-space-6));
 
-  @include large-break {
+  @include mid-break {
+    position: static;
     flex-direction: row;
-    gap: 40px;
+    flex-wrap: wrap;
+    gap: var(--th-space-8);
+    padding-bottom: var(--th-space-6);
+    border-bottom: 1px solid var(--th-line);
   }
-  
+
   @include small-break {
     flex-direction: column;
-    gap: 20px;
-  }
-
-  @include small-break {
-    margin-top: 16px;
+    gap: var(--th-space-6);
   }
 }
 
-.categories {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-top: 20px;
+// Resets the browser's default fieldset chrome without losing the grouping
+// semantics that make it worth using.
+.group {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
 
-  @include large-break {
-    flex-direction: row;
-  }
-
-  @include small-break {
-    flex-direction: column;
+  @include mid-break {
+    flex: 1 1 220px;
   }
 }
 
 .title {
-  white-space: nowrap;
+  @extend %label;
+  color: var(--th-muted);
+  padding: 0;
+  margin-bottom: var(--th-space-2);
 }
 
-.priceSlider {
+.options {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  width: 100%;
 }
 
-.sliderWrapper {
-  display: flex;
+.clear {
+  display: inline-flex;
   flex-direction: column;
-  gap: 16px;
+  align-items: flex-start;
+  gap: 2px;
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--th-brand-text);
+  font-family: inherit;
+  font-size: var(--th-text-sm);
+  font-weight: var(--th-weight-semibold);
+  cursor: pointer;
 
-  p {
-    white-space: nowrap;
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: var(--th-focus-outline);
+    outline-offset: 3px;
+    border-radius: var(--th-radius-sm);
   }
 }
 
-.hr {
-  margin: 20px 0;
+.clearNote {
+  font-size: var(--th-text-xs);
+  font-weight: var(--th-weight-regular);
+  color: var(--th-muted);
 }
-

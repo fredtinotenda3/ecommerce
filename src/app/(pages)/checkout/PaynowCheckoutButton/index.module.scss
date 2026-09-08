@@ -3,7 +3,38 @@
 .paynow {
   display: flex;
   flex-direction: column;
-  gap: var(--base);
+  gap: var(--th-space-4);
+}
+
+.payButton {
+  @extend %th-btn-primary;
+  @extend %th-btn-lg;
+  width: 100%;
+}
+
+// A ring that spins on its own axis; suppressed under reduced-motion, where
+// the label alone carries the state.
+.spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: th-spin 700ms linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes th-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+    opacity: 0.6;
+  }
 }
 
 .heading {
@@ -11,11 +42,11 @@
 }
 
 .description {
-  color: var(--theme-elevation-600);
+  color: var(--th-muted);
 }
 
 .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--base);
+  gap: var(--th-space-3);
 }

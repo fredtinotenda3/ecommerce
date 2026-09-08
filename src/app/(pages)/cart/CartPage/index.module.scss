@@ -1,55 +1,202 @@
 @import '../../../_css/common';
 
-.cart {
-  margin: 30px 0;
-}
-
 .cartWrapper {
   display: grid;
-  grid-template-columns: 65% 1fr;
-  gap: 60px;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+  gap: clamp(2rem, 4vw, 4rem);
+  align-items: start;
+  padding-bottom: var(--th-section);
 
-  @include large-break {
-    grid-template-columns: 1fr;
+  @include mid-break {
+    grid-template-columns: 100%;
+    gap: var(--th-space-8);
   }
+}
+
+.items {
+  min-width: 0;
+}
+
+.empty {
+  margin-bottom: var(--th-section);
 }
 
 .header {
   display: grid;
-  grid-template-columns: 100px 2fr 1fr;
-  gap: 24px;
-  margin-bottom: 8px;
+  grid-template-columns: 1fr 140px 120px;
+  gap: var(--th-space-4);
+  padding-bottom: var(--th-space-4);
+  border-bottom: 1px solid var(--th-line);
 
+  p {
+    @extend %label;
+    color: var(--th-muted);
+    margin: 0;
+  }
+
+  // The column headers mean nothing once the rows stack on a phone; each
+  // row labels its own values there instead.
   @include small-break {
     display: none;
   }
 }
 
-.headerItemDetails {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
-}
-
-.headersubtotal {
-  text-align: end;
+.headerQuantity,
+.headerSubtotal {
+  text-align: right;
 }
 
 .itemsList {
-  border-top: 1px solid var(--color-dark-50);
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
+.continue {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--th-space-2);
+  margin-top: var(--th-space-6);
+  font-size: var(--th-text-sm);
+  font-weight: var(--th-weight-medium);
+  color: var(--th-muted);
+
+  svg {
+    transition: transform var(--th-transition);
+  }
+
+  &:hover {
+    color: var(--th-ink);
+
+    svg {
+      transform: translateX(-3px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    svg,
+    &:hover svg {
+      transition: none;
+      transform: none;
+    }
+  }
+}
+
+// --- Summary ----------------------------------------------------------------
+
 .summary {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 30px 24px;
-  border: 1px solid var(--color-dark-50);
+  @extend %th-card;
+  position: sticky;
+  top: calc(var(--th-header-height) + var(--th-space-5));
+  padding: var(--th-space-7);
+
+  @include mid-break {
+    position: static;
+  }
+}
+
+.summaryTitle {
+  margin: 0 0 var(--th-space-5);
+  font-size: var(--th-text-h4);
+  font-weight: var(--th-weight-semibold);
+  letter-spacing: var(--th-tracking-normal);
 }
 
 .row {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  align-items: center;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--color-dark-50);
+  gap: var(--th-space-4);
+  padding: var(--th-space-3) 0;
+  font-size: var(--th-text-sm);
+  color: var(--th-muted);
+}
+
+.rowNote {
+  display: block;
+  font-size: var(--th-text-xs);
+  color: var(--th-muted-soft);
+  margin-top: 2px;
+}
+
+.rowValue {
+  color: var(--th-ink);
+  font-weight: var(--th-weight-medium);
+  font-variant-numeric: tabular-nums;
+}
+
+.rowFree {
+  color: var(--th-success);
+  font-weight: var(--th-weight-semibold);
+}
+
+.totalRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--th-space-4);
+  margin-top: var(--th-space-3);
+  padding-top: var(--th-space-4);
+  border-top: 1px solid var(--th-line);
+  font-size: var(--th-text-body);
+  font-weight: var(--th-weight-semibold);
+}
+
+.totalValue {
+  font-size: var(--th-text-h3);
+  letter-spacing: var(--th-tracking-heading);
+  font-variant-numeric: tabular-nums;
+}
+
+.reassurance {
+  margin: var(--th-space-3) 0 var(--th-space-6);
+  font-size: var(--th-text-xs);
+  line-height: var(--th-leading-normal);
+  color: var(--th-muted);
+}
+
+.checkoutButton {
+  @extend %th-btn-primary;
+  @extend %th-btn-lg;
+  width: 100%;
+}
+
+.trust {
+  display: flex;
+  flex-direction: column;
+  gap: var(--th-space-3);
+  margin: var(--th-space-6) 0 0;
+  padding: var(--th-space-5) 0 0;
+  border-top: 1px solid var(--th-line);
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--th-space-3);
+    font-size: var(--th-text-xs);
+    line-height: var(--th-leading-normal);
+    color: var(--th-muted);
+
+    svg {
+      flex-shrink: 0;
+      margin-top: 1px;
+      color: var(--th-success);
+    }
+  }
+}
+
+// --- Loading ----------------------------------------------------------------
+
+.skeletonRow {
+  @extend %th-skeleton;
+  height: 116px;
+  margin-bottom: var(--th-space-4);
+  border-radius: var(--th-radius-lg);
+}
+
+.skeletonSummary {
+  @extend %th-skeleton;
+  height: 320px;
+  border-radius: var(--th-radius-lg);
 }

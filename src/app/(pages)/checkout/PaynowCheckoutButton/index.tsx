@@ -12,7 +12,6 @@
 
 import React, { useState } from 'react'
 
-import { Button } from '../../../_components/Button'
 import { Message } from '../../../_components/Message'
 
 import classes from './index.module.scss'
@@ -58,20 +57,39 @@ export const PaynowCheckoutButton: React.FC = () => {
 
   return (
     <div className={classes.paynow}>
-      <h3 className={classes.heading}>Payment Details</h3>
       {error && <Message error={error} />}
-      <p className={classes.description}>
-        {"You'll be redirected to Paynow to complete your payment securely."}
-      </p>
-      <div className={classes.actions}>
-        <Button label="Back to cart" href="/cart" appearance="secondary" disabled={isLoading} />
-        <Button
-          label={isLoading ? 'Redirecting…' : 'Pay with Paynow'}
-          onClick={handleClick}
-          appearance="primary"
-          disabled={isLoading}
-        />
-      </div>
+
+      {/* One control, full width, and the only primary action on the page:
+          the reassurance copy and the "back to cart" escape hatch live in
+          the panel around this, so they are not competing with it. */}
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={isLoading}
+        className={classes.payButton}
+        // Announced to a screen reader while the redirect is being set up,
+        // which is otherwise a silent second or two.
+        aria-busy={isLoading}
+      >
+        {isLoading ? (
+          <React.Fragment>
+            <span className={classes.spinner} aria-hidden="true" />
+            Redirecting to Paynow…
+          </React.Fragment>
+        ) : (
+          <React.Fragment>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M12 3l7 3v5.5c0 4.2-2.9 8.1-7 9.5-4.1-1.4-7-5.3-7-9.5V6z"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinejoin="round"
+              />
+            </svg>
+            Pay securely with Paynow
+          </React.Fragment>
+        )}
+      </button>
     </div>
   )
 }

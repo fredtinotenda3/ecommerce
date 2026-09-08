@@ -3,38 +3,69 @@
 .radioWrapper {
   display: flex;
   align-items: center;
-  gap: 10px;
-  white-space: nowrap;
+  gap: var(--th-space-3);
+  padding: var(--th-space-2) 0;
+  min-height: 36px;
   cursor: pointer;
+  font-size: var(--th-text-sm);
+  color: var(--th-ink-soft);
+  transition: color var(--th-transition);
+
+  &:hover {
+    color: var(--th-ink);
+
+    .dot {
+      border-color: var(--th-line-strong);
+    }
+  }
 }
 
+.selected {
+  color: var(--th-ink);
+  font-weight: var(--th-weight-medium);
+}
+
+// Same approach as the checkbox: the native input stays, hidden, so
+// keyboard and screen-reader behaviour is the browser's rather than ours.
 .radio {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background-color: white;
-  border: 2px solid var(--color-dark-500);
-  outline: none;
-  cursor: pointer;
-}
-
-.radio:checked {
-  font-size: 16px;
-  background-color: white;
-  position: relative;
-}
-
-.radio:checked::before {
-  content: "";
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background-color: var(--color-dark-500);
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  opacity: 0;
+  width: 0;
+  height: 0;
+
+  &:focus-visible + .dot {
+    outline: var(--th-focus-outline);
+    outline-offset: 2px;
+  }
+
+  &:checked + .dot {
+    border-color: var(--th-brand-fill);
+
+    &::after {
+      transform: scale(1);
+    }
+  }
+}
+
+.dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid var(--th-line-strong);
+  background-color: var(--th-surface);
+  transition: border-color var(--th-transition);
+
+  &::after {
+    content: '';
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: var(--th-brand-fill);
+    transform: scale(0);
+    transition: transform var(--th-transition);
+  }
 }

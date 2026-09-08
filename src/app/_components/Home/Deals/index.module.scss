@@ -1,17 +1,34 @@
 @import '../../../_css/common';
 
+// ---------------------------------------------------------------------------
+// Deals of the Month.
+//
+// A dark panel, because this is the one band on the page that should stop
+// the scroll — and inverting the surface does that without resorting to a
+// saturated colour block, which would fight the product photography.
+//
+// The image is floated right with the copy wrapping around it, as briefed.
+// A float, not a grid column: a grid column would put the text in a fixed
+// track beside the image, which is a different (and blockier) composition.
+// Below the mid breakpoint the float is dropped and the image leads.
+// ---------------------------------------------------------------------------
+
 .section {
-  padding: 0 0 var(--th-section);
+  @extend %th-section;
+  padding-top: 0; // sits directly beneath the products band
 }
 
 .panel {
   position: relative;
-  border-radius: var(--th-radius-xl);
-  padding: var(--th-space-14) var(--th-space-14) var(--th-space-12);
-  background:
-    radial-gradient(90% 120% at 100% 0%, rgba(79, 70, 229, 0.18) 0%, transparent 55%),
-    var(--th-inverse);
-  color: #fff;
+  isolation: isolate;
+  border-radius: var(--th-radius-2xl);
+  padding: clamp(2.5rem, 1.5rem + 4vw, 5rem);
+  // A deep indigo rather than near-black. Every product in this catalogue
+  // is a dark-finished device, so a black panel leaves the photograph with
+  // nothing to sit against; shifting the panel toward the brand hue gives
+  // the silhouette an edge without lightening the band.
+  background-color: #0d1030;
+  color: var(--th-on-inverse);
   overflow: hidden;
 
   // `overflow: hidden` also establishes a block formatting context, so the
@@ -20,19 +37,33 @@
 
   @include mid-break {
     padding: var(--th-space-8) var(--th-space-6) var(--th-space-10);
+    border-radius: var(--th-radius-xl);
   }
+}
+
+// The light behind the product, drawn under everything in the panel.
+.panelWash {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    // A bright pool directly behind the product, so the dark device reads
+    // against it rather than dissolving into the panel.
+    radial-gradient(46% 62% at 74% 42%, rgba(129, 140, 248, 0.42) 0%, transparent 66%),
+    radial-gradient(70% 90% at 92% 0%, rgba(79, 70, 229, 0.42) 0%, transparent 62%),
+    radial-gradient(46% 70% at 4% 100%, rgba(245, 158, 11, 0.16) 0%, transparent 60%);
 }
 
 .art {
   float: right;
-  width: 42%;
-  margin: 0 0 var(--th-space-6) var(--th-space-10);
+  width: 46%;
+  margin: 0 0 var(--th-space-6) var(--th-space-12);
   shape-margin: var(--th-space-6);
 
   @include mid-break {
     float: none;
     width: 100%;
-    max-width: 420px;
+    max-width: 26rem;
     margin: 0 auto var(--th-space-8);
   }
 }
@@ -41,35 +72,55 @@
   display: block;
   width: 100%;
   height: auto;
-  filter: drop-shadow(0 24px 48px rgba(0, 0, 0, 0.45));
+  // Follows the product's silhouette rather than its bounding box.
+  filter: drop-shadow(0 30px 50px rgba(0, 0, 0, 0.55));
 }
 
 .eyebrow {
-  @extend %th-eyebrow;
-  margin: 0 0 var(--th-space-3);
-  color: var(--th-accent-500);
+  @extend %label;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--th-space-2);
+  margin: 0 0 var(--th-space-5);
+  padding: var(--th-space-2) var(--th-space-4);
+  border: 1px solid var(--th-inverse-line);
+  border-radius: var(--th-radius-pill);
+  background-color: var(--th-inverse-raised);
+  color: var(--th-accent-300);
 }
 
 .heading {
   margin: 0 0 var(--th-space-5);
-  font-size: clamp(1.75rem, 3.2vw, 2.75rem);
-  line-height: 1.12;
-  letter-spacing: -0.02em;
-  max-width: 22ch;
+  font-size: var(--th-text-h1);
+  line-height: var(--th-leading-tight);
+  letter-spacing: var(--th-tracking-display);
+  font-weight: var(--th-weight-bold);
+  max-width: 17ch;
+  color: var(--th-on-inverse);
 }
 
 .copy {
   margin: 0 0 var(--th-space-4);
-  line-height: 1.7;
-  color: rgba(255, 255, 255, 0.78);
-  max-width: 52ch;
+  font-size: var(--th-text-body);
+  line-height: var(--th-leading-relaxed);
+  color: var(--th-on-inverse-muted);
+  max-width: 54ch;
+}
+
+// --- Countdown --------------------------------------------------------------
+
+.countdownLabel {
+  @extend %label;
+  display: block;
+  margin: var(--th-space-8) 0 var(--th-space-3);
+  color: var(--th-on-inverse-muted);
 }
 
 .countdown {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--th-space-3);
-  margin: var(--th-space-8) 0 var(--th-space-8);
+  gap: var(--th-space-2);
+  margin: 0 0 var(--th-space-8);
   padding: 0;
   list-style: none;
 }
@@ -79,47 +130,48 @@
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  min-width: 78px;
+  min-width: 74px;
   padding: var(--th-space-3) var(--th-space-4);
   border-radius: var(--th-radius);
-  background-color: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  background-color: var(--th-inverse-raised);
+  border: 1px solid var(--th-inverse-line);
 }
 
 .unitValue {
-  font-size: 28px;
-  font-weight: 700;
+  font-size: 1.75rem;
+  font-weight: var(--th-weight-semibold);
   line-height: 1.1;
+  letter-spacing: var(--th-tracking-heading);
   // Stops the whole row shifting as the seconds tick over.
   font-variant-numeric: tabular-nums;
+  color: var(--th-on-inverse);
 }
 
 .unitLabel {
-  font-size: 11px;
-  letter-spacing: 0.12em;
+  font-size: var(--th-text-micro);
+  letter-spacing: var(--th-tracking-caps);
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--th-on-inverse-muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--th-space-3);
+
+  @include small-break {
+    flex-direction: column;
+    align-items: stretch;
+    max-width: 22rem;
+  }
 }
 
 .cta {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 14px var(--th-space-7);
-  border-radius: var(--th-radius-pill);
-  background-color: #fff;
-  color: var(--th-inverse);
-  font-weight: 600;
-  text-decoration: none;
-  transition: background-color var(--th-transition);
+  @extend %th-btn-on-dark;
+  @extend %th-btn-lg;
+}
 
-  &:hover {
-    background-color: var(--th-accent-500);
-    color: var(--th-inverse);
-  }
-
-  &:focus-visible {
-    outline: 2px solid #fff;
-    outline-offset: 3px;
-  }
+.ctaGhost {
+  @extend %th-btn-ghost-on-dark;
+  @extend %th-btn-lg;
 }

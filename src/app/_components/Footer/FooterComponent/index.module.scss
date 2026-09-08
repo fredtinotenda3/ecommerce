@@ -1,90 +1,70 @@
-@use '../../../_css/queries.scss' as *;
+@import '../../../_css/common';
 
 .footer {
   margin-top: var(--th-section);
 }
 
-.inclusions {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--th-space-6);
-  padding: var(--th-space-10) 0;
-  border-top: 1px solid var(--th-line);
-
-  li {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--th-space-3);
-  }
-
-  @include mid-break {
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--th-space-5);
-  }
-
-  @include small-break {
-    grid-template-columns: 1fr;
-  }
-}
-
-.inclusionIcon {
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.inclusionTitle {
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 1.4;
-  margin: 0 0 2px;
-}
-
-.inclusionCopy {
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--th-muted);
-}
-
 .main {
   background: var(--th-inverse);
-  color: #d7dae1;
-  padding: var(--th-space-16) 0 var(--th-space-8);
+  color: var(--th-on-inverse-muted);
+  padding: var(--th-space-20) 0 var(--th-space-8);
+
+  @include small-break {
+    padding: var(--th-space-12) 0 var(--th-space-6);
+  }
 }
 
+// Three tracks, not five. The previous rule declared five columns and then
+// collapsed to three at `large-break` — which is `max-width: 1440px`, so
+// desktop got the collapsed grid and five children wrapped raggedly across
+// three tracks. Grouping the three link columns into one child means the
+// top-level grid has exactly three children at every size.
 .columns {
   display: grid;
-  grid-template-columns: 1.6fr repeat(3, 1fr) 1.4fr;
-  gap: var(--th-space-10);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: clamp(2rem, 4vw, 4.5rem);
 
-  @include large-break {
-    grid-template-columns: 1.4fr 1fr 1fr;
-    row-gap: var(--th-space-10);
+  @include mid-break {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    row-gap: var(--th-space-12);
+
+    .newsletterColumn {
+      grid-column: 1 / -1;
+    }
   }
 
   @include small-break {
-    grid-template-columns: 1fr;
-    gap: var(--th-space-8);
+    grid-template-columns: 100%;
+    gap: var(--th-space-10);
+  }
+}
+
+.brandLink {
+  display: inline-block;
+
+  &:hover {
+    opacity: 0.85;
   }
 }
 
 .tagline {
   margin-top: var(--th-space-4);
-  font-size: 15px;
-  color: #9aa1ad;
+  font-size: var(--th-text-sm);
+  color: var(--th-on-inverse-muted);
 }
 
 .contact {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin-top: var(--th-space-5);
+  margin-top: var(--th-space-6);
   font-style: normal;
-  font-size: 14px;
-  line-height: 1.6;
-  color: #9aa1ad;
+  font-size: var(--th-text-xs);
+  line-height: 1.7;
+  color: var(--th-on-inverse-muted);
 
   a {
-    color: #d7dae1;
+    color: var(--th-on-inverse);
 
     &:hover {
       color: #fff;
@@ -94,30 +74,41 @@
 }
 
 .hours {
-  margin-top: 4px;
-  color: #767d89;
+  margin-top: var(--th-space-2);
+  opacity: 0.75;
+}
+
+.linkColumns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--th-space-8) var(--th-space-6);
+
+  @include extra-small-break {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .columnTitle {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  @extend %label;
   color: #fff;
-  margin: 0 0 var(--th-space-4);
+  margin: 0 0 var(--th-space-5);
 }
 
 .linkColumn {
   ul {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: var(--th-space-3);
   }
 }
 
 .footerLink {
-  font-size: 14px;
-  color: #9aa1ad;
+  font-size: var(--th-text-sm);
+  color: var(--th-on-inverse-muted);
+  // A slightly generous hit area without visible padding: footer links are
+  // small and are exactly where a mis-tap is most likely.
+  display: inline-block;
+  padding-block: 2px;
 
   &:hover {
     color: #fff;
@@ -125,10 +116,10 @@
 }
 
 .newsletterCopy {
-  font-size: 14px;
-  line-height: 1.6;
-  color: #9aa1ad;
-  margin-bottom: var(--th-space-4);
+  font-size: var(--th-text-sm);
+  line-height: var(--th-leading-relaxed);
+  color: var(--th-on-inverse-muted);
+  margin-bottom: var(--th-space-5);
 }
 
 .bottom {
@@ -137,15 +128,23 @@
   justify-content: space-between;
   gap: var(--th-space-4);
   flex-wrap: wrap;
-  margin-top: var(--th-space-12);
+  margin-top: var(--th-space-16);
   padding-top: var(--th-space-6);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--th-inverse-line);
+
+  @include small-break {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--th-space-5);
+    margin-top: var(--th-space-10);
+  }
 }
 
 .copyright,
 .payments {
-  font-size: 13px;
-  color: #767d89;
+  font-size: var(--th-text-xs);
+  color: var(--th-on-inverse-muted);
+  opacity: 0.8;
   margin: 0;
 }
 
@@ -158,21 +157,36 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--th-radius-pill);
-  background: rgba(255, 255, 255, 0.08);
-  transition: background var(--th-transition), transform var(--th-transition);
+  background: var(--th-inverse-raised);
+  border: 1px solid var(--th-inverse-line);
+  color: var(--th-on-inverse);
+  transition:
+    background var(--th-transition),
+    border-color var(--th-transition),
+    transform var(--th-transition);
 
   &:hover {
-    background: rgba(255, 255, 255, 0.16);
-    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.28);
+    color: #fff;
+    transform: translateY(-2px);
   }
-}
 
-.socialIcon {
-  width: 18px;
-  height: 18px;
+  &:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+
+    &:hover {
+      transform: none;
+    }
+  }
 }
 
 .hide {

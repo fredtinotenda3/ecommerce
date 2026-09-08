@@ -1,7 +1,30 @@
 @import '../../_css/common';
 
 .removeFromCartButton {
-  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--th-space-2);
+  // Below the 44px recommendation on purpose: a destructive control sized
+  // like a primary one invites the mis-tap it causes. The padding still
+  // gives it a comfortable target without making it prominent.
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--th-muted);
+  font-family: inherit;
+  font-size: var(--th-text-xs);
+  font-weight: var(--th-weight-medium);
   cursor: pointer;
-  @extend %label;
+  transition: color var(--th-transition);
+
+  &:hover {
+    color: var(--th-danger);
+  }
+
+  &:focus-visible {
+    outline: var(--th-focus-outline);
+    outline-offset: 3px;
+    border-radius: var(--th-radius-sm);
+  }
 }

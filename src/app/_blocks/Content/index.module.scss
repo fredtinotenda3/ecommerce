@@ -1,5 +1,18 @@
 @import '../../_css/common';
 
+// Running text at a readable measure. Without this the product description
+// ran the full width of the content column — around 110 characters a line
+// on a wide screen, roughly twice the comfortable maximum.
+.grid p {
+  max-width: var(--th-measure);
+  line-height: var(--th-leading-relaxed);
+  color: var(--th-ink-soft);
+}
+
+.grid p + p {
+  margin-top: var(--th-space-5);
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(12, 1fr);

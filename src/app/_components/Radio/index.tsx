@@ -16,21 +16,19 @@ export const RadioButton: React.FC<RadioButtonProps> = ({
   isSelected,
   onRadioChange,
   groupName,
-}) => {
-  const handleRadioChange = () => {
-    onRadioChange(value)
-  }
-
-  return (
-    <label className={classes.radioWrapper}>
-      <input
-        type="radio"
-        checked={isSelected}
-        onChange={handleRadioChange}
-        className={classes.radio}
-        name={groupName}
-      />
-      {label}
-    </label>
-  )
-}
+}) => (
+  <label
+    className={[classes.radioWrapper, isSelected && classes.selected].filter(Boolean).join(' ')}
+  >
+    <input
+      type="radio"
+      checked={isSelected}
+      onChange={() => onRadioChange(value)}
+      className={classes.radio}
+      name={groupName}
+      value={value}
+    />
+    <span className={classes.dot} aria-hidden="true" />
+    <span>{label}</span>
+  </label>
+)

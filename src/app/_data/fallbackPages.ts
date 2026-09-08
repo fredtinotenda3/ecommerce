@@ -6,6 +6,11 @@
 // instead of a 404 while the catalogue is still being set up. It is a
 // rendering fallback only — nothing here is written to the database, and a
 // real page with the same slug always takes precedence.
+//
+// Everything here is CUSTOMER-FACING copy. It must never mention the
+// database, the admin area, a seed script or a slug: a visitor who lands
+// on a half-configured store should see a shop that happens to be quiet,
+// not a developer's setup note.
 
 import type { StorefrontPage } from '../_types/storefront'
 
@@ -34,7 +39,7 @@ export const fallbackHome: StorefrontPage = {
         type: 'p',
         children: [
           {
-            text: 'No page with the slug "home" exists in the database yet, so this placeholder supplies the metadata while the branded homepage renders around it. Sign in at /admin to publish one, or run `npm run seed:store` to load the demo catalogue.',
+            text: 'Genuine Apple laptops, phones, tablets, watches and audio — with a two-year warranty on every device and free delivery across Zimbabwe on orders over $150.',
           },
         ],
       },

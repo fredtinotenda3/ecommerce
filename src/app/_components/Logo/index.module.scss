@@ -7,12 +7,42 @@
 
 .mark {
   flex-shrink: 0;
-  color: var(--th-brand-600);
+  color: var(--th-brand-fill);
 }
 
 .wordmark {
   width: auto;
   height: 22px;
+}
+
+// `variant="auto"`: both wordmarks are rendered and CSS reveals the one
+// that suits the active theme, so the correct mark is present at first
+// paint without JavaScript deciding it.
+//
+// `display: none` rather than stacking them: the two files are the same
+// artwork at the same intrinsic size, so hiding one cannot change the
+// lockup's width, and it keeps the hidden image out of the accessibility
+// tree as well as out of the layout.
+.auto {
+  .wordmarkDark {
+    display: none;
+  }
+}
+
+:root[data-theme='dark'] .auto {
+  .wordmarkLight {
+    display: none;
+  }
+
+  .wordmarkDark {
+    display: block;
+  }
+
+  .mark {
+    color: #fff;
+    --th-logo-mark-ink: #0b0d12;
+    --th-logo-mark-accent: #5b62e8;
+  }
 }
 
 .dark {

@@ -1,57 +1,97 @@
 @import '../../_css/common';
 
+// ---------------------------------------------------------------------------
+// The product card.
+//
+// The single biggest change here is that the photograph now gets the room.
+// It previously sat in a 4:3 box with 24px of padding on every side — on a
+// portrait product shot that leaves the actual device rendering at around a
+// third of the tile, which is what made the grid look like a page of
+// thumbnails. It is now a 4:5 portrait well with minimal padding, matching
+// the shape of the source photography instead of fighting it.
+//
+// The card itself is borderless by default. A grid of bordered boxes reads
+// as a table of records; letting the products sit on the page and lifting
+// only the one under the cursor reads as a shop.
+// ---------------------------------------------------------------------------
+
 .card {
-  @extend %th-card;
+  position: relative;
   height: 100%;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   text-decoration: none;
   color: inherit;
-  transition:
-    transform var(--th-transition),
-    box-shadow var(--th-transition),
-    border-color var(--th-transition);
-
-  &:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--th-shadow);
-    border-color: var(--th-brand-200);
-
-    .image {
-      transform: scale(1.03);
-    }
-
-    .title {
-      color: var(--th-brand-700);
-    }
-  }
 
   &:focus-visible {
     outline: var(--th-focus-outline);
-    outline-offset: 3px;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    transition: none;
-
-    &:hover {
-      transform: none;
-
-      .image {
-        transform: none;
-      }
-    }
+    outline-offset: 6px;
+    border-radius: var(--th-radius-lg);
   }
 }
 
 .mediaWrapper {
   position: relative;
-  display: block;
-  aspect-ratio: 4 / 3;
-  background-color: var(--th-surface-sunken);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  // Portrait, matching the source photography. Nearly every product shot in
+  // the catalogue is taller than it is wide.
+  aspect-ratio: 4 / 5;
+  margin-bottom: var(--th-space-5);
+  padding: var(--th-space-5);
+  border-radius: var(--th-radius-lg);
+  background-color: var(--th-surface-subtle);
   overflow: hidden;
+  transition:
+    background-color var(--th-transition),
+    box-shadow var(--th-transition);
+
+  .card:hover & {
+    background-color: var(--th-surface-sunken);
+    box-shadow: var(--th-shadow);
+  }
+
+  @include small-break {
+    aspect-ratio: 1 / 1;
+    padding: var(--th-space-4);
+  }
 }
+
+.image {
+  // `contain`, never `cover`: these are cutouts, and cropping a laptop in
+  // half to fill a box is worse than letterboxing it.
+  object-fit: contain;
+  // No resting scale. An overscan of even 2% crops the edge of a landscape
+  // product inside a portrait well — the base of a MacBook, in practice —
+  // and a clipped product photograph is worse than a slightly smaller one.
+  transition: transform var(--th-transition-slow);
+
+  .card:hover & {
+    transform: scale(1.05);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+
+    .card:hover & {
+      transform: none;
+    }
+  }
+}
+
+.placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--th-muted-soft);
+  font-size: var(--th-text-xs);
+  letter-spacing: var(--th-tracking-wide);
+}
+
+// --- Badges -----------------------------------------------------------------
 
 .badges {
   position: absolute;
@@ -63,63 +103,63 @@
   gap: var(--th-space-2);
 }
 
-.badgeSale {
+%badge {
   @extend %th-pill;
+  font-size: var(--th-text-micro);
+  letter-spacing: var(--th-tracking-caps);
+  text-transform: uppercase;
+  backdrop-filter: blur(6px);
+}
+
+.badgeSale {
+  @extend %badge;
   background-color: var(--th-danger);
   color: #fff;
 }
 
 .badgeNew {
-  @extend %th-pill;
-  background-color: var(--th-brand-600);
-  color: #fff;
+  @extend %badge;
+  background-color: var(--th-ink);
+  color: var(--th-surface);
 }
 
 .badgeMuted {
-  @extend %th-pill;
-  background-color: var(--th-surface);
+  @extend %badge;
+  background-color: color-mix(in srgb, var(--th-surface) 82%, transparent);
   color: var(--th-muted);
   border: 1px solid var(--th-line);
 }
 
-.image {
-  padding: var(--th-space-6);
-  object-fit: contain;
-  max-width: 100%;
-  transition: transform var(--th-transition);
-}
-
-.placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--th-muted);
-  font-size: 14px;
-}
+// --- Text -------------------------------------------------------------------
 
 .content {
-  padding: var(--th-space-4) var(--th-space-5) var(--th-space-5);
   display: flex;
   flex-direction: column;
   gap: var(--th-space-2);
   flex-grow: 1;
+  padding-inline: var(--th-space-1);
 }
 
 .title {
   margin: 0;
-  font-size: 17px;
-  font-weight: 600;
-  line-height: 1.35;
+  // Deliberately close to body size. A product grid where every title is a
+  // heading has no hierarchy left for the price, which is the number the
+  // customer is actually scanning for.
+  font-size: var(--th-text-sm);
+  font-weight: var(--th-weight-medium);
+  line-height: 1.4;
+  letter-spacing: var(--th-tracking-normal);
+  color: var(--th-ink);
   transition: color var(--th-transition);
 
-  // Two lines, then ellipsis: product names are long, and a card that grows
-  // to fit one of them breaks the grid's rhythm.
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+
+  .card:hover & {
+    color: var(--th-brand-text);
+  }
 }
 
 .body {
@@ -128,8 +168,8 @@
 
 .description {
   margin: 0;
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: var(--th-text-xs);
+  line-height: var(--th-leading-normal);
   color: var(--th-muted);
 
   display: -webkit-box;
@@ -138,10 +178,16 @@
   overflow: hidden;
 }
 
+// The price sits at the bottom of every card regardless of how long the
+// title wrapped, so the row of prices lines up across the grid.
+.priceRow {
+  margin-top: var(--th-space-2);
+}
+
 .unavailable {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
+  margin: var(--th-space-2) 0 0;
+  font-size: var(--th-text-sm);
+  font-weight: var(--th-weight-medium);
   color: var(--th-muted);
 }
 

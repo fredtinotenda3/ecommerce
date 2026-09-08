@@ -57,5 +57,6 @@
 }
 
 .action {
-  margin-top: var(--th-space-2);
+  @extend %th-btn-primary;
+  margin-top: var(--th-space-3);
 }

@@ -32,28 +32,61 @@
 
 html {
   @extend %body;
-  background: var(--theme-bg);
+  background: var(--th-surface);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  // The page is hidden until the inline theme script has stamped
+  // `data-theme`, so a visitor who chose dark never sees a white flash.
+  //
+  // The `scripting: none` guard is the safety net: without it, a browser
+  // with JavaScript disabled — or one where that inline script threw —
+  // would render a permanently blank page. A theme flash is a blemish; an
+  // invisible storefront is an outage.
   opacity: 0;
 
-  &[data-theme=dark],
-  &[data-theme=light] {
+  &[data-theme='dark'],
+  &[data-theme='light'] {
+    opacity: initial;
+  }
+
+  @media (scripting: none) {
     opacity: initial;
   }
 }
 
+// `min-height`, not `height`.
+//
+// The template set `height: 100%` here. That caps <body> at exactly one
+// viewport while its content overflows, and a `position: sticky` element's
+// sticky range is bounded by its containing block — so the sticky header
+// could only travel within that 900px box and then scrolled away with the
+// rest of the page. The cart and search were reachable only from the very
+// top of a 4000px homepage.
+//
+// `min-height` lets <body> grow with its content, which restores the sticky
+// range to the full document while still letting the footer sit at the
+// bottom of a short page (the flex column below does that part).
+//
+// `#app` is a Pages-router artefact; no such element exists in the App
+// Router, so the selector is dropped rather than left to mislead.
 html,
-body,
-#app {
-  height: 100%;
+body {
+  min-height: 100%;
 }
 
 body {
-  font-family: var(--font-jost);
+  font-family: var(--th-font-sans);
   margin: 0;
   padding: 0;
   color: var(--th-ink);
   background: var(--th-surface);
+
+  // Optical sizing and kerning are off by default in some engines; both
+  // matter most at the display sizes the hero uses.
+  font-kerning: normal;
+  font-optical-sizing: auto;
+  text-rendering: optimizeLegibility;
 
   display: flex;
   flex-flow: column;
@@ -120,8 +153,15 @@ a {
   transition: color var(--th-transition);
 
   &:hover {
-    color: var(--th-brand-600);
+    color: var(--th-brand-text);
   }
+}
+
+// Prices, counts, countdowns and quantities. Proportional digits shift
+// width as they change, which makes a live total or a ticking clock jitter.
+.th-numeric {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
 }
 
 // One focus indicator for everything interactive. `:focus-visible` keeps
@@ -135,7 +175,7 @@ select:focus-visible,
 textarea:focus-visible,
 summary:focus-visible,
 [tabindex]:focus-visible {
-  outline: 2px solid var(--th-brand-600);
+  outline: var(--th-focus-outline);
   outline-offset: 2px;
   border-radius: var(--th-radius-sm);
 }
@@ -158,9 +198,15 @@ svg {
 
 // Skip link: first tab stop on every page.
 .th-skip-link {
-  position: absolute;
-  left: -9999px;
+  // Positioned off the top rather than 9999px to the left: a far-left
+  // absolute element can widen the scrollable area in some engines, and a
+  // storefront with a mysterious horizontal scrollbar is a bug nobody can
+  // find.
+  position: fixed;
+  left: 0;
   top: 0;
+  transform: translateY(-120%);
+  transition: transform var(--th-transition);
   z-index: 100;
   padding: var(--th-space-3) var(--th-space-5);
   background: var(--th-ink);
@@ -169,7 +215,7 @@ svg {
   font-weight: 600;
 
   &:focus {
-    left: 0;
+    transform: translateY(0);
     color: #fff;
   }
 }

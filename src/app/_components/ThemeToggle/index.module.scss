@@ -1,0 +1,96 @@
+@import '../../_css/common';
+
+// Reserves the icon button's footprint before mount, so the header's
+// action row does not jump when the control appears.
+.placeholder {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+}
+
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--th-radius-pill);
+  background-color: transparent;
+  color: var(--th-ink-soft);
+  cursor: pointer;
+  transition:
+    background-color var(--th-transition),
+    border-color var(--th-transition),
+    color var(--th-transition);
+
+  &:hover {
+    background-color: var(--th-surface-sunken);
+    border-color: var(--th-line);
+    color: var(--th-ink);
+  }
+
+  &:focus-visible {
+    outline: var(--th-focus-outline);
+    outline-offset: 2px;
+  }
+}
+
+// Re-keyed on every change, so React remounts the span and the animation
+// replays. A cross-fade makes the state change legible without the control
+// drawing attention to itself the rest of the time.
+.iconSwap {
+  display: inline-flex;
+  animation: th-fade-up 220ms ease-out;
+}
+
+// --- Segmented (mobile drawer) ---------------------------------------------
+
+.segmented {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--th-space-1);
+  padding: var(--th-space-1);
+  border: 1px solid var(--th-line);
+  border-radius: var(--th-radius);
+  background-color: var(--th-surface-subtle);
+}
+
+.segment {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--th-space-1);
+  // Comfortably above the 44px touch-target minimum.
+  min-height: 56px;
+  padding: var(--th-space-2);
+  border: 0;
+  border-radius: var(--th-radius-sm);
+  background-color: transparent;
+  color: var(--th-muted);
+  font-family: inherit;
+  font-size: var(--th-text-micro);
+  font-weight: var(--th-weight-semibold);
+  letter-spacing: var(--th-tracking-wide);
+  cursor: pointer;
+  transition:
+    background-color var(--th-transition),
+    color var(--th-transition);
+
+  &:hover {
+    color: var(--th-ink);
+  }
+
+  &:focus-visible {
+    outline: var(--th-focus-outline);
+    outline-offset: -2px;
+  }
+}
+
+.segmentActive {
+  background-color: var(--th-surface);
+  color: var(--th-ink);
+  box-shadow: var(--th-shadow-sm);
+}

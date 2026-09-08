@@ -10,14 +10,13 @@
 // number that says "200+" is not mistaken for the true total.
 
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
 
 import {
   listAdminMediaNative,
   listAdminOrdersNative,
   listAdminProductsNative,
 } from '../../_api/adminQueries'
-import { ADMIN_SECTIONS } from './_components/AdminNav'
+import { ADMIN_SECTIONS } from './_components/sections'
 
 import classes from './_components/admin.module.scss'
 
@@ -49,8 +48,6 @@ export default async function AdminIndexPage() {
     statsFailed = true
     console.error('admin dashboard stats failed:', error) // eslint-disable-line no-console
   }
-
-  if (!ADMIN_SECTIONS.length) notFound()
 
   const published = products.filter(product => product.status === 'published').length
   const unpriced = products.filter(product => product.price == null).length

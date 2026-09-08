@@ -1,12 +1,22 @@
-@use '../../../_css/queries.scss' as *;
+@import '../../../_css/common';
 
 .header {
   position: sticky;
   top: 0;
   z-index: 40;
-  background: color-mix(in srgb, var(--th-surface) 88%, transparent);
-  backdrop-filter: blur(12px);
+  // Nearly opaque rather than 88%: at 88% the blur over a dark section
+  // below turned the bar grey, which reads as a smudge rather than a
+  // surface. The remaining translucency is enough to feel like glass
+  // without letting content underneath tint the navigation.
+  background: color-mix(in srgb, var(--th-surface) 94%, transparent);
+  backdrop-filter: saturate(180%) blur(14px);
   border-bottom: 1px solid var(--th-line);
+
+  // Where backdrop-filter is unsupported the bar must still be readable,
+  // so it falls back to a fully opaque surface.
+  @supports not (backdrop-filter: blur(1px)) {
+    background: var(--th-surface);
+  }
 }
 
 .wrap {
@@ -14,6 +24,10 @@
   display: flex;
   align-items: center;
   gap: var(--th-space-6);
+
+  @include mid-break {
+    gap: var(--th-space-3);
+  }
 }
 
 .brand {
@@ -37,8 +51,9 @@
 
 .navLink {
   position: relative;
-  font-size: 15px;
-  font-weight: 500;
+  font-size: var(--th-text-sm);
+  font-weight: var(--th-weight-medium);
+  letter-spacing: var(--th-tracking-normal);
   color: var(--th-ink-soft);
   padding: 6px 0;
 
@@ -50,7 +65,7 @@
     bottom: -2px;
     height: 2px;
     border-radius: 2px;
-    background: var(--th-brand-600);
+    background: var(--th-brand-fill);
     transform: scaleX(0);
     transform-origin: left;
     transition: transform var(--th-transition);
@@ -62,8 +77,8 @@
 }
 
 .navLinkActive {
-  color: var(--th-brand-700);
-  font-weight: 600;
+  color: var(--th-ink);
+  font-weight: var(--th-weight-semibold);
 
   &::after {
     transform: scaleX(1);
@@ -75,6 +90,12 @@
   align-items: center;
   gap: var(--th-space-3);
   margin-left: auto;
+  // Never allow the action row to push the header wider than the viewport.
+  min-width: 0;
+
+  @include mid-break {
+    gap: var(--th-space-1);
+  }
 }
 
 .search {
@@ -93,20 +114,42 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: var(--th-text-xs);
+  font-weight: var(--th-weight-medium);
   color: var(--th-ink-soft);
-  padding: 8px 10px;
-  border-radius: var(--th-radius);
+  min-height: 40px;
+  padding: 0 var(--th-space-3);
+  border-radius: var(--th-radius-pill);
   transition: background-color var(--th-transition), color var(--th-transition);
 
   &:hover {
     background: var(--th-surface-sunken);
-    color: var(--th-brand-700);
+    color: var(--th-ink);
+  }
+}
+
+.themeToggle {
+  flex-shrink: 0;
+
+  // Hidden on a phone, where the drawer carries the full three-state
+  // Appearance control with visible labels. Keeping it here as well was
+  // what pushed the action row 32px past the viewport and gave the whole
+  // page a horizontal scroll — which then clipped the drawer's own left
+  // gutter, because the page stayed scrolled while the drawer was open.
+  @include mid-break {
+    display: none;
   }
 }
 
 .iconLabel {
+  @include mid-break {
+    display: none;
+  }
+}
+
+// The account link also lives in the drawer, so on a phone the action row
+// keeps only what a shopper reaches for mid-task: the cart, and the menu.
+.accountLink {
   @include mid-break {
     display: none;
   }
@@ -123,14 +166,14 @@
   width: 40px;
   height: 40px;
   border: 1px solid var(--th-line);
-  border-radius: var(--th-radius);
+  border-radius: var(--th-radius-pill);
   background: var(--th-surface);
   color: var(--th-ink);
   cursor: pointer;
   transition: border-color var(--th-transition), background var(--th-transition);
 
   &:hover {
-    border-color: var(--th-brand-400);
+    border-color: var(--th-line-strong);
     background: var(--th-surface-sunken);
   }
 
@@ -157,11 +200,15 @@
   margin-bottom: var(--th-space-5);
 }
 
+// 52px rows: comfortably above the 44px touch-target minimum, and far
+// enough apart that a thumb does not hit the neighbour.
 .drawerLink {
-  display: block;
-  padding: var(--th-space-3) 0;
-  font-size: 17px;
-  font-weight: 500;
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  padding: var(--th-space-2) 0;
+  font-size: var(--th-text-body);
+  font-weight: var(--th-weight-medium);
   color: var(--th-ink);
   border-bottom: 1px solid var(--th-line);
 
@@ -171,8 +218,21 @@
 }
 
 .drawerLinkActive {
-  color: var(--th-brand-700);
-  font-weight: 600;
+  color: var(--th-brand-text);
+  font-weight: var(--th-weight-semibold);
+}
+
+.drawerTheme {
+  margin-top: var(--th-space-6);
+  padding-top: var(--th-space-5);
+  border-top: 1px solid var(--th-line);
+}
+
+.drawerThemeLabel {
+  @extend %label;
+  display: block;
+  margin-bottom: var(--th-space-3);
+  color: var(--th-muted);
 }
 
 .drawerCmsNav {

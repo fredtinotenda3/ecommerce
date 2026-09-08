@@ -3,12 +3,22 @@
 import React from 'react'
 import NextImage, { StaticImageData } from 'next/image'
 
-import cssVariables from '../../../cssVariables'
 import { Props as MediaProps } from '../types'
 
 import classes from './index.module.scss'
 
-const { breakpoints } = cssVariables
+/**
+ * Fallback `sizes` for a caller that does not supply one.
+ *
+ * It describes an image that is full-width on a phone, roughly half the
+ * viewport on a tablet and a third on a desktop — a reasonable guess for a
+ * grid tile. It is deliberately NOT `100vw`: the previous implementation
+ * built its sizes list from the breakpoint map, which declared every image
+ * to be the full viewport width at every breakpoint, so a 280px product tile
+ * downloaded the 1280px rendition. Callers that know their layout should
+ * still pass `sizes` explicitly.
+ */
+const DEFAULT_SIZES = '(max-width: 640px) 92vw, (max-width: 1024px) 46vw, 30vw'
 
 export const Image: React.FC<MediaProps> = props => {
   const {
@@ -18,6 +28,8 @@ export const Image: React.FC<MediaProps> = props => {
     resource,
     priority,
     fill,
+    sizes: sizesFromProps,
+    quality = 82,
     src: srcFromProps,
     alt: altFromProps,
   } = props
@@ -40,7 +52,9 @@ export const Image: React.FC<MediaProps> = props => {
 
     width = fullWidth
     height = fullHeight
-    alt = altFromResource
+    // Only take the record's alt when the caller has not supplied one:
+    // a caller with page context often knows better than the media library.
+    alt = altFromProps ?? altFromResource
 
     // Prefer the record's own url, falling back to the filename for
     // records written before urls were stored. Root-relative either way:
@@ -51,14 +65,11 @@ export const Image: React.FC<MediaProps> = props => {
     src = urlFromResource || `/media/${fullFilename}`
   }
 
-  // NOTE: this is used by the browser to determine which image to download at different screen sizes
-  const sizes = Object.entries(breakpoints)
-    .map(([, value]) => `(max-width: ${value}px) ${value}px`)
-    .join(', ')
+  if (!src) return null
 
   return (
     <NextImage
-      className={[isLoading && classes.placeholder, classes.image, imgClassName]
+      className={[isLoading && classes.loading, classes.image, imgClassName]
         .filter(Boolean)
         .join(' ')}
       src={src}
@@ -73,8 +84,11 @@ export const Image: React.FC<MediaProps> = props => {
       fill={fill}
       width={!fill ? width : undefined}
       height={!fill ? height : undefined}
-      sizes={sizes}
+      sizes={sizesFromProps || DEFAULT_SIZES}
+      quality={quality}
       priority={priority}
+      // Anything not marked priority is below the fold by definition here.
+      loading={priority ? undefined : 'lazy'}
     />
   )
 }

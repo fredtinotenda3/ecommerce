@@ -352,6 +352,65 @@ const SEED_PAGES: SeedPage[] = [
       'Items stay in this browser until you sign in, after which your cart follows your account across devices.',
     ],
   },
+
+  // --- The pages the footer links to ------------------------------------
+  //
+  // These exist because the footer and the 404 page link to them. A
+  // storefront whose own footer leads to four 404s reads as unfinished, and
+  // the content below is the information a customer actually asks for
+  // before buying an expensive device.
+  {
+    slug: 'delivery-and-returns',
+    title: 'Delivery & returns',
+    metaTitle: 'Delivery & returns | Tech Haven',
+    metaDescription:
+      'Free next-day delivery on Tech Haven orders over $150, nationwide. Thirty days to change your mind on anything unused and in its packaging.',
+    heroHeading: 'Delivery & returns',
+    heroBody: [
+      'Orders placed before 2pm on a working day are dispatched the same afternoon. Delivery is free on orders over $150 anywhere in Zimbabwe; below that we quote the courier rate at checkout rather than marking it up.',
+      'Harare deliveries usually arrive the next working day. Bulawayo, Mutare and Gweru are typically two days. Somewhere else? Ask us before you order and we will give you a real date rather than an optimistic one.',
+      'You have thirty days to change your mind. Anything unused and in its original packaging can come back for a full refund, and we cover the return courier if the fault is ours. Devices that have been set up and used are still covered by the warranty below, but are no longer returnable as new stock.',
+    ],
+  },
+  {
+    slug: 'warranty',
+    title: 'Warranty',
+    metaTitle: 'Two-year warranty | Tech Haven',
+    metaDescription:
+      'Every device sold by Tech Haven carries a two-year local warranty on top of the manufacturer cover, handled in Harare.',
+    heroHeading: 'Two years, handled locally',
+    heroBody: [
+      'Every device we sell carries a two-year Tech Haven warranty in addition to the manufacturer cover. It is handled here in Harare, so a repair does not mean shipping your laptop abroad and waiting a month for news.',
+      'The warranty covers manufacturing defects and hardware failure under normal use. It does not cover accidental damage, liquid damage, or a device that has been opened by someone else — those we can still repair, but as a quoted job rather than a warranty claim.',
+      'Keep your order number. That is all we need to look up a purchase; there is no card to lose and no registration to remember.',
+    ],
+  },
+  {
+    slug: 'about',
+    title: 'About Tech Haven',
+    metaTitle: 'About Tech Haven',
+    metaDescription:
+      'Tech Haven is a Harare technology retailer selling genuine Apple hardware with a two-year local warranty and advice you can act on.',
+    heroHeading: 'A shop, not a warehouse',
+    heroBody: [
+      'Tech Haven sells Apple hardware in Harare. Everything is sealed, genuine stock with local warranty paperwork in the box — not grey imports, and not refurbished units described as new.',
+      'The part we care most about is the advice. If the cheaper model does what you need, we will say so; if the machine you are looking at will be too slow for the work you have described, we will say that too. We would rather lose a sale than have it come back in a month.',
+      'Come and see the demo units before you commit, especially for anything you are going to wear or carry every day.',
+    ],
+  },
+  {
+    slug: 'contact',
+    title: 'Contact us',
+    metaTitle: 'Contact Tech Haven',
+    metaDescription:
+      'Talk to Tech Haven in Harare — by phone, by email, or in the shop on Samora Machel Avenue, Monday to Saturday.',
+    heroHeading: 'Talk to someone who has used it',
+    heroBody: [
+      'The fastest way to reach us is the phone, Monday to Saturday, 08:00 to 18:00 CAT: +263 77 000 0000. Email reaches the same people at support@techhaven.example and is usually answered the same working day.',
+      'The shop is at 14 Samora Machel Avenue, Harare. Demo units for every current model are set up and switched on — you are welcome to spend as long as you like with one before deciding.',
+      'For an order already placed, quote the order number and we can tell you exactly where it is.',
+    ],
+  },
 ]
 
 const seedPages = async (connection: Connection): Promise<Map<string, Types.ObjectId>> => {

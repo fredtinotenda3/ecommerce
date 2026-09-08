@@ -2,18 +2,26 @@
 //
 // Tech Haven's design tokens.
 //
-// One place defines the palette, spacing rhythm, radii, shadows and
-// motion. Components reference these rather than hard-coded values, so a
-// brand change is an edit here rather than a search across the codebase.
+// One place defines the palette, the type scale, the spacing rhythm, radii,
+// shadows and motion. Components reference these rather than hard-coded
+// values, so a brand change is an edit here rather than a search across the
+// codebase.
 //
 // The existing `--color-*` scales (colors.scss) are left alone: they back
 // the older theme layer. These tokens sit on top and are what new and
 // reworked components use.
 
 :root {
+  color-scheme: light;
+
   // --- Brand ------------------------------------------------------------
-  // Indigo carries the brand; amber is the accent used sparingly for deals
-  // and highlights. Both are checked for contrast against ink and surface.
+  // Indigo carries the brand; amber is the accent, used sparingly for deals
+  // and highlights.
+  //
+  // The 50–200 steps are TINTS — they are backgrounds, not text — which is
+  // why they are redefined wholesale for the dark theme rather than left
+  // alone. A light lavender panel on a near-black page is the single most
+  // common way a "dark mode" gives itself away as an afterthought.
   --th-brand-50: #eef2ff;
   --th-brand-100: #e0e7ff;
   --th-brand-200: #c7d2fe;
@@ -25,36 +33,99 @@
   --th-brand-800: #3730a3;
   --th-brand-900: #312e81;
 
+  /// The brand colour at the weight that is legible as TEXT on the page
+  /// background. Separate from --th-brand-600 because the dark theme needs
+  /// a lighter step for text while keeping a saturated step for fills.
+  --th-brand-text: #4338ca;
+  /// The brand colour used as a solid fill behind white text.
+  --th-brand-fill: #4f46e5;
+  --th-brand-fill-hover: #4338ca;
+  /// Text/icon colour that sits on --th-brand-fill.
+  --th-on-brand: #ffffff;
+
   --th-accent-100: #fef3c7;
   --th-accent-300: #fcd34d;
   --th-accent-500: #f59e0b;
   --th-accent-700: #b45309;
+  /// Amber legible as text on the page background.
+  --th-accent-text: #b45309;
 
   // --- Neutrals ---------------------------------------------------------
   --th-ink: #0f1115;
   --th-ink-soft: #333844;
-  --th-muted: #6b7280;
-  --th-muted-soft: #9ca3af;
-  --th-line: #e5e7eb;
-  --th-line-strong: #d1d5db;
+  --th-muted: #5b6472;
+  --th-muted-soft: #8b94a3;
+  --th-line: #e6e8ec;
+  --th-line-strong: #d3d7de;
   --th-surface: #ffffff;
-  --th-surface-subtle: #f8fafc;
-  --th-surface-sunken: #f1f5f9;
+  --th-surface-subtle: #f7f8fa;
+  --th-surface-sunken: #eef0f4;
   --th-inverse: #0b0d12;
+  /// Text on an inverse (near-black) surface.
+  --th-on-inverse: #f5f6f8;
+  --th-on-inverse-muted: rgba(245, 246, 248, 0.68);
+  /// Hairline and raised fill on an inverse surface.
+  --th-inverse-line: rgba(255, 255, 255, 0.14);
+  --th-inverse-raised: rgba(255, 255, 255, 0.07);
 
   // --- Status -----------------------------------------------------------
-  --th-success: #15803d;
-  --th-success-bg: #dcfce7;
-  --th-warning: #b45309;
-  --th-warning-bg: #fef3c7;
-  --th-danger: #b91c1c;
-  --th-danger-bg: #fee2e2;
+  --th-success: #157347;
+  --th-success-bg: #e7f6ed;
+  --th-warning: #a15c07;
+  --th-warning-bg: #fdf3d7;
+  --th-danger: #b3261e;
+  --th-danger-bg: #fdeceb;
   --th-info: #1d4ed8;
-  --th-info-bg: #dbeafe;
+  --th-info-bg: #e8effd;
+
+  // --- Typography -------------------------------------------------------
+  //
+  // A modular scale, not a pile of one-off font sizes. Display steps are
+  // fluid (clamp) so a headline is dramatic on a wide screen without
+  // overflowing a phone; body steps are fixed, because body text that grows
+  // with the viewport is harder to read, not easier.
+  //
+  // Tracking tightens as size increases — the single change that most makes
+  // large type read as designed rather than as a scaled-up paragraph — and
+  // line-height loosens as size decreases.
+  --th-font-sans: var(--font-jost), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+
+  --th-text-display: clamp(2.75rem, 1.6rem + 4.6vw, 5.25rem);
+  --th-text-h1: clamp(2.25rem, 1.5rem + 3vw, 3.75rem);
+  --th-text-h2: clamp(1.75rem, 1.3rem + 1.7vw, 2.5rem);
+  --th-text-h3: clamp(1.3rem, 1.15rem + 0.6vw, 1.625rem);
+  --th-text-h4: 1.125rem;
+  --th-text-lead: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
+  --th-text-body: 1rem;
+  --th-text-sm: 0.9375rem;
+  --th-text-xs: 0.8125rem;
+  --th-text-micro: 0.6875rem;
+
+  --th-leading-tight: 1.04;
+  --th-leading-snug: 1.18;
+  --th-leading-normal: 1.5;
+  --th-leading-relaxed: 1.65;
+
+  --th-tracking-display: -0.035em;
+  --th-tracking-heading: -0.022em;
+  --th-tracking-normal: -0.006em;
+  --th-tracking-wide: 0.02em;
+  --th-tracking-caps: 0.13em;
+
+  --th-weight-regular: 400;
+  --th-weight-medium: 500;
+  --th-weight-semibold: 600;
+  --th-weight-bold: 700;
+
+  /// Comfortable measure for running text. Over-long lines are the most
+  /// common readability failure on wide screens.
+  --th-measure: 68ch;
+  --th-measure-narrow: 46ch;
 
   // --- Spacing ----------------------------------------------------------
-  // A 4px rhythm. Sections use --th-section so vertical spacing between
-  // page bands is consistent everywhere.
+  // A 4px rhythm. Bands use --th-section, so vertical spacing between page
+  // sections is one decision rather than forty.
   --th-space-1: 4px;
   --th-space-2: 8px;
   --th-space-3: 12px;
@@ -64,65 +135,124 @@
   --th-space-8: 32px;
   --th-space-10: 40px;
   --th-space-12: 48px;
+  --th-space-14: 56px;
   --th-space-16: 64px;
   --th-space-20: 80px;
-  --th-section: 96px;
+  --th-space-24: 96px;
+  --th-space-32: 128px;
+
+  /// Space between major page bands. Fluid, so a wide screen breathes and a
+  /// phone does not spend half a viewport on emptiness.
+  --th-section: clamp(4.5rem, 3rem + 5vw, 8rem);
+  /// The tighter version, for a band that belongs with the one above it.
+  --th-section-tight: clamp(3rem, 2rem + 3vw, 5rem);
 
   // --- Radii, shadows, motion ------------------------------------------
   --th-radius-sm: 6px;
   --th-radius: 10px;
   --th-radius-lg: 16px;
   --th-radius-xl: 24px;
+  --th-radius-2xl: 32px;
   --th-radius-pill: 999px;
 
-  --th-shadow-sm: 0 1px 2px rgba(15, 17, 21, 0.06);
-  --th-shadow: 0 4px 16px rgba(15, 17, 21, 0.07);
-  --th-shadow-lg: 0 16px 48px rgba(15, 17, 21, 0.12);
+  // Two-layer shadows: a tight contact shadow plus a wide ambient one. A
+  // single large blur reads as a grey smudge; this reads as lift.
+  --th-shadow-sm: 0 1px 2px rgba(15, 17, 21, 0.05), 0 1px 3px rgba(15, 17, 21, 0.04);
+  --th-shadow: 0 2px 4px rgba(15, 17, 21, 0.04), 0 8px 24px rgba(15, 17, 21, 0.07);
+  --th-shadow-lg: 0 4px 8px rgba(15, 17, 21, 0.05), 0 24px 56px rgba(15, 17, 21, 0.13);
+  --th-shadow-brand: 0 6px 16px rgba(79, 70, 229, 0.22), 0 2px 4px rgba(79, 70, 229, 0.12);
 
-  --th-transition: 160ms cubic-bezier(0.4, 0, 0.2, 1);
+  --th-transition: 180ms cubic-bezier(0.32, 0.72, 0, 1);
+  --th-transition-slow: 420ms cubic-bezier(0.32, 0.72, 0, 1);
 
-  // Focus ring. Defined once because every interactive element must use
-  // the same one — an inconsistent focus indicator is a keyboard user's
-  // problem, not a styling detail.
-  // Two forms of the same indicator. `--th-focus-ring` is a box-shadow
-  // value (for inputs, where an outline would sit outside the field's own
-  // border radius); `--th-focus-outline` is an outline shorthand. Using one
-  // where the other belongs silently produces no focus indicator at all,
-  // so they are named for the property they go in.
+  // Focus indicator. Two forms of the same thing, named for the property
+  // each belongs in — `--th-focus-ring` is a box-shadow value (for inputs,
+  // where an outline would sit outside the field's own radius) and
+  // `--th-focus-outline` is an outline shorthand. Using one where the other
+  // belongs silently produces no focus indicator at all.
   --th-focus-ring: 0 0 0 3px var(--th-brand-200);
   --th-focus-outline: 2px solid var(--th-brand-600);
 
-  --th-header-height: 76px;
+  --th-header-height: 72px;
 }
 
+// ---------------------------------------------------------------------------
+// Dark theme
+//
+// Designed, not inverted. Three things separate the two:
+//
+//   1. Surfaces get LIGHTER as they come forward (subtle page → surface →
+//      sunken/raised), the opposite of the light theme, where raised
+//      surfaces are white and the page behind them is tinted. Reusing the
+//      light theme's direction is what makes a dark card look like a hole.
+//   2. The brand tints (50–200) are re-derived as dark, desaturated
+//      indigos. They are backgrounds, so here they must be dark.
+//   3. Saturated colours are lightened for text use. A #157347 green on a
+//      #15181f page is unreadable; fill colours stay saturated, because
+//      white text sits on them rather than the page behind them.
+// ---------------------------------------------------------------------------
+
 :root[data-theme='dark'] {
-  --th-ink: #f5f6f8;
-  --th-ink-soft: #d7dae1;
-  --th-muted: #9aa1ad;
-  --th-muted-soft: #767d89;
-  --th-line: #262a33;
-  --th-line-strong: #333944;
-  --th-surface: #14171d;
-  --th-surface-subtle: #1a1e26;
-  --th-surface-sunken: #10131a;
+  color-scheme: dark;
+
+  --th-brand-50: #191c2f;
+  --th-brand-100: #1e2238;
+  --th-brand-200: #2f3459;
+  --th-brand-300: #4c53a0;
+  --th-brand-400: #8288f0;
+  --th-brand-500: #8288f0;
+  --th-brand-600: #7c83f5;
+  --th-brand-700: #9aa0ff;
+  --th-brand-800: #2a2f56;
+  --th-brand-900: #22264a;
+
+  --th-brand-text: #a5abff;
+  --th-brand-fill: #5b62e8;
+  --th-brand-fill-hover: #6f76f0;
+  --th-on-brand: #ffffff;
+
+  --th-accent-100: #2e2410;
+  --th-accent-300: #6b5216;
+  --th-accent-500: #f0b429;
+  --th-accent-700: #c98a12;
+  --th-accent-text: #f2c14e;
+
+  --th-ink: #f2f4f7;
+  --th-ink-soft: #d2d6de;
+  --th-muted: #9ba3b0;
+  --th-muted-soft: #737b88;
+  --th-line: #272b34;
+  --th-line-strong: #383e4a;
+  // Surfaces get lighter as they come forward.
+  --th-surface: #15181f;
+  --th-surface-subtle: #101319;
+  --th-surface-sunken: #1c2029;
   --th-inverse: #05070b;
+  --th-on-inverse: #f2f4f7;
+  --th-on-inverse-muted: rgba(242, 244, 247, 0.66);
+  --th-inverse-line: rgba(255, 255, 255, 0.1);
+  --th-inverse-raised: rgba(255, 255, 255, 0.05);
 
-  --th-success-bg: #0f2e1c;
-  --th-warning-bg: #33260a;
-  --th-danger-bg: #3a1414;
-  --th-info-bg: #0f1f3d;
+  --th-success: #4ade80;
+  --th-success-bg: #10291c;
+  --th-warning: #fbbf24;
+  --th-warning-bg: #2c2210;
+  --th-danger: #fb7185;
+  --th-danger-bg: #2e1418;
+  --th-info: #7dabff;
+  --th-info-bg: #101c33;
 
-  --th-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
-  --th-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
-  --th-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.55);
+  --th-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.6);
+  --th-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.45);
+  --th-shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.45), 0 24px 56px rgba(0, 0, 0, 0.6);
+  --th-shadow-brand: 0 6px 20px rgba(91, 98, 232, 0.35);
 
-  --th-focus-ring: 0 0 0 3px var(--th-brand-800);
-  --th-focus-outline: 2px solid var(--th-brand-300);
+  --th-focus-ring: 0 0 0 3px rgba(124, 131, 245, 0.45);
+  --th-focus-outline: 2px solid var(--th-brand-400);
 }
 
 @media (max-width: 1024px) {
   :root {
-    --th-section: 64px;
-    --th-header-height: 64px;
+    --th-header-height: 62px;
   }
 }
