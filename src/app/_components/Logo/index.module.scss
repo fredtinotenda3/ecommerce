@@ -1,0 +1,24 @@
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  line-height: 1;
+}
+
+.mark {
+  flex-shrink: 0;
+  color: var(--th-brand-600);
+}
+
+.wordmark {
+  width: auto;
+  height: 22px;
+}
+
+.dark {
+  .mark {
+    color: #fff;
+    --th-logo-mark-ink: #0b0d12;
+    --th-logo-mark-accent: #4f46e5;
+  }
+}

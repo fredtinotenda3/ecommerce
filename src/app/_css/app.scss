@@ -1,5 +1,6 @@
 @use './queries.scss' as *;
 @use './colors.scss' as *;
+@use './brand.scss' as *;
 @use './type.scss' as *;
 @import "./theme.scss";
 
@@ -8,17 +9,20 @@
   --font-body: 'Jost', sans-serif;
   --font-jost: 'Jost', sans-serif;
 
-  --gutter-h: 180px;
-  --block-padding: 120px;
+  // Content is centred in a max-width container rather than pushed in by a
+  // fixed gutter, so the layout holds together on ultrawide displays
+  // instead of stretching a product grid across 2500px.
+  --gutter-h: 32px;
+  --content-max: 1280px;
+  --block-padding: 80px;
 
   @include large-break {
-    --gutter-h: 144px;
-    --block-padding: 96px;
+    --block-padding: 72px;
   }
 
   @include mid-break {
-    --gutter-h: 24px;
-    --block-padding: 60px;
+    --gutter-h: 20px;
+    --block-padding: 56px;
   }
 }
 
@@ -48,7 +52,8 @@ body {
   font-family: var(--font-jost);
   margin: 0;
   padding: 0;
-  color: var(--color-dark-500);
+  color: var(--th-ink);
+  background: var(--th-surface);
 
   display: flex;
   flex-flow: column;
@@ -59,13 +64,13 @@ body {
 }
 
 ::selection {
-  background: var(--color-dark-500);
-  color: var(--color-base-800);
+  background: var(--th-brand-500);
+  color: #fff;
 }
 
 ::-moz-selection {
-  background: var(--color-dark-50);
-  color: var(--color-base-800);
+  background: var(--th-brand-500);
+  color: #fff;
 }
 
 img {
@@ -110,20 +115,90 @@ ol {
 }
 
 a {
-  color: var(--color-dark-500);
+  color: var(--th-ink);
   text-decoration: none;
+  transition: color var(--th-transition);
 
-  &:focus {
-    opacity: .8;
-    outline: none;
+  &:hover {
+    color: var(--th-brand-600);
   }
+}
 
-  &:active {
-    opacity: .7;
-    outline: none;
-  }
+// One focus indicator for everything interactive. `:focus-visible` keeps
+// it off mouse clicks while guaranteeing it for keyboard users — the
+// previous rule removed the outline entirely, which left keyboard
+// navigation with nothing to follow.
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--th-brand-600);
+  outline-offset: 2px;
+  border-radius: var(--th-radius-sm);
 }
 
 svg {
   vertical-align: middle;
+}
+
+// Respect a reduced-motion preference globally rather than per-component.
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+// Skip link: first tab stop on every page.
+.th-skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: var(--th-space-3) var(--th-space-5);
+  background: var(--th-ink);
+  color: #fff;
+  border-radius: 0 0 var(--th-radius) 0;
+  font-weight: 600;
+
+  &:focus {
+    left: 0;
+    color: #fff;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Global keyframes
+//
+// Declared here, once, rather than in `utilities.scss` — that file is
+// forwarded into every CSS module, so a `@keyframes` block in it would be
+// emitted dozens of times. The placeholders in `utilities.scss` reference
+// these by name.
+// ---------------------------------------------------------------------------
+
+@keyframes th-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes th-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }

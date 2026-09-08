@@ -1,0 +1,45 @@
+@import '../../../_css/common';
+
+.section {
+  padding: 0 0 var(--th-section);
+}
+
+.panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--th-space-10);
+  padding: var(--th-space-12);
+  border-radius: var(--th-radius-xl);
+  background:
+    radial-gradient(80% 140% at 0% 0%, var(--th-brand-100) 0%, transparent 60%),
+    var(--th-surface-subtle);
+  border: 1px solid var(--th-line);
+
+  @include large-break {
+    grid-template-columns: 100%;
+    gap: var(--th-space-6);
+    padding: var(--th-space-8) var(--th-space-6);
+  }
+}
+
+.copy {
+  max-width: 40ch;
+}
+
+.heading {
+  margin: 0 0 var(--th-space-3);
+  font-size: clamp(1.5rem, 2.6vw, 2.125rem);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.lede {
+  margin: 0;
+  color: var(--th-muted);
+  line-height: 1.65;
+}
+
+.form {
+  min-width: 0;
+}

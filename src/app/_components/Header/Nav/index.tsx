@@ -1,38 +1,34 @@
 'use client'
 
-import React from 'react'
-import Link from 'next/link'
+// src/app/_components/Header/Nav/index.tsx
+//
+// Renders whatever nav items are configured in the Header global.
+//
+// These are supplementary: the fixed shop navigation lives in
+// `PRIMARY_NAV` (constants/brand.ts) and is rendered by the header itself,
+// so an empty or half-configured Header global cannot leave the site
+// without navigation.
 
-import { useAuth } from '../../../_providers/Auth'
+import React from 'react'
+
 import { StorefrontHeader } from '../../../_types/storefront'
-import { Button } from '../../Button'
-import { CartLink } from '../../CartLink'
 import { CMSLink } from '../../Link'
 
 import classes from './index.module.scss'
 
-// Reads only `.navItems[].link`, spread straight into `CMSLink`.
-export const HeaderNav: React.FC<{ header: StorefrontHeader | null }> = ({ header }) => {
+export const HeaderNav: React.FC<{ header: StorefrontHeader | null; className?: string }> = ({
+  header,
+  className,
+}) => {
   const navItems = header?.navItems || []
-  const { user } = useAuth()
+
+  if (navItems.length === 0) return null
 
   return (
-    <nav className={[classes.nav, user === undefined && classes.hide].filter(Boolean).join(' ')}>
-      {navItems.map(({ link }, i) => {
-        return <CMSLink key={i} {...link} appearance="none" />
-      })}
-      <CartLink />
-      {user && <Link href="/account">Account</Link>}
-      {!user && (
-        <Button
-          el="link"
-          href="/login"
-          label="Login"
-          appearance="primary"
-          onClick={() => (window.location.href = '/login')}
-        />
-      )}
-      {user && <CartLink />}
+    <nav className={[classes.nav, className].filter(Boolean).join(' ')} aria-label="More">
+      {navItems.map(({ link }, i) => (
+        <CMSLink key={i} {...link} appearance="none" />
+      ))}
     </nav>
   )
 }

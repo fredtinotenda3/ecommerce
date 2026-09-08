@@ -1,0 +1,53 @@
+.form {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.icon {
+  position: absolute;
+  left: 12px;
+  color: var(--th-muted);
+  pointer-events: none;
+}
+
+.input {
+  width: 100%;
+  padding: 10px 14px 10px 38px;
+  border: 1px solid var(--th-line);
+  border-radius: var(--th-radius-pill);
+  background: var(--th-surface-subtle);
+  color: var(--th-ink);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  transition: border-color var(--th-transition), box-shadow var(--th-transition),
+    background var(--th-transition);
+
+  &::placeholder {
+    color: var(--th-muted-soft);
+  }
+
+  &:hover {
+    border-color: var(--th-line-strong);
+  }
+
+  &:focus {
+    outline: none;
+    background: var(--th-surface);
+    border-color: var(--th-brand-500);
+    box-shadow: var(--th-focus-ring);
+  }
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

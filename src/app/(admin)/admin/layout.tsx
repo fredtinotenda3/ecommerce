@@ -12,9 +12,13 @@
 // through /api/auth/login.
 
 import type { ReactNode } from 'react'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { getAdminAccess } from '../../_api/adminAccess'
+import { AdminNav } from './_components/AdminNav'
+
+import classes from './_components/admin.module.scss'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,24 +30,29 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   }
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '2rem 1.5rem', fontFamily: 'system-ui, sans-serif' }}>
-      <header style={{ marginBottom: '1.5rem', borderBottom: '1px solid #ddd', paddingBottom: '1rem' }}>
-        <strong>Admin</strong>
-        <span style={{ marginLeft: '0.75rem', color: '#666' }}>
-          Signed in as {access.user?.email}
-        </span>
-        <nav style={{ marginTop: '0.75rem', display: 'flex', gap: '1rem' }}>
-          <a href="/admin/products">Products</a>
-          <a href="/admin/categories">Categories</a>
-          <a href="/admin/orders">Orders</a>
-          <a href="/admin/customers">Customers</a>
-          <a href="/admin/pages">Pages</a>
-          <a href="/admin/media">Media</a>
-          <a href="/admin/globals">Globals</a>
-          <a href="/admin/redirects">Redirects</a>
-        </nav>
-      </header>
-      <main>{children}</main>
+    <div className={classes.shell}>
+      <div className={classes.topBar}>
+        <div className={classes.topBarInner}>
+          <Link href="/admin" className={classes.brand}>
+            Tech Haven
+            <span className={classes.brandBadge}>Admin</span>
+          </Link>
+
+          <div className={classes.identity}>
+            <span>{access.user?.email}</span>
+            {/* A plain anchor, not a Link: leaving the admin should be a
+                full navigation that discards any client cache of admin
+                data. */}
+            <a href="/" className={classes.button}>
+              View store
+            </a>
+          </div>
+        </div>
+
+        <AdminNav />
+      </div>
+
+      <main className={classes.content}>{children}</main>
     </div>
   )
 }

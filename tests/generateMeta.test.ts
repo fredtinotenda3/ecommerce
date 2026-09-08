@@ -13,6 +13,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest'
 
+import { SITE_NAME, SITE_OG_IMAGE, SITE_TAGLINE } from '../src/app/constants/brand'
 import { generateMeta } from '../src/app/_utilities/generateMeta'
 
 const ORIGINAL_SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL
@@ -26,8 +27,12 @@ describe('generateMeta', () => {
 
   it('falls back to a generic title when no meta.title is present', async () => {
     const result = await generateMeta({ doc: {} })
-    expect(result.title).toEqual('Store')
-    expect(result.openGraph?.title).toEqual('Store')
+    // Asserted against the brand constants rather than a copy of the
+    // string, so renaming the shop does not need this test edited — only
+    // that the fallback still comes from one place.
+    const expected = `${SITE_NAME} — ${SITE_TAGLINE}`
+    expect(result.title).toEqual(expected)
+    expect(result.openGraph?.title).toEqual(expected)
   })
 
   it('uses meta.title and meta.description when present', async () => {
@@ -60,12 +65,18 @@ describe('generateMeta', () => {
   it('does not set an ogImage when meta.image is an unpopulated id string', async () => {
     const result = await generateMeta({ doc: { meta: { image: 'media-id-123' } } })
     // falls back to mergeOpenGraph's default images
-    expect(result.openGraph?.images).toEqual([{ url: '/static-image.jpg' }])
+    // Falls back to the site-wide social card. Only the url is asserted:
+    // the default also carries dimensions and alt text, which are a
+    // presentation detail this test should not freeze.
+    expect(result.openGraph?.images).toMatchObject([{ url: SITE_OG_IMAGE }])
   })
 
   it('does not set an ogImage when meta.image is absent', async () => {
     const result = await generateMeta({ doc: {} })
-    expect(result.openGraph?.images).toEqual([{ url: '/static-image.jpg' }])
+    // Falls back to the site-wide social card. Only the url is asserted:
+    // the default also carries dimensions and alt text, which are a
+    // presentation detail this test should not freeze.
+    expect(result.openGraph?.images).toMatchObject([{ url: SITE_OG_IMAGE }])
   })
 
   it('accepts a plain narrow object with none of the other Page/Product fields', async () => {

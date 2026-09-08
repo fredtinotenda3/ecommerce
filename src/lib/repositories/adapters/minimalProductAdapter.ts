@@ -18,7 +18,7 @@
 import type { StorefrontProductCard } from '../../../app/_types/storefront'
 import type { Media as NativeMedia, Product as NativeProduct } from '../../domain/types'
 import { toStorefrontMedia } from './mediaStorefrontAdapter'
-import { toStorefrontPrice } from './priceStorefrontAdapter'
+import { toStorefrontCompareAtPrice, toStorefrontPrice } from './priceStorefrontAdapter'
 
 export const buildMinimalStorefrontProduct = (
   product: NativeProduct,
@@ -28,6 +28,8 @@ export const buildMinimalStorefrontProduct = (
   slug: product.slug,
   title: product.title,
   price: toStorefrontPrice(product),
+  compareAtPrice: toStorefrontCompareAtPrice(product),
+  createdAt: product.createdAt ? new Date(product.createdAt).toISOString() : undefined,
   meta: {
     title: product.meta.title,
     description: product.meta.description,

@@ -90,6 +90,16 @@ const buildListQuery = (filter: ProductListFilter): FilterQuery<ProductDocument>
   }
   if (filter.ids?.length) query._id = { $in: filter.ids }
 
+  if (filter.search) {
+    // The term is escaped before it reaches the regex engine: an
+    // unescaped user string is both a correctness bug (a stray `(` throws)
+    // and a denial-of-service vector (a catastrophic backtracking pattern
+    // against every document in the collection).
+    const escaped = filter.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const term = new RegExp(escaped, 'i')
+    query.$or = [{ title: term }, { 'meta.description': term }]
+  }
+
   return query
 }
 

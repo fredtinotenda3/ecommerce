@@ -33,6 +33,14 @@ export class FakeProductRepository implements ProductRepository {
       results = results.filter(p => p.categories.includes(filter.categoryId!))
     }
     if (filter.ids) results = results.filter(p => filter.ids!.includes(p.id))
+    if (filter.search) {
+      const term = filter.search.toLowerCase()
+      results = results.filter(
+        p =>
+          (p.title || '').toLowerCase().includes(term) ||
+          (p.meta?.description || '').toLowerCase().includes(term),
+      )
+    }
     return results
   }
 

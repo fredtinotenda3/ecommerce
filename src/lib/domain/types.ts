@@ -91,6 +91,13 @@ export interface ProductListFilter {
    * boxes in a facet list expects). */
   categoryIds?: string[]
   ids?: string[]
+  /** Free-text search over the product title and meta description. Matched
+   * case-insensitively as a substring, not as a ranked full-text query:
+   * the catalogue is small enough that a scan is cheaper than maintaining a
+   * text index, and substring matching is what a shopper typing "macbook"
+   * into a store search box expects. Callers are responsible for trimming
+   * and length-capping the term. */
+  search?: string
   limit?: number
   page?: number
   sort?: ProductSort

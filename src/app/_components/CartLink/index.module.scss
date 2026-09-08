@@ -1,9 +1,46 @@
+@use '../../_css/queries.scss' as *;
+
 .cartLink {
-  cursor: pointer;
-  display: flex;
+  position: relative;
+  display: inline-flex;
   align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: var(--th-radius);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--th-ink-soft);
+  transition: background-color var(--th-transition), color var(--th-transition);
+
+  &:hover {
+    background: var(--th-surface-sunken);
+    color: var(--th-brand-700);
+  }
 }
 
-.quantity {
-  margin-left: 2px;
+.iconWrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: var(--th-radius-pill);
+  background: var(--th-brand-600);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 17px;
+  text-align: center;
+}
+
+.label {
+  @include mid-break {
+    display: none;
+  }
 }

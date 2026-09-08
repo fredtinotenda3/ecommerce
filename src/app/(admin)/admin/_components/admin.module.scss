@@ -1,0 +1,421 @@
+@import '../../../_css/common';
+
+// ---------------------------------------------------------------------------
+// The admin's stylesheet.
+//
+// One module rather than a file per component: the admin is a dozen screens
+// built from the same eight primitives (shell, panel, table, stat, badge,
+// button, field, bar), and splitting eight primitives across a dozen files
+// buys indirection rather than isolation.
+//
+// It reuses the storefront's design tokens, so the two cannot drift into
+// different greys, and it inherits dark-mode support for free.
+// ---------------------------------------------------------------------------
+
+// --- Shell -----------------------------------------------------------------
+
+.shell {
+  min-height: 100vh;
+  background-color: var(--th-surface-subtle);
+  color: var(--th-ink);
+}
+
+.topBar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background-color: var(--th-surface);
+  border-bottom: 1px solid var(--th-line);
+}
+
+.topBarInner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--th-space-4) var(--th-space-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--th-space-4);
+  flex-wrap: wrap;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--th-space-3);
+  font-weight: 700;
+  text-decoration: none;
+  color: inherit;
+}
+
+.brandBadge {
+  @extend %th-pill;
+  background-color: var(--th-brand-50);
+  color: var(--th-brand-700);
+  border: 1px solid var(--th-brand-100);
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: var(--th-space-4);
+  font-size: 14px;
+  color: var(--th-muted);
+}
+
+.nav {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 var(--th-space-6) var(--th-space-3);
+  display: flex;
+  gap: var(--th-space-1);
+  overflow-x: auto;
+
+  // Horizontal scroll rather than a wrap on narrow screens: eight items
+  // wrapping to three rows pushes the content off a phone entirely.
+  scrollbar-width: thin;
+}
+
+.navLink {
+  padding: var(--th-space-2) var(--th-space-4);
+  border-radius: var(--th-radius-pill);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--th-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color var(--th-transition),
+    color var(--th-transition);
+
+  &:hover {
+    background-color: var(--th-surface-sunken);
+    color: var(--th-ink);
+  }
+}
+
+.navLinkActive {
+  background-color: var(--th-brand-600);
+  color: #fff;
+
+  &:hover {
+    background-color: var(--th-brand-700);
+    color: #fff;
+  }
+}
+
+.content {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--th-space-8) var(--th-space-6) var(--th-space-16);
+}
+
+// --- Page header -----------------------------------------------------------
+
+.pageHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--th-space-4);
+  margin-bottom: var(--th-space-6);
+  flex-wrap: wrap;
+}
+
+.pageTitle {
+  margin: 0;
+  font-size: 1.75rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.pageSubtitle {
+  margin: var(--th-space-1) 0 0;
+  color: var(--th-muted);
+  font-size: 14px;
+}
+
+// --- Panels and stats ------------------------------------------------------
+
+.panel {
+  @extend %th-card;
+  padding: var(--th-space-6);
+}
+
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--th-space-4);
+  margin-bottom: var(--th-space-8);
+}
+
+.stat {
+  @extend %th-card;
+  padding: var(--th-space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--th-space-1);
+}
+
+.statLabel {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--th-muted);
+}
+
+.statValue {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.statHint {
+  font-size: 13px;
+  color: var(--th-muted);
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--th-space-4);
+}
+
+.sectionCard {
+  @extend %th-card;
+  padding: var(--th-space-5);
+  text-decoration: none;
+  color: inherit;
+  transition:
+    border-color var(--th-transition),
+    box-shadow var(--th-transition),
+    transform var(--th-transition);
+
+  &:hover {
+    border-color: var(--th-brand-300);
+    box-shadow: var(--th-shadow);
+    transform: translateY(-2px);
+  }
+
+  strong {
+    display: block;
+    margin-bottom: var(--th-space-2);
+  }
+
+  p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--th-muted);
+    line-height: 1.5;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+
+    &:hover {
+      transform: none;
+    }
+  }
+}
+
+// --- Table -----------------------------------------------------------------
+
+// The wrapper scrolls, not the page: an eight-column table on a phone must
+// not give the whole document a horizontal scrollbar.
+.tableWrap {
+  @extend %th-card;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  min-width: 640px;
+}
+
+.th {
+  text-align: left;
+  padding: var(--th-space-3) var(--th-space-4);
+  border-bottom: 1px solid var(--th-line);
+  background-color: var(--th-surface-subtle);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--th-muted);
+  white-space: nowrap;
+}
+
+.td {
+  padding: var(--th-space-3) var(--th-space-4);
+  border-bottom: 1px solid var(--th-line);
+  vertical-align: middle;
+}
+
+.row {
+  transition: background-color var(--th-transition);
+
+  &:hover {
+    background-color: var(--th-surface-subtle);
+  }
+
+  &:last-child .td {
+    border-bottom: 0;
+  }
+}
+
+.rowSelected {
+  background-color: var(--th-brand-50);
+
+  &:hover {
+    background-color: var(--th-brand-50);
+  }
+}
+
+.selectCell {
+  width: 44px;
+  padding-left: var(--th-space-4);
+}
+
+.rowLink {
+  font-weight: 600;
+  color: var(--th-brand-700);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// --- Badges ----------------------------------------------------------------
+
+.badge {
+  @extend %th-pill;
+  background-color: var(--th-surface-sunken);
+  color: var(--th-muted);
+}
+
+.badgeSuccess {
+  @extend %th-pill;
+  background-color: var(--th-success-bg);
+  color: var(--th-success);
+}
+
+.badgeWarning {
+  @extend %th-pill;
+  background-color: var(--th-warning-bg);
+  color: var(--th-warning);
+}
+
+.badgeDanger {
+  @extend %th-pill;
+  background-color: var(--th-danger-bg);
+  color: var(--th-danger);
+}
+
+// --- Bulk action bar -------------------------------------------------------
+
+.bulkBar {
+  display: flex;
+  align-items: center;
+  gap: var(--th-space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--th-space-4);
+  padding: var(--th-space-3) var(--th-space-4);
+  border-radius: var(--th-radius);
+  background-color: var(--th-brand-50);
+  border: 1px solid var(--th-brand-100);
+}
+
+.bulkCount {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.bulkSpacer {
+  flex-grow: 1;
+}
+
+// --- Buttons ---------------------------------------------------------------
+
+%buttonBase {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--th-space-2);
+  padding: 9px var(--th-space-4);
+  border-radius: var(--th-radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition:
+    background-color var(--th-transition),
+    border-color var(--th-transition),
+    color var(--th-transition);
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+.button {
+  @extend %buttonBase;
+  background-color: var(--th-surface);
+  border-color: var(--th-line);
+  color: var(--th-ink);
+
+  &:hover:not(:disabled) {
+    border-color: var(--th-brand-300);
+    color: var(--th-brand-700);
+  }
+}
+
+.buttonPrimary {
+  @extend %buttonBase;
+  background-color: var(--th-brand-600);
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background-color: var(--th-brand-700);
+  }
+}
+
+.buttonDanger {
+  @extend %buttonBase;
+  background-color: var(--th-surface);
+  border-color: var(--th-danger);
+  color: var(--th-danger);
+
+  &:hover:not(:disabled) {
+    background-color: var(--th-danger);
+    color: #fff;
+  }
+}
+
+// --- Skeletons -------------------------------------------------------------
+
+.skeletonRow {
+  @extend %th-skeleton;
+  height: 44px;
+  margin-bottom: var(--th-space-2);
+}
+
+.skeletonStat {
+  @extend %th-skeleton;
+  height: 104px;
+  border-radius: var(--th-radius-lg);
+}
+
+// --- Empty state -----------------------------------------------------------
+
+.empty {
+  padding: var(--th-space-10) var(--th-space-6);
+  text-align: center;
+  color: var(--th-muted);
+}

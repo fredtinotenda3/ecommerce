@@ -1,0 +1,61 @@
+@import '../../_css/common';
+
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--th-space-3);
+  padding: var(--th-space-12) var(--th-space-6);
+  border: 1px dashed var(--th-line);
+  border-radius: var(--th-radius-lg);
+  background-color: var(--th-surface-subtle);
+  color: var(--th-ink);
+}
+
+.error {
+  border-style: solid;
+  border-color: var(--th-danger);
+  background-color: var(--th-danger-bg);
+  color: var(--th-danger);
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: var(--th-surface);
+  border: 1px solid var(--th-line);
+  color: var(--th-muted);
+
+  .error & {
+    border-color: var(--th-danger);
+    color: var(--th-danger);
+  }
+}
+
+.title {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+.description {
+  margin: 0;
+  max-width: 46ch;
+  color: var(--th-muted);
+  line-height: 1.6;
+
+  .error & {
+    color: inherit;
+  }
+}
+
+.action {
+  margin-top: var(--th-space-2);
+}

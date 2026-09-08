@@ -1,79 +1,116 @@
 // src/app/(admin)/admin/page.tsx
 //
-// Index for /admin. Access is enforced by the route group's layout.
+// The admin dashboard: a handful of counts that answer "is anything
+// waiting for me?", then the section links.
+//
+// The stats are counts of what the admin queries already return, not new
+// aggregate queries — deliberately. A dashboard is the wrong place to
+// introduce a query nobody has looked at under load, and these lists are
+// already capped. The caps are stated in the hints rather than hidden, so a
+// number that says "200+" is not mistaken for the true total.
 
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
+
+import {
+  listAdminMediaNative,
+  listAdminOrdersNative,
+  listAdminProductsNative,
+} from '../../_api/adminQueries'
+import { ADMIN_SECTIONS } from './_components/AdminNav'
+
+import classes from './_components/admin.module.scss'
 
 export const dynamic = 'force-dynamic'
 
-const SECTIONS: { href: string; title: string; description: string }[] = [
-  {
-    href: '/admin/products',
-    title: 'Products',
-    description: 'Create and edit products, set prices, publish or unpublish.',
-  },
-  {
-    href: '/admin/categories',
-    title: 'Categories',
-    description: 'The category tree used by product filters.',
-  },
-  {
-    href: '/admin/pages',
-    title: 'Pages',
-    description: 'CMS pages: hero, layout blocks and SEO.',
-  },
-  {
-    href: '/admin/media',
-    title: 'Media',
-    description: 'Upload images and edit their alt text.',
-  },
-  {
-    href: '/admin/orders',
-    title: 'Orders',
-    description: 'Order and payment status across all customers.',
-  },
-  {
-    href: '/admin/customers',
-    title: 'Customers',
-    description: 'Accounts, their orders, and role assignment.',
-  },
-  {
-    href: '/admin/globals',
-    title: 'Globals',
-    description: 'Header and footer navigation, and site settings.',
-  },
-  {
-    href: '/admin/redirects',
-    title: 'Redirects',
-    description: 'Path redirects applied to incoming requests.',
-  },
-]
+const LIST_CAP = 200
 
-export default function AdminIndexPage() {
+/** "200" when the list came back at its cap, since the real total may be
+ * higher and printing a capped number as if it were exact is a lie the
+ * operator has no way to detect. */
+const formatCount = (value: number): string => (value >= LIST_CAP ? `${LIST_CAP}+` : String(value))
+
+export default async function AdminIndexPage() {
+  let products: Awaited<ReturnType<typeof listAdminProductsNative>> = []
+  let orders: Awaited<ReturnType<typeof listAdminOrdersNative>> = []
+  let media: Awaited<ReturnType<typeof listAdminMediaNative>> = []
+  let statsFailed = false
+
+  try {
+    ;[products, orders, media] = await Promise.all([
+      listAdminProductsNative({ limit: LIST_CAP }),
+      listAdminOrdersNative(),
+      listAdminMediaNative(LIST_CAP),
+    ])
+  } catch (error) {
+    // The section links are the useful part of this page and do not depend
+    // on the database, so a failed read hides the stats rather than the
+    // whole dashboard.
+    statsFailed = true
+    console.error('admin dashboard stats failed:', error) // eslint-disable-line no-console
+  }
+
+  if (!ADMIN_SECTIONS.length) notFound()
+
+  const published = products.filter(product => product.status === 'published').length
+  const unpriced = products.filter(product => product.price == null).length
+  const awaitingFulfilment = orders.filter(
+    order => order.status === 'PAID' || order.status === 'PROCESSING',
+  ).length
+  const missingAlt = media.filter(item => !item.alt).length
+
+  const stats: { label: string; value: string; hint: string }[] = [
+    {
+      label: 'Published products',
+      value: `${published}`,
+      hint: `${formatCount(products.length)} in the catalogue${
+        unpriced > 0 ? `, ${unpriced} with no price` : ''
+      }`,
+    },
+    {
+      label: 'Awaiting fulfilment',
+      value: `${awaitingFulfilment}`,
+      hint: `${formatCount(orders.length)} orders in total`,
+    },
+    {
+      label: 'Media files',
+      value: formatCount(media.length),
+      hint: missingAlt > 0 ? `${missingAlt} without alt text` : 'All have alt text',
+    },
+  ]
+
   return (
     <>
-      <h1>Admin</h1>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-          gap: '1rem',
-        }}
-      >
-        {SECTIONS.map(section => (
-          <Link
-            key={section.href}
-            href={section.href}
-            style={{
-              border: '1px solid #ddd',
-              borderRadius: 6,
-              padding: '1rem',
-              textDecoration: 'none',
-              color: 'inherit',
-            }}
-          >
+      <div className={classes.pageHeader}>
+        <div>
+          <h1 className={classes.pageTitle}>Dashboard</h1>
+          <p className={classes.pageSubtitle}>
+            Everything that runs the store. Counts are over the most recent {LIST_CAP} records.
+          </p>
+        </div>
+      </div>
+
+      {statsFailed ? (
+        <div className={classes.panel} role="alert" style={{ marginBottom: '1.5rem' }}>
+          The dashboard counts could not be loaded. The sections below still work.
+        </div>
+      ) : (
+        <div className={classes.statGrid}>
+          {stats.map(stat => (
+            <div key={stat.label} className={classes.stat}>
+              <span className={classes.statLabel}>{stat.label}</span>
+              <span className={classes.statValue}>{stat.value}</span>
+              <span className={classes.statHint}>{stat.hint}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className={classes.cardGrid}>
+        {ADMIN_SECTIONS.map(section => (
+          <Link key={section.href} href={section.href} className={classes.sectionCard}>
             <strong>{section.title}</strong>
-            <p style={{ color: '#666', margin: '0.35rem 0 0' }}>{section.description}</p>
+            <p>{section.description}</p>
           </Link>
         ))}
       </div>

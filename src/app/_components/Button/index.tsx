@@ -7,6 +7,10 @@ import classes from './index.module.scss'
 
 export type Props = {
   label?: string
+  /** Stretches the button to its container. */
+  fullWidth?: boolean
+  /** Announced to assistive tech when the button has no visible label. */
+  ariaLabel?: string
   appearance?: 'default' | 'primary' | 'secondary' | 'none'
   el?: 'button' | 'link' | 'a'
   onClick?: () => void
@@ -22,6 +26,8 @@ export type Props = {
 export const Button: React.FC<Props> = ({
   el: elFromProps = 'link',
   label,
+  fullWidth,
+  ariaLabel,
   newTab,
   href,
   appearance,
@@ -41,6 +47,7 @@ export const Button: React.FC<Props> = ({
     classNameFromProps,
     classes[`appearance--${appearance}`],
     invert && classes[`${appearance}--invert`],
+    fullWidth && classes.fullWidth,
   ]
     .filter(Boolean)
     .join(' ')
@@ -56,7 +63,13 @@ export const Button: React.FC<Props> = ({
 
   if (el === 'link') {
     return (
-      <Link href={href || ''} className={className} {...newTabProps} onClick={onClick}>
+      <Link
+        href={href || ''}
+        className={className}
+        aria-label={ariaLabel}
+        {...newTabProps}
+        onClick={onClick}
+      >
         {content}
       </Link>
     )
@@ -69,6 +82,7 @@ export const Button: React.FC<Props> = ({
       href={href}
       className={className}
       type={type}
+      aria-label={ariaLabel}
       {...newTabProps}
       onClick={onClick}
       disabled={disabled}

@@ -1,0 +1,53 @@
+@import '../../_css/common';
+
+.button {
+  position: fixed;
+  right: var(--th-space-6);
+  bottom: var(--th-space-6);
+  z-index: 40;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px; // WCAG 2.5.5 minimum target size
+  height: 44px;
+
+  border: 1px solid var(--th-line);
+  border-radius: 50%;
+  background-color: var(--th-surface);
+  color: var(--th-ink);
+  box-shadow: var(--th-shadow);
+  cursor: pointer;
+
+  animation: th-fade-up 180ms ease-out;
+  transition:
+    background-color var(--th-transition),
+    color var(--th-transition),
+    transform var(--th-transition);
+
+  &:hover {
+    background-color: var(--th-brand-600);
+    border-color: var(--th-brand-600);
+    color: #fff;
+    transform: translateY(-2px);
+  }
+
+  &:focus-visible {
+    outline: var(--th-focus-outline);
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    transition: none;
+
+    &:hover {
+      transform: none;
+    }
+  }
+
+  @include mid-break {
+    right: var(--th-space-4);
+    bottom: var(--th-space-4);
+  }
+}

@@ -14,6 +14,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "seed:admin": "ts-node -T scripts/seed/createAdminUser.ts",
+    "seed:store": "ts-node -T scripts/seed/seedStore.ts",
     "migration:products:prices": "ts-node -T scripts/migrations/backfillProductPrices.ts",
     "migration:products:legacy-stripe-id": "ts-node -T scripts/migrations/preserveProductLegacyStripeId.ts",
     "migration:users:legacy-stripe-id": "ts-node -T scripts/migrations/preserveUserLegacyStripeId.ts",

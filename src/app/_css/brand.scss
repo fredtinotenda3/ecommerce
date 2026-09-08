@@ -1,0 +1,128 @@
+// src/app/_css/brand.scss
+//
+// Tech Haven's design tokens.
+//
+// One place defines the palette, spacing rhythm, radii, shadows and
+// motion. Components reference these rather than hard-coded values, so a
+// brand change is an edit here rather than a search across the codebase.
+//
+// The existing `--color-*` scales (colors.scss) are left alone: they back
+// the older theme layer. These tokens sit on top and are what new and
+// reworked components use.
+
+:root {
+  // --- Brand ------------------------------------------------------------
+  // Indigo carries the brand; amber is the accent used sparingly for deals
+  // and highlights. Both are checked for contrast against ink and surface.
+  --th-brand-50: #eef2ff;
+  --th-brand-100: #e0e7ff;
+  --th-brand-200: #c7d2fe;
+  --th-brand-300: #a5b4fc;
+  --th-brand-400: #818cf8;
+  --th-brand-500: #6366f1;
+  --th-brand-600: #4f46e5;
+  --th-brand-700: #4338ca;
+  --th-brand-800: #3730a3;
+  --th-brand-900: #312e81;
+
+  --th-accent-100: #fef3c7;
+  --th-accent-300: #fcd34d;
+  --th-accent-500: #f59e0b;
+  --th-accent-700: #b45309;
+
+  // --- Neutrals ---------------------------------------------------------
+  --th-ink: #0f1115;
+  --th-ink-soft: #333844;
+  --th-muted: #6b7280;
+  --th-muted-soft: #9ca3af;
+  --th-line: #e5e7eb;
+  --th-line-strong: #d1d5db;
+  --th-surface: #ffffff;
+  --th-surface-subtle: #f8fafc;
+  --th-surface-sunken: #f1f5f9;
+  --th-inverse: #0b0d12;
+
+  // --- Status -----------------------------------------------------------
+  --th-success: #15803d;
+  --th-success-bg: #dcfce7;
+  --th-warning: #b45309;
+  --th-warning-bg: #fef3c7;
+  --th-danger: #b91c1c;
+  --th-danger-bg: #fee2e2;
+  --th-info: #1d4ed8;
+  --th-info-bg: #dbeafe;
+
+  // --- Spacing ----------------------------------------------------------
+  // A 4px rhythm. Sections use --th-section so vertical spacing between
+  // page bands is consistent everywhere.
+  --th-space-1: 4px;
+  --th-space-2: 8px;
+  --th-space-3: 12px;
+  --th-space-4: 16px;
+  --th-space-5: 20px;
+  --th-space-6: 24px;
+  --th-space-8: 32px;
+  --th-space-10: 40px;
+  --th-space-12: 48px;
+  --th-space-16: 64px;
+  --th-space-20: 80px;
+  --th-section: 96px;
+
+  // --- Radii, shadows, motion ------------------------------------------
+  --th-radius-sm: 6px;
+  --th-radius: 10px;
+  --th-radius-lg: 16px;
+  --th-radius-xl: 24px;
+  --th-radius-pill: 999px;
+
+  --th-shadow-sm: 0 1px 2px rgba(15, 17, 21, 0.06);
+  --th-shadow: 0 4px 16px rgba(15, 17, 21, 0.07);
+  --th-shadow-lg: 0 16px 48px rgba(15, 17, 21, 0.12);
+
+  --th-transition: 160ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  // Focus ring. Defined once because every interactive element must use
+  // the same one — an inconsistent focus indicator is a keyboard user's
+  // problem, not a styling detail.
+  // Two forms of the same indicator. `--th-focus-ring` is a box-shadow
+  // value (for inputs, where an outline would sit outside the field's own
+  // border radius); `--th-focus-outline` is an outline shorthand. Using one
+  // where the other belongs silently produces no focus indicator at all,
+  // so they are named for the property they go in.
+  --th-focus-ring: 0 0 0 3px var(--th-brand-200);
+  --th-focus-outline: 2px solid var(--th-brand-600);
+
+  --th-header-height: 76px;
+}
+
+:root[data-theme='dark'] {
+  --th-ink: #f5f6f8;
+  --th-ink-soft: #d7dae1;
+  --th-muted: #9aa1ad;
+  --th-muted-soft: #767d89;
+  --th-line: #262a33;
+  --th-line-strong: #333944;
+  --th-surface: #14171d;
+  --th-surface-subtle: #1a1e26;
+  --th-surface-sunken: #10131a;
+  --th-inverse: #05070b;
+
+  --th-success-bg: #0f2e1c;
+  --th-warning-bg: #33260a;
+  --th-danger-bg: #3a1414;
+  --th-info-bg: #0f1f3d;
+
+  --th-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --th-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  --th-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.55);
+
+  --th-focus-ring: 0 0 0 3px var(--th-brand-800);
+  --th-focus-outline: 2px solid var(--th-brand-300);
+}
+
+@media (max-width: 1024px) {
+  :root {
+    --th-section: 64px;
+    --th-header-height: 64px;
+  }
+}

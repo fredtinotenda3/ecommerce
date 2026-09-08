@@ -8,7 +8,9 @@ import { listCategoryOptions, listMediaOptions, withNoneOption } from '../../../
 import { listAdminCategoriesNative } from '../../../_api/adminQueries'
 import { AdminForm } from '../_components/AdminForm'
 import { AdminSection } from '../_components/AdminSection'
-import { AdminTable } from '../_components/AdminTable'
+import { CategoriesTable, type CategoryRow } from './CategoriesTable'
+
+import classes from '../_components/admin.module.scss'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,20 +21,26 @@ export default async function AdminCategoriesPage() {
     listMediaOptions(),
   ])
 
+  const rows: CategoryRow[] = categories.map(category => ({
+    id: category.id,
+    title: category.title,
+    parentTitle: category.parentTitle,
+    hasMedia: Boolean(category.mediaId),
+    updatedAt: new Date(category.updatedAt).toISOString(),
+  }))
+
   return (
     <>
-      <h1>Categories</h1>
+      <div className={classes.pageHeader}>
+        <div>
+          <h1 className={classes.pageTitle}>Categories</h1>
+          <p className={classes.pageSubtitle}>
+            {rows.length} total. A category can only be deleted once nothing is filed under it.
+          </p>
+        </div>
+      </div>
 
-      <AdminTable
-        rows={categories}
-        rowHref={row => `/admin/categories/${row.id}`}
-        columns={[
-          { header: 'Title', render: c => c.title },
-          { header: 'Parent', render: c => c.parentTitle ?? '—' },
-          { header: 'Media', render: c => (c.mediaId ? 'Set' : '—') },
-          { header: 'Updated', render: c => new Date(c.updatedAt).toLocaleString() },
-        ]}
-      />
+      <CategoriesTable rows={rows} />
 
       <div style={{ marginTop: '2rem' }}>
         <AdminSection title="New category">
@@ -62,7 +70,7 @@ export default async function AdminCategoriesPage() {
         </AdminSection>
       </div>
 
-      <p style={{ color: '#666' }}>
+      <p className={classes.pageSubtitle}>
         Need to add an image first? <Link href="/admin/media">Upload one</Link>.
       </p>
     </>

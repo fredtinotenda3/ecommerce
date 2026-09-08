@@ -124,3 +124,61 @@ describe('buildStorefrontProductList', () => {
     expect(card?.meta?.image).toMatchObject({ url: '/media/photo.png' })
   })
 })
+
+describe('buildStorefrontProductList search', () => {
+  let productRepository: FakeProductRepository
+  let mediaRepository: FakeMediaRepository
+
+  const deps = () => ({ productRepository, mediaRepository })
+
+  beforeEach(() => {
+    productRepository = new FakeProductRepository()
+    mediaRepository = new FakeMediaRepository()
+
+    productRepository.seed(
+      buildTestProduct({
+        id: 'a',
+        slug: 'macbook-air',
+        title: 'MacBook Air',
+        status: 'published',
+        meta: { title: undefined, description: 'A silent laptop', imageId: undefined },
+      }),
+    )
+    productRepository.seed(
+      buildTestProduct({
+        id: 'b',
+        slug: 'iphone-15',
+        title: 'iPhone 15 Pro',
+        status: 'published',
+        meta: { title: undefined, description: 'Titanium, not steel', imageId: undefined },
+      }),
+    )
+  })
+
+  it('matches on the title, case-insensitively', async () => {
+    const result = await buildStorefrontProductList({ search: 'macbook' }, deps())
+
+    expect(result.total).toBe(1)
+    expect(result.docs[0].slug).toBe('macbook-air')
+  })
+
+  it('matches on the meta description too', async () => {
+    const result = await buildStorefrontProductList({ search: 'titanium' }, deps())
+
+    expect(result.docs.map(doc => doc.slug)).toEqual(['iphone-15'])
+  })
+
+  it('reports an honest empty result rather than falling back to everything', async () => {
+    const result = await buildStorefrontProductList({ search: 'thinkpad' }, deps())
+
+    expect(result.total).toBe(0)
+    expect(result.docs).toEqual([])
+  })
+
+  it('counts against the search as well as pages through it', async () => {
+    const result = await buildStorefrontProductList({ search: 'pro', limit: 1 }, deps())
+
+    expect(result.total).toBe(1)
+    expect(result.totalPages).toBe(1)
+  })
+})

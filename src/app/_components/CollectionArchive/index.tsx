@@ -17,6 +17,7 @@ import type { ArchiveBlockProps } from '../../_blocks/ArchiveBlock/types'
 import { useFilter } from '../../_providers/Filter'
 import type { StorefrontProductCard } from '../../_types/storefront'
 import { Card } from '../Card'
+import { EmptyState } from '../EmptyState'
 import { PageRange } from '../PageRange'
 import { Pagination } from '../Pagination'
 
@@ -45,7 +46,7 @@ export type Props = {
 }
 
 export const CollectionArchive: React.FC<Props> = props => {
-  const { categoryFilters, sort } = useFilter()
+  const { categoryFilters, search, sort } = useFilter()
 
   const {
     className,
@@ -75,7 +76,7 @@ export const CollectionArchive: React.FC<Props> = props => {
 
   // Changing the filters while on a later page would otherwise leave the
   // customer on a page number that no longer exists in the new result set.
-  const filterKey = `${categoryFilters.join(',')}|${sort}`
+  const filterKey = `${categoryFilters.join(',')}|${search}|${sort}`
   const lastFilterKey = useRef(filterKey)
 
   useEffect(() => {
@@ -98,6 +99,7 @@ export const CollectionArchive: React.FC<Props> = props => {
       for (const categoryId of categoryFilters) {
         params.append('category', categoryId)
       }
+      if (search) params.set('q', search)
 
       const req = await fetch(`/api/products?${params.toString()}`)
       if (!req.ok) throw new Error(`HTTP ${req.status}`)
@@ -115,7 +117,7 @@ export const CollectionArchive: React.FC<Props> = props => {
       clearTimeout(timer)
       setIsLoading(false)
     }
-  }, [categoryFilters, limit, page, sort, onResultChange])
+  }, [categoryFilters, limit, page, search, sort, onResultChange])
 
   useEffect(() => {
     loadPage()
@@ -124,9 +126,18 @@ export const CollectionArchive: React.FC<Props> = props => {
   return (
     <div className={[classes.collectionArchive, className].filter(Boolean).join(' ')}>
       <div ref={scrollRef} className={classes.scrollRef} />
-      {!isLoading && error && <div>{error}</div>}
+
+      {!isLoading && error && (
+        <EmptyState
+          title="We could not load the products"
+          description={error}
+          action={{ label: 'Try again', onClick: () => loadPage() }}
+          tone="error"
+        />
+      )}
+
       <Fragment>
-        {showPageRange !== false && (
+        {showPageRange !== false && !error && (
           <div className={classes.pageRange}>
             <PageRange
               totalDocs={results.total}
@@ -137,13 +148,46 @@ export const CollectionArchive: React.FC<Props> = props => {
           </div>
         )}
 
-        <div className={classes.grid}>
-          {results.docs?.map(result => (
-            <Card key={result.id} relationTo="products" doc={result} showCategories />
-          ))}
-        </div>
+        {/* Skeletons rather than a spinner: the grid keeps its height, so
+            the page does not jump when the results land. */}
+        {isLoading && (
+          <div className={classes.grid} aria-hidden="true">
+            {Array.from({ length: Math.min(limit, 6) }).map((_, index) => (
+              <div key={index} className={classes.skeletonCard} />
+            ))}
+          </div>
+        )}
 
-        {results.totalPages > 1 && (
+        {!isLoading && !error && results.docs.length === 0 && (
+          <EmptyState
+            title="Nothing matched that"
+            description={
+              search
+                ? `We have nothing matching “${search}”. Try a shorter search, or browse everything we stock.`
+                : 'No products match the filters you have selected. Clearing a filter or two should bring some back.'
+            }
+            action={{ label: 'Browse all products', href: '/products' }}
+          />
+        )}
+
+        {!isLoading && results.docs.length > 0 && (
+          <div className={classes.grid}>
+            {results.docs.map(result => (
+              <Card key={result.id} relationTo="products" doc={result} showCategories />
+            ))}
+          </div>
+        )}
+
+        {/* A live region so a screen reader hears the result count change
+            when filters are applied — the visual PageRange update above is
+            silent otherwise. */}
+        <p aria-live="polite" className={classes.srStatus}>
+          {isLoading
+            ? 'Loading products'
+            : `${results.total} product${results.total === 1 ? '' : 's'} found`}
+        </p>
+
+        {!isLoading && results.totalPages > 1 && (
           <Pagination
             className={classes.pagination}
             page={results.page}

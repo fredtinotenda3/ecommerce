@@ -16,6 +16,10 @@ import type { ProductSort } from '../../../lib/domain/types'
 interface IContextType {
   categoryFilters: string[]
   setCategoryFilters: React.Dispatch<SetStateAction<string[]>>
+  /** Free-text term from the header search box. Empty string means "no
+   * search", which is distinct from a search that matched nothing. */
+  search: string
+  setSearch: React.Dispatch<SetStateAction<string>>
   sort: ProductSort
   setSort: React.Dispatch<SetStateAction<ProductSort>>
 }
@@ -23,6 +27,8 @@ interface IContextType {
 export const INITIAL_FILTER_DATA: IContextType = {
   categoryFilters: [],
   setCategoryFilters: () => [],
+  search: '',
+  setSearch: () => undefined,
   sort: 'newest',
   setSort: () => undefined,
 }
@@ -31,6 +37,7 @@ const FilterContext = createContext<IContextType>(INITIAL_FILTER_DATA)
 
 export const FilterProvider = ({ children }: { children: React.ReactNode }) => {
   const [categoryFilters, setCategoryFilters] = useState<string[]>([])
+  const [search, setSearch] = useState<string>('')
   const [sort, setSort] = useState<ProductSort>('newest')
 
   return (
@@ -38,6 +45,8 @@ export const FilterProvider = ({ children }: { children: React.ReactNode }) => {
       value={{
         categoryFilters,
         setCategoryFilters,
+        search,
+        setSearch,
         sort,
         setSort,
       }}

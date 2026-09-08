@@ -1,67 +1,117 @@
-@import '../../_css/type.scss';
+@use '../../_css/queries.scss' as *;
 
 .button {
-  border: none;
+  position: relative;
+  border: 1px solid transparent;
   cursor: pointer;
   display: inline-flex;
+  align-items: center;
   justify-content: center;
+  gap: var(--th-space-2);
   background-color: transparent;
   text-decoration: none;
-  display: inline-flex;
-  padding: 10px 24px;
+  padding: 12px 22px;
   font-family: inherit;
-  line-height: inherit;
-  font-size: inherit;
-  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+  border-radius: var(--th-radius);
+  transition: background-color var(--th-transition), color var(--th-transition),
+    border-color var(--th-transition), transform var(--th-transition),
+    box-shadow var(--th-transition);
+  white-space: nowrap;
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  &[disabled],
+  &[aria-disabled='true'] {
+    cursor: not-allowed;
+    opacity: 0.55;
+    transform: none;
+  }
 }
 
 .content {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-around;
+  justify-content: center;
+  gap: var(--th-space-2);
 
   svg {
-    margin-right: calc(var(--base) / 2);
-    width: var(--base);
-    height: var(--base);
+    width: 18px;
+    height: 18px;
   }
 }
 
 .label {
-  @extend %label;
   text-align: center;
-  display: flex;
+  display: inline-flex;
   align-items: center;
 }
 
 .appearance--primary {
-  background-color: var(--theme-elevation-1000);
-  color: var(--theme-elevation-0);
+  background-color: var(--th-brand-600);
+  border-color: var(--th-brand-600);
+  color: #fff;
+
+  &:hover {
+    background-color: var(--th-brand-700);
+    border-color: var(--th-brand-700);
+    color: #fff;
+    box-shadow: var(--th-shadow);
+  }
 }
 
 .appearance--secondary {
   background-color: transparent;
-  box-shadow: inset 0 0 0 1px var(--theme-elevation-1000);
+  border-color: var(--th-line-strong);
+  color: var(--th-ink);
+
+  &:hover {
+    border-color: var(--th-brand-600);
+    color: var(--th-brand-600);
+    background-color: var(--th-brand-50);
+  }
 }
 
 .primary--invert {
-  background-color: var(--theme-elevation-0);
-  color: var(--theme-elevation-1000);
+  background-color: #fff;
+  border-color: #fff;
+  color: var(--th-ink);
+
+  &:hover {
+    background-color: var(--th-brand-50);
+    border-color: var(--th-brand-50);
+    color: var(--th-brand-700);
+  }
 }
 
 .secondary--invert {
-  background-color: var(--theme-elevation-1000);
-  box-shadow: inset 0 0 0 1px var(--theme-elevation-0);
+  background-color: transparent;
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #fff;
+
+  &:hover {
+    border-color: #fff;
+    background-color: rgba(255, 255, 255, 0.12);
+    color: #fff;
+  }
 }
 
 .appearance--default {
   padding: 0;
-  color: var(--theme-text);
+  color: var(--th-ink);
+
+  &:hover {
+    color: var(--th-brand-600);
+  }
 }
 
 .appearance--none {
   padding: 0;
-  color: var(--theme-text);
+  color: inherit;
 
   &:local() {
     .label {
@@ -70,4 +120,9 @@
       font-size: inherit;
     }
   }
+}
+
+/// Full-width variant, used inside cards and forms on small screens.
+.fullWidth {
+  width: 100%;
 }

@@ -34,3 +34,36 @@
 .priceBreakdown {
   color: var(--theme-elevation-500);
 }
+
+.amount {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--th-space-2);
+  margin: 0;
+  font-weight: 600;
+  color: var(--th-ink);
+}
+
+// The current price when it is a reduced one: emphasised so the eye lands
+// on what the customer will actually pay, not on the struck-through figure.
+.discounted {
+  color: var(--th-danger);
+}
+
+.compareAt {
+  font-size: 0.85em;
+  font-weight: 400;
+  color: var(--th-muted);
+}
+
+.saving {
+  @extend %th-pill;
+  background-color: var(--th-danger-bg);
+  color: var(--th-danger);
+  font-size: 11px;
+}
+
+.srOnly {
+  @extend %th-visually-hidden;
+}

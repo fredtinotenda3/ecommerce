@@ -4,13 +4,49 @@
   width: 100%;
 }
 
+.intro {
+  padding: var(--th-space-12) 0 var(--th-space-8);
+  max-width: 60ch;
+
+  @include mid-break {
+    padding: var(--th-space-8) 0 var(--th-space-6);
+  }
+}
+
+.eyebrow {
+  @extend %th-eyebrow;
+  margin: 0 0 var(--th-space-2);
+}
+
+.heading {
+  margin: 0 0 var(--th-space-3);
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.introCopy {
+  margin: 0;
+  color: var(--th-muted);
+  line-height: 1.6;
+}
+
 .products {
   display: grid;
-  grid-template-columns: 1fr 75%;
+  grid-template-columns: minmax(200px, 260px) 1fr;
   gap: 60px;
+  align-items: start;
+  padding-bottom: var(--th-section);
 
   @include large-break {
     grid-template-columns: 100%;
-    gap: 48px;
+    gap: 32px;
   }
+}
+
+// Establishes a containing block so the archive's absolutely positioned
+// scroll anchor resolves against the results column rather than the page.
+.results {
+  position: relative;
+  min-width: 0;
 }

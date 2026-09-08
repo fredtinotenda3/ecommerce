@@ -1,0 +1,68 @@
+@import '../../../_css/common';
+
+.section {
+  padding: 0 0 var(--th-section);
+}
+
+.eyebrow {
+  @extend %th-eyebrow;
+  margin: 0 0 var(--th-space-2);
+}
+
+.heading {
+  margin: 0 0 var(--th-space-8);
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--th-space-5);
+
+  @include large-break {
+    grid-template-columns: 100%;
+  }
+}
+
+.card {
+  @extend %th-card;
+  display: flex;
+  flex-direction: column;
+  gap: var(--th-space-4);
+  margin: 0;
+  padding: var(--th-space-7);
+}
+
+.quoteMark {
+  color: var(--th-brand-200);
+  flex-shrink: 0;
+}
+
+.quote {
+  margin: 0;
+  flex-grow: 1;
+
+  p {
+    margin: 0;
+    line-height: 1.7;
+  }
+}
+
+.attribution {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: var(--th-space-4);
+  border-top: 1px solid var(--th-line);
+}
+
+.name {
+  font-weight: 600;
+}
+
+.role {
+  font-size: 14px;
+  color: var(--th-muted);
+}

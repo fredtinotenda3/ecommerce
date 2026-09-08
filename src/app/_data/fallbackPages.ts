@@ -19,21 +19,22 @@ export const fallbackHome: StorefrontPage = {
   createdAt: now,
   updatedAt: now,
   meta: {
-    title: 'Store',
-    description: 'An online store built with Next.js, MongoDB and Paynow.',
+    title: 'Tech Haven — Premium tech, honestly priced',
+    description:
+      'Genuine Apple laptops, phones, tablets, watches and audio, with a two-year warranty and free delivery over $150.',
   },
   hero: {
     type: 'lowImpact',
     richText: [
       {
         type: 'h1',
-        children: [{ text: 'Your store is ready' }],
+        children: [{ text: 'Premium tech, honestly priced' }],
       },
       {
         type: 'p',
         children: [
           {
-            text: 'There is no home page in the database yet, so this placeholder is being shown. Sign in to the admin area at /admin to review products, orders and customers, then publish a page with the slug "home" to replace this.',
+            text: 'No page with the slug "home" exists in the database yet, so this placeholder supplies the metadata while the branded homepage renders around it. Sign in at /admin to publish one, or run `npm run seed:store` to load the demo catalogue.',
           },
         ],
       },
@@ -50,8 +51,8 @@ export const fallbackCart: StorefrontPage = {
   createdAt: now,
   updatedAt: now,
   meta: {
-    title: 'Cart',
-    description: 'Your cart syncs to your account so you can continue shopping on any device.',
+    title: 'Your cart | Tech Haven',
+    description: 'Review the items in your Tech Haven cart and check out securely with Paynow.',
   },
   hero: {
     type: 'lowImpact',

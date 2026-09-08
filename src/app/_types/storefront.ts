@@ -230,9 +230,15 @@ export interface StorefrontPrice {
   currency: string
 }
 
-/** What `Price` reads. */
+/** What `Price` reads.
+ *
+ * `compareAtPrice` is the previous price a discount is displayed against.
+ * It is only meaningful when strictly greater than `price`; `Price` checks
+ * that rather than trusting the data, because a "was" price at or below the
+ * current one is a misleading claim, not a rendering quirk. */
 export interface StorefrontPriceableProduct {
   price?: StorefrontPrice | null
+  compareAtPrice?: StorefrontPrice | null
 }
 
 /** What cart-coupled code reads off a product: `id` for cart-line identity,
@@ -267,6 +273,8 @@ export interface StorefrontProductCard extends StorefrontPriceableProduct {
   id: string
   title?: string | null
   slug?: string | null
+  /** ISO timestamp, used only to decide whether a "New" badge is shown. */
+  createdAt?: string | null
   categories?: (string | StorefrontProductCategoryRef)[]
   meta?: {
     title?: string | null

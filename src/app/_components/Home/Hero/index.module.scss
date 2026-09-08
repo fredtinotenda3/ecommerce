@@ -1,0 +1,159 @@
+@import '../../../_css/common';
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 85% 0%, var(--th-brand-50) 0%, transparent 60%),
+    var(--th-surface);
+  border-bottom: 1px solid var(--th-line);
+}
+
+.wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  align-items: center;
+  gap: var(--th-space-12);
+  padding-top: var(--th-space-16);
+  padding-bottom: var(--th-space-16);
+
+  @include large-break {
+    grid-template-columns: 100%;
+    gap: var(--th-space-10);
+    padding-top: var(--th-space-12);
+    padding-bottom: var(--th-space-12);
+  }
+}
+
+.copy {
+  max-width: 34rem;
+}
+
+.eyebrow {
+  @extend %th-eyebrow;
+  margin: 0 0 var(--th-space-4);
+}
+
+.heading {
+  margin: 0 0 var(--th-space-5);
+  font-size: clamp(2.25rem, 5vw, 3.75rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.lede {
+  margin: 0 0 var(--th-space-8);
+  font-size: clamp(1rem, 1.4vw, 1.125rem);
+  line-height: 1.65;
+  color: var(--th-muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--th-space-3);
+  margin-bottom: var(--th-space-8);
+}
+
+%cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px var(--th-space-7);
+  border-radius: var(--th-radius-pill);
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    background-color var(--th-transition),
+    color var(--th-transition),
+    border-color var(--th-transition);
+
+  &:focus-visible {
+    outline: var(--th-focus-outline);
+    outline-offset: 2px;
+  }
+}
+
+.primaryCta {
+  @extend %cta;
+  background-color: var(--th-brand-600);
+  color: #fff;
+  border: 1px solid var(--th-brand-600);
+
+  &:hover {
+    background-color: var(--th-brand-700);
+    border-color: var(--th-brand-700);
+    color: #fff;
+  }
+}
+
+.secondaryCta {
+  @extend %cta;
+  background-color: transparent;
+  color: var(--th-ink);
+  border: 1px solid var(--th-line);
+
+  &:hover {
+    border-color: var(--th-brand-600);
+    color: var(--th-brand-700);
+  }
+}
+
+.proof {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--th-space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--th-space-2);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--th-muted);
+
+    svg {
+      color: var(--th-success);
+      flex-shrink: 0;
+    }
+  }
+}
+
+.art {
+  position: relative;
+  min-width: 0;
+}
+
+.artPrimary {
+  border-radius: var(--th-radius-xl);
+  overflow: hidden;
+  background-color: var(--th-surface-sunken);
+  box-shadow: var(--th-shadow-lg);
+}
+
+// The second shot is decorative framing, not information. It is dropped
+// entirely below the large breakpoint so a phone downloads one image, not
+// two.
+.artSecondary {
+  position: absolute;
+  right: calc(var(--th-space-8) * -1);
+  bottom: calc(var(--th-space-10) * -1);
+  width: 42%;
+  border-radius: var(--th-radius-lg);
+  overflow: hidden;
+  border: 6px solid var(--th-surface);
+  box-shadow: var(--th-shadow);
+
+  @include large-break {
+    display: none;
+  }
+}
+
+.artImage {
+  display: block;
+  width: 100%;
+  height: auto;
+}

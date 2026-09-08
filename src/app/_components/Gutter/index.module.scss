@@ -1,5 +1,10 @@
 .gutter {
-  max-width: 1920px;
+  // Centred content column. The previous fixed 180px gutter pushed content
+  // in from the viewport edge, which on a 2560px display stretched a
+  // product grid across the whole screen; a max-width keeps line lengths
+  // and grid cells readable at any size.
+  width: 100%;
+  max-width: calc(var(--content-max) + (var(--gutter-h) * 2));
   margin-left: auto;
   margin-right: auto;
 }
@@ -10,4 +15,8 @@
 
 .gutterRight {
   padding-right: var(--gutter-h);
+}
+
+.wide {
+  max-width: calc(1600px + (var(--gutter-h) * 2));
 }

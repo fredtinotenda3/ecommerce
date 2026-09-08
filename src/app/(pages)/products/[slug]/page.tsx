@@ -30,37 +30,51 @@ export default async function ProductPage({ params: { slug } }) {
     notFound()
   }
 
-  const { relatedProducts } = product
+  const { relatedProducts, layout } = product
 
   return (
     <>
       <ProductHero product={product} />
+
+      {/* The product's own body copy. Rendered before the paywall and the
+          related row so the page reads top to bottom as description, then
+          gated content, then alternatives. */}
+      {Array.isArray(layout) && layout.length > 0 && <Blocks disableTopPadding blocks={layout} />}
+
       {product?.enablePaywall && <PaywallBlocks productSlug={slug as string} disableTopPadding />}
-      <Blocks
-        disableTopPadding
-        blocks={[
-          {
-            blockType: 'relatedProducts',
-            blockName: 'Related Product',
-            relationTo: 'products',
-            introContent: [
-              {
-                type: 'h3',
-                children: [{ text: 'Related Products' }],
-              },
-            ],
-            docs: relatedProducts,
-          },
-        ]}
-      />
+
+      {/* Only rendered when there is something to show: a "Related
+          products" heading above an empty row looks like a failed load. */}
+      {Array.isArray(relatedProducts) && relatedProducts.length > 0 && (
+        <Blocks
+          disableTopPadding
+          blocks={[
+            {
+              blockType: 'relatedProducts',
+              blockName: 'Related Products',
+              relationTo: 'products',
+              introContent: [
+                {
+                  type: 'h2',
+                  children: [{ text: 'You might also like' }],
+                },
+              ],
+              docs: relatedProducts,
+            },
+          ]}
+        />
+      )}
     </>
   )
 }
 
 export async function generateStaticParams() {
   try {
-    return await fetchProductSlugs()
+    // One object per dynamic segment, not a bare slug list.
+    const slugs = await fetchProductSlugs()
+    return slugs.filter(Boolean).map(slug => ({ slug }))
   } catch (error) {
+    // No database at build time is normal; the route is `force-dynamic`.
     return []
   }
 }

@@ -88,6 +88,8 @@ export interface ProductListQuery {
   /** Union filter: a product matches if it is in ANY of these categories,
    * which is what ticking several boxes in a facet list means. */
   categoryIds?: string[]
+  /** Free-text term from the header search box. */
+  search?: string
   limit?: number
   page?: number
   sort?: ProductSort
@@ -121,6 +123,7 @@ export const buildStorefrontProductList = async (
   const filter = {
     status: 'published' as const,
     categoryIds: query.categoryIds?.length ? query.categoryIds : undefined,
+    search: query.search || undefined,
     sort: query.sort,
   }
 

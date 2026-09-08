@@ -1,104 +1,156 @@
 @import '../../_css/common';
 
 .card {
-  border-radius: 4px;
+  @extend %th-card;
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition:
+    transform var(--th-transition),
+    box-shadow var(--th-transition),
+    border-color var(--th-transition);
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--th-shadow);
+    border-color: var(--th-brand-200);
+
+    .image {
+      transform: scale(1.03);
+    }
+
+    .title {
+      color: var(--th-brand-700);
+    }
+  }
+
+  &:focus-visible {
+    outline: var(--th-focus-outline);
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+
+    &:hover {
+      transform: none;
+
+      .image {
+        transform: none;
+      }
+    }
+  }
+}
+
+.mediaWrapper {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 3;
+  background-color: var(--th-surface-sunken);
+  overflow: hidden;
+}
+
+.badges {
+  position: absolute;
+  top: var(--th-space-3);
+  left: var(--th-space-3);
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--th-space-2);
+}
+
+.badgeSale {
+  @extend %th-pill;
+  background-color: var(--th-danger);
+  color: #fff;
+}
+
+.badgeNew {
+  @extend %th-pill;
+  background-color: var(--th-brand-600);
+  color: #fff;
+}
+
+.badgeMuted {
+  @extend %th-pill;
+  background-color: var(--th-surface);
+  color: var(--th-muted);
+  border: 1px solid var(--th-line);
+}
+
+.image {
+  padding: var(--th-space-6);
+  object-fit: contain;
+  max-width: 100%;
+  transition: transform var(--th-transition);
+}
+
+.placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--th-muted);
+  font-size: 14px;
 }
 
 .content {
-  padding: 8px 0;
+  padding: var(--th-space-4) var(--th-space-5) var(--th-space-5);
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  background-color: white;
-  width: 100%;
-
-  @include small-break {
-    padding: calc(var(--base) / 2);
-    gap: calc(var(--base) / 4);
-  }
+  gap: var(--th-space-2);
+  flex-grow: 1;
 }
 
 .title {
   margin: 0;
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.35;
+  transition: color var(--th-transition);
 
-  white-space: nowrap;
+  // Two lines, then ellipsis: product names are long, and a card that grows
+  // to fit one of them breaks the grid's rhythm.
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.centerAlign {
-  align-items: center;
 }
 
 .body {
   flex-grow: 1;
 }
 
-.priceActions {
-  gap: var(--base);
-}
-
-.price {
-  font-weight: 600;
-  margin: 0;
-}
-
-.leader {
-  @extend %label;
-  display: flex;
-  gap: var(--base);
-}
-
 .description {
   margin: 0;
-  line-height: 24px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--th-muted);
 
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+.unavailable {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--th-muted);
+}
+
+.centerAlign {
+  align-items: center;
 }
 
 .hideImageOnMobile {
   @include mid-break {
     display: none;
-  }
-}
-
-.mediaWrapper {
-  text-decoration: none;
-  display: block;
-  position: relative;
-  min-height: 262px;
-  background-color: var(--color-dark-50);
-}
-
-.image {
-  padding: 24px;
-  object-fit: contain;
-  aspect-ratio: 1/1;
-  max-width: 100%;
-}
-
-.placeholder {
-  background-color: var(--theme-elevation-50);
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.actions {
-  display: flex;
-  align-items: center;
-
-  @include mid-break {
-    flex-direction: column;
-    align-items: flex-start;
   }
 }

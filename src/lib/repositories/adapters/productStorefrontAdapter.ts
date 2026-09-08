@@ -19,7 +19,7 @@ import type {
   Product as NativeProduct,
 } from '../../domain/types'
 import { toStorefrontMedia } from './mediaStorefrontAdapter'
-import { toStorefrontPrice } from './priceStorefrontAdapter'
+import { toStorefrontCompareAtPrice, toStorefrontPrice } from './priceStorefrontAdapter'
 
 export interface ResolvedProductRelations {
   /** Only `id`/`title` are populated: `ProductHero` reads nothing else off
@@ -47,6 +47,7 @@ export const toStorefrontProduct = (
     slug: product.slug,
     _status: product.status,
     price: toStorefrontPrice(product),
+    compareAtPrice: toStorefrontCompareAtPrice(product),
     enablePaywall: product.enablePaywall,
     categories,
     layout: resolved.layout as StorefrontProductDetail['layout'],

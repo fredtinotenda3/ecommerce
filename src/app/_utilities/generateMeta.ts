@@ -5,8 +5,14 @@
 
 import type { Metadata } from 'next'
 
+import { SITE_NAME, SITE_TAGLINE } from '../constants/brand'
 import type { StorefrontMetaDoc } from '../_types/storefront'
 import { mergeOpenGraph } from './mergeOpenGraph'
+
+/** Used when a document carries no meta title of its own. Never the bare
+ * site name on its own — a browser tab reading only "Tech Haven" tells a
+ * customer with six tabs open nothing. */
+const FALLBACK_TITLE = `${SITE_NAME} — ${SITE_TAGLINE}`
 
 export const generateMeta = async (args: { doc: StorefrontMetaDoc }): Promise<Metadata> => {
   const { doc } = args || {}
@@ -25,10 +31,10 @@ export const generateMeta = async (args: { doc: StorefrontMetaDoc }): Promise<Me
     : undefined
 
   return {
-    title: doc?.meta?.title || 'Store',
+    title: doc?.meta?.title || FALLBACK_TITLE,
     description: doc?.meta?.description,
     openGraph: mergeOpenGraph({
-      title: doc?.meta?.title || 'Store',
+      title: doc?.meta?.title || FALLBACK_TITLE,
       description: doc?.meta?.description,
       url: Array.isArray(doc?.slug) ? doc?.slug.join('/') : '/',
       images: ogImage

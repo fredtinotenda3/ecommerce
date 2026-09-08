@@ -1,0 +1,13 @@
+Files removed by this pass — delete them from your working copy:
+
+public/file.svg
+public/globe.svg
+public/next.svg
+public/vercel.svg
+public/window.svg
+src/app/_components/Categories/CategoryCard/index.module.scss
+src/app/_components/Categories/CategoryCard/index.tsx
+src/app/_components/Categories/index.module.scss
+src/app/_components/Categories/index.tsx
+src/app/_components/Promotion/index.module.scss
+src/app/_components/Promotion/index.tsx

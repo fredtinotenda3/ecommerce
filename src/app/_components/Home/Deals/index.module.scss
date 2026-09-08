@@ -1,0 +1,125 @@
+@import '../../../_css/common';
+
+.section {
+  padding: 0 0 var(--th-section);
+}
+
+.panel {
+  position: relative;
+  border-radius: var(--th-radius-xl);
+  padding: var(--th-space-14) var(--th-space-14) var(--th-space-12);
+  background:
+    radial-gradient(90% 120% at 100% 0%, rgba(79, 70, 229, 0.18) 0%, transparent 55%),
+    var(--th-inverse);
+  color: #fff;
+  overflow: hidden;
+
+  // `overflow: hidden` also establishes a block formatting context, so the
+  // panel grows to contain the floated image instead of collapsing behind
+  // it — no clearfix element needed.
+
+  @include mid-break {
+    padding: var(--th-space-8) var(--th-space-6) var(--th-space-10);
+  }
+}
+
+.art {
+  float: right;
+  width: 42%;
+  margin: 0 0 var(--th-space-6) var(--th-space-10);
+  shape-margin: var(--th-space-6);
+
+  @include mid-break {
+    float: none;
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto var(--th-space-8);
+  }
+}
+
+.artImage {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 24px 48px rgba(0, 0, 0, 0.45));
+}
+
+.eyebrow {
+  @extend %th-eyebrow;
+  margin: 0 0 var(--th-space-3);
+  color: var(--th-accent-500);
+}
+
+.heading {
+  margin: 0 0 var(--th-space-5);
+  font-size: clamp(1.75rem, 3.2vw, 2.75rem);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  max-width: 22ch;
+}
+
+.copy {
+  margin: 0 0 var(--th-space-4);
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.78);
+  max-width: 52ch;
+}
+
+.countdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--th-space-3);
+  margin: var(--th-space-8) 0 var(--th-space-8);
+  padding: 0;
+  list-style: none;
+}
+
+.unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 78px;
+  padding: var(--th-space-3) var(--th-space-4);
+  border-radius: var(--th-radius);
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.unitValue {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.1;
+  // Stops the whole row shifting as the seconds tick over.
+  font-variant-numeric: tabular-nums;
+}
+
+.unitLabel {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px var(--th-space-7);
+  border-radius: var(--th-radius-pill);
+  background-color: #fff;
+  color: var(--th-inverse);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color var(--th-transition);
+
+  &:hover {
+    background-color: var(--th-accent-500);
+    color: var(--th-inverse);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 3px;
+  }
+}

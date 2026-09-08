@@ -61,3 +61,17 @@
     margin-top: var(--base);
   }
 }
+
+// Placeholder tiles shown while a page of results is in flight. Sized to
+// the real card so the grid does not reflow when the data lands.
+.skeletonCard {
+  @extend %th-skeleton;
+  aspect-ratio: 3 / 4;
+  border-radius: var(--th-radius-lg);
+}
+
+// Visually hidden, but announced: the result count changing is the only
+// feedback a screen-reader user gets that a filter took effect.
+.srStatus {
+  @extend %th-visually-hidden;
+}

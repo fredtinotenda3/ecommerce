@@ -1,80 +1,145 @@
 'use client'
 
+// src/app/_components/Footer/FooterComponent/index.tsx
+//
+// Site footer: the four promises, link columns, contact details, social
+// links and the copyright line.
+//
+// Link columns and contact details come from `constants/brand.ts`; social
+// links prefer whatever is configured in the Footer global and fall back
+// to the brand defaults, so the footer is never empty on a fresh install.
+
 import React from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 import { StorefrontFooter, StorefrontMediaItem } from '../../../_types/storefront'
-import { inclusions, noHeaderFooterUrls } from '../../../constants'
-import { Button } from '../../Button'
+import { noHeaderFooterUrls } from '../../../constants'
+import {
+  CONTACT,
+  FOOTER_LINK_GROUPS,
+  INCLUSIONS,
+  SITE_NAME,
+  SITE_TAGLINE,
+  SOCIAL_LINKS,
+} from '../../../constants/brand'
 import { Gutter } from '../../Gutter'
+import { Logo } from '../../Logo'
+import { NewsletterForm } from '../../NewsletterForm'
 
 import classes from './index.module.scss'
 
-// Reads only `.copyright` and `.navItems[].link.{url,label,icon}`.
 const FooterComponent = ({ footer }: { footer: StorefrontFooter | null }) => {
-  // see the matching comment in
-  // src/app/_components/Header/HeaderComponent/index.tsx — `usePathname`
-  // is called unconditionally here (react-hooks/rules-of-hooks); a
-  // render-phase crash inside it is guarded against one level up by an
-  // `ErrorBoundary` (see src/app/_components/Footer/index.tsx).
   const pathname = usePathname()
-  const navItems = footer?.navItems || []
+
+  if (noHeaderFooterUrls.includes(pathname)) return null
+
+  const cmsSocial = (footer?.navItems || [])
+    .map(item => {
+      const icon = item?.link?.icon as StorefrontMediaItem | undefined
+      return {
+        label: item.link.label ?? 'Social',
+        href: item.link.url ?? '#',
+        icon: icon?.url ?? null,
+      }
+    })
+    .filter(entry => entry.icon)
+
+  const socialLinks = cmsSocial.length > 0 ? cmsSocial : SOCIAL_LINKS
+  const copyright =
+    footer?.copyright || `© ${new Date().getFullYear()} ${SITE_NAME}. All rights reserved.`
 
   return (
-    <footer className={noHeaderFooterUrls.includes(pathname) ? classes.hide : ''}>
+    <footer className={classes.footer}>
       <Gutter>
         <ul className={classes.inclusions}>
-          {inclusions.map(inclusion => (
+          {INCLUSIONS.map(inclusion => (
             <li key={inclusion.title}>
               <Image
                 src={inclusion.icon}
-                alt={inclusion.title}
-                width={36}
-                height={36}
-                className={classes.icon}
+                alt=""
+                width={32}
+                height={32}
+                className={classes.inclusionIcon}
               />
-
-              <h5 className={classes.title}>{inclusion.title}</h5>
-              <p>{inclusion.description}</p>
+              <div>
+                <h3 className={classes.inclusionTitle}>{inclusion.title}</h3>
+                <p className={classes.inclusionCopy}>{inclusion.description}</p>
+              </div>
             </li>
           ))}
         </ul>
       </Gutter>
 
-      <div className={classes.footer}>
+      <div className={classes.main}>
         <Gutter>
-          <div className={classes.wrap}>
-            <Link href="/">
-              <Image src="/logo-white.svg" alt="logo" width={170} height={50} />
-            </Link>
+          <div className={classes.columns}>
+            <div className={classes.brandColumn}>
+              <Link href="/" aria-label={`${SITE_NAME} home`}>
+                <Logo variant="dark" />
+              </Link>
+              <p className={classes.tagline}>{SITE_TAGLINE}.</p>
 
-            <p>{footer?.copyright}</p>
+              <address className={classes.contact}>
+                {CONTACT.addressLines.map(line => (
+                  <span key={line}>{line}</span>
+                ))}
+                <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
+                <a href={`tel:${CONTACT.phone.replace(/\s/g, '')}`}>{CONTACT.phone}</a>
+                <span className={classes.hours}>{CONTACT.hours}</span>
+              </address>
+            </div>
+
+            {FOOTER_LINK_GROUPS.map(group => (
+              <nav key={group.title} className={classes.linkColumn} aria-label={group.title}>
+                <h3 className={classes.columnTitle}>{group.title}</h3>
+                <ul>
+                  {group.links.map(link => (
+                    <li key={link.href}>
+                      <Link href={link.href} className={classes.footerLink}>
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            ))}
+
+            <div className={classes.newsletterColumn}>
+              <h3 className={classes.columnTitle}>Stay in the loop</h3>
+              <p className={classes.newsletterCopy}>
+                New arrivals and genuine price drops. One email a month, no noise.
+              </p>
+              <NewsletterForm variant="dark" />
+            </div>
+          </div>
+
+          <div className={classes.bottom}>
+            <p className={classes.copyright}>{copyright}</p>
 
             <div className={classes.socialLinks}>
-              {navItems.map(item => {
-                const icon = item?.link?.icon as StorefrontMediaItem | undefined
-
-                return (
-                  <Button
-                    key={item.link.label}
-                    el="link"
-                    href={item.link.url}
-                    newTab={true}
-                    className={classes.socialLinkItem}
-                  >
-                    <Image
-                      src={icon?.url}
-                      alt={item.link.label}
-                      width={24}
-                      height={24}
-                      className={classes.socialIcon}
-                    />
-                  </Button>
-                )
-              })}
+              {socialLinks.map(social => (
+                <a
+                  key={social.label}
+                  href={social.href}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className={classes.socialLinkItem}
+                  aria-label={`${SITE_NAME} on ${social.label}`}
+                >
+                  <Image
+                    src={social.icon as string}
+                    alt=""
+                    width={20}
+                    height={20}
+                    className={classes.socialIcon}
+                  />
+                </a>
+              ))}
             </div>
+
+            <p className={classes.payments}>Secure payments by Paynow</p>
           </div>
         </Gutter>
       </div>
