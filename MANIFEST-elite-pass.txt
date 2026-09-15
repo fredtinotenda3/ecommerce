@@ -1,0 +1,41 @@
+Elite visual direction pass — Terro Technology
+================================================
+
+New files:
+  public/brand/tech-panel-hero-desktop.svg
+  public/brand/tech-panel-hero-mobile.svg
+  public/brand/tech-panel-band-wide.svg
+  public/brand/tech-panel-corner.svg
+  src/app/_components/Home/BrandStory/index.tsx
+  src/app/_components/Home/BrandStory/index.module.scss
+
+Modified files:
+  src/app/_components/Home/Hero/index.tsx
+  src/app/_components/Home/Hero/index.module.scss
+  src/app/_components/Home/NewsletterBand/index.module.scss
+  src/app/(pages)/[slug]/page.tsx
+  docs/image-polish-prompts.md
+  docs/image-generation-prompts.md
+  image-polish-prompts.md            (root copy, kept in sync with docs/)
+  image-generation-prompts.md        (root copy, kept in sync with docs/)
+
+Explicitly NOT changed (by user decision after two clarifying questions
+this session — see the implementation report):
+  src/app/_css/brand.scss — canonical brand colours kept at their current,
+    most-recently-verified values (#010B62/#011584/#0039EE/#009CFE) rather
+    than reverted to the brief's stated values, which trace back to an
+    earlier, superseded sampling round of the same reference image.
+
+No architecture, API, auth, checkout, payment, tenancy, admin CRUD,
+catalogue, or business-logic files touched. No Payload/Stripe reintroduced
+(neither was present to begin with — this project already migrated off
+both before this session).
+
+Verification performed:
+  npx tsc --noEmit    -> clean
+  npx eslint src       -> clean
+  npx vitest run       -> 481 passed / 46 files (no regressions)
+  npx sass (each touched .module.scss, standalone)  -> compiles clean
+  Hero composition rendered via a structural Playwright mock at 1440 / 1280
+    / 1024 / 768 / 430 / 390 / 375px — no overflow, no text/CTA collision,
+    product stage stays large and intentional at every width (see report).

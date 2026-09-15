@@ -16,6 +16,128 @@ opened and inspected — dimensions read from the file, corners scanned for
 watermarks, and content evaluated against Zimbabwe retail reality — before
 any placement decision below was made.
 
+**A note on this pass**: this session's brief asked specifically about four
+categories — Printers & Office Tech, Gaming, Accessories & Parts, and
+Laptops & Computers — and for this document to carry a tailored polish
+prompt for each. This upload contained no `public/` folder (no image or
+video files at all, only the code and these docs), so the assessment below
+is built from the asset log already on record in this file rather than a
+fresh visual inspection; nothing here contradicts or re-litigates that
+record. See "Category polish prompts (elite visual pass)" immediately
+below for the four requested prompts; the rest of this document is the
+original full asset-by-asset log, unchanged.
+
+## Category polish prompts (elite visual pass)
+
+Each prompt below is written against the specific asset already on file for
+that category (see the full log further down for exactly how each was
+cropped from its source flyer) — not a single generic prompt reused four
+times. Where an asset is already launch-ready, that is stated instead of
+recommending unnecessary regeneration.
+
+### 1. Printers & Office Tech
+
+**Assets on file**: `public/media/category-office-tech.jpg` (800×578, three
+printers of different sizes, cropped from `office-home-printer.jpeg`) and
+`public/media/products/home-office-inkjet-printer.jpg` (820×582, a tighter
+single-printer crop from the same source).
+
+Both are genuine, text-free product photography with no watermark and
+correct proportions — launch-ready as-is. The polish opportunity is
+consistency of lighting and background between the two crops (they come
+from the same source photo, so this is a light pass, not a rebuild):
+
+> Retouch this printer product photograph for premium e-commerce
+> presentation. Preserve the exact printer model(s), their proportions, and
+> every visible port, tray and button — do not invent or alter any physical
+> detail. Even out the studio lighting across the frame so no side of the
+> unit reads darker than the other; keep shadows soft and physically
+> plausible (a gentle contact shadow under the unit, not a hard drawn
+> outline). Clean or neutralize the background to a seamless light-grey or
+> white so the unit reads as isolated product photography rather than a
+> flyer crop. Keep any plastic or glass surfaces' reflections realistic and
+> restrained — do not add glossy highlights that aren't physically
+> consistent with the lighting. Sharpen only enough to correct the softness
+> introduced by upscaling; do not oversharpen into visible haloing. No
+> added text, no watermark, no logo, no props. Reference image:
+> public/media/category-office-tech.jpg (and the matching tighter crop
+> public/media/products/home-office-inkjet-printer.jpg).
+
+### 2. Gaming
+
+**Asset on file**: `public/media/category-gaming.jpg` (1080×524, a
+tempered-glass gaming PC with monitor and keyboard, cropped from
+`custome-game-pc.jpeg` — Terro's own build, reused honestly for both the
+one gaming product listing and the homepage build-spotlight band, since
+it's genuinely the same build's own photo each time).
+
+This is already a strong, real photograph of an actual build — launch-ready.
+The one worthwhile polish pass is bringing its colour temperature in line
+with the rest of a cool-toned site, the same treatment already prompted for
+the warranty-bench photo:
+
+> Colour-grade this gaming PC photograph (tempered-glass case, RGB
+> interior, monitor and keyboard) to sit visually alongside a cool,
+> Deep-Electric-Cobalt-toned website (hex family #010B62 / #011584 /
+> #0039EE / #009CFE) — a clean, neutral-cool white balance rather than any
+> warm indoor cast. Preserve the RGB lighting inside the case exactly as
+> shot; do not recolour or intensify it, and do not add any lighting effect
+> that isn't already in the frame. Do not alter, add, or remove any
+> component, cable, port, or peripheral. Keep reflections on the glass
+> panel physically consistent with a single light source. No text overlay,
+> no watermark, no brand logo added. Reference image:
+> public/media/category-gaming.jpg.
+
+### 3. Accessories & Parts
+
+**Assets on file**: `public/media/category-accessories.jpg` (746×567,
+charger/SSD/battery pile, cropped from `back-to-school.jpeg`),
+`public/media/products/laptop-ssd-128-512gb.jpg` (756×378, three SSDs) and
+`public/media/products/universal-laptop-charger.jpg` (692×366, a charger
+tangle).
+
+All three are genuine crops of one real flat-lay photo, already text-free
+and watermark-free. The flat-lay composition is the one thing worth a
+premium pass — small accessories shot as a "pile" read as a clearance bin,
+not a considered product shot:
+
+> Restyle this small-electronics flat-lay (SSDs, laptop charger, loose
+> cables/battery) into a clean, deliberately arranged e-commerce product
+> shot. Preserve every physical item exactly as it is — same SSD casings,
+> same charger and cable shapes, no added or removed items, no invented
+> connectors or ports. Rearrange the existing items into an intentional
+> grid or fanned layout with visible breathing room between each one,
+> rather than the current loose pile. Place on a seamless light-grey or
+> white surface with soft, even studio lighting and a subtle contact
+> shadow under each item. Keep any glossy plastic or metal surfaces'
+> reflections realistic and restrained. No added text, no watermark, no
+> brand logos, no props beyond the items already in frame. Reference
+> image: public/media/category-accessories.jpg (individual product crops:
+> public/media/products/laptop-ssd-128-512gb.jpg,
+> public/media/products/universal-laptop-charger.jpg).
+
+### 4. Laptops & Computers
+
+**Asset on file**: `public/media/category-laptops.jpg` (1080×1080, a
+MacBook opened for repair with its logic board and battery laid out beside
+it, cropped from `laptop-in-picese.jpeg`).
+
+This is the one category where "polish" is the wrong tool. The image is a
+genuine, clean repair-bench photo — it correctly represents Terro's repair
+work and needs no retouching for that purpose — but it is not product
+photography of a whole, sellable laptop, so no polish prompt turns it into
+one. Using it as if it were a listing photo would misrepresent what's for
+sale. The actual product-photo gap for this category is addressed in
+`docs/image-generation-prompts.md`, not here.
+
+> (Optional light polish only, for its existing use as a repair-context
+> image — not a listing photo): even out the lighting across the bench
+> surface and correct the white balance to a neutral cool tone consistent
+> with the rest of the site. Preserve the exact components, tools and their
+> arrangement — this documents real repair work and should not be
+> restyled into something more polished-looking than the actual bench.
+> Reference image: public/media/category-laptops.jpg.
+
 ## Used, as source material
 
 | Final asset | Source file | What was done |

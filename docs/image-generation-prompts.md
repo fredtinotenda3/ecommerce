@@ -10,6 +10,16 @@ page and its description exist and explain the gap honestly to a visitor
 ("Photographed listings are on their way"); no product was invented to
 paper over it.
 
+**This pass's four-category review** (Printers & Office Tech, Gaming,
+Accessories & Parts, Laptops & Computers — see
+`docs/image-polish-prompts.md`'s "Category polish prompts" section)
+confirms this is still the only real imagery gap. Printers & Office Tech,
+Gaming and Accessories & Parts each already have genuine, text-free product
+photography on file and get a polish prompt instead of a generation one —
+"real product photography should always be preferred when available" cuts
+both ways: it's also the reason not to manufacture a generation prompt for
+a category that doesn't need one.
+
 Every prompt below is for an **external** AI image tool or a designer —
 nothing in this project generates images itself, and none of these prompts
 have been run. Treat their output as placeholder e-commerce photography

@@ -7,7 +7,13 @@
 // and the order is the argument it makes:
 //
 //   brand (hero) → discovery (categories) → product (new arrivals) →
-//   offer (deals) → why us (value) → proof (testimonials) → conversion
+//   offer (deals) → why us (value) → brand story (video) →
+//   proof (testimonials) → conversion
+//
+// "Brand story" is new: the same real Terro Technology clip already used
+// on the Services page, given its own placement here rather than being
+// left isolated on a page a first-time visitor may never reach — see
+// Home/BrandStory's own header comment for the full reasoning.
 //
 // A second product band sorted by ascending price used to sit after the
 // deals panel. It was dropped: "our cheapest things" is not a reason to
@@ -29,6 +35,7 @@ import { fetchPage, fetchPageSlugs } from '../../_api/fetchPage'
 import { fetchProducts } from '../../_api/fetchProduct'
 import { Blocks } from '../../_components/Blocks'
 import { Hero } from '../../_components/Hero'
+import { BrandStory } from '../../_components/Home/BrandStory'
 import { Deals } from '../../_components/Home/Deals'
 import { FeaturedCategories } from '../../_components/Home/FeaturedCategories'
 import { FeaturedProducts } from '../../_components/Home/FeaturedProducts'
@@ -107,6 +114,7 @@ export default async function Page({ params: { slug = 'home' } }) {
         />
         <Deals />
         <ValueProps />
+        <BrandStory />
         <Testimonials />
         <NewsletterBand />
 

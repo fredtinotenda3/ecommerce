@@ -2,17 +2,25 @@
 //
 // The homepage hero.
 //
-// Composition: a two-column band where the product photograph sits in the
-// right-hand column, feathered at its edges into the band's own wash rather
-// than boxed in a card. The asset is genuinely small — 460×280, cropped from
-// the client's own "Boxed Smartphones" flyer with every price and headline
-// removed (see docs/image-polish-prompts.md) — so the art column is
-// deliberately capped near that width instead of stretched to fill a large
-// column. Tech Haven's hero photograph was 789×669 and could carry a much
-// bigger frame; this one cannot without upscaling a source image that does
-// not support it, which the brief explicitly rules out. The copy column
-// takes the space the image gives up, which is the honest trade rather than
-// a smaller "wow moment".
+// VISUAL DOMINANCE, HONESTLY ACHIEVED — read this before changing `.art`.
+//
+// The one real product photograph here (`/brand/hero-phones.png`) is
+// genuinely small: 460×280, cropped from the client's own "Boxed
+// Smartphones" flyer with every price and headline removed (see
+// docs/image-polish-prompts.md). Stretching that source past roughly its
+// own pixel density starts to look soft — so the crisp photograph itself is
+// NOT blown up to fill 60–70% of the hero. What changed instead is the
+// STAGE around it: a blurred, larger "echo" of the same photograph sits
+// behind the sharp one (depth, not a second real asset), a bespoke
+// technology-panel SVG (see index.module.scss and public/brand/tech-panel-
+// hero-*.svg) frames it with diagonal circuitry and glow, and the grid
+// itself now gives the art column roughly two-thirds of the row on desktop.
+// The result is a large, confident visual moment built from composition —
+// scale, glow, layered depth, negative space — rather than from upscaling a
+// 460px source past what it can carry. If Terro can supply a genuinely
+// higher-resolution product photograph later, the crisp <Image> below is
+// the only element that needs a bigger source; nothing else in this
+// composition depends on that photo's native resolution.
 //
 // Server component: no state, no interactivity. The homepage is the page
 // most likely to be a visitor's first, and it should not wait on a bundle
@@ -99,9 +107,31 @@ export const HomeHero: React.FC = () => (
       </div>
 
       <div className={classes.art}>
+        {/* The technology-panel accent local to the art stage: a tighter,
+            higher-opacity crop than the full-band `.circuit` layer above,
+            so the product visibly sits "in front of" its own energy field
+            rather than just having a backdrop somewhere behind the band. */}
+        <div className={classes.stagePanel} aria-hidden="true" />
+
         {/* A soft radial pool behind the phones, echoing the glow the
             photo's own light-blue background already carries. */}
         <div className={classes.artGlow} aria-hidden="true" />
+
+        {/* A blurred, larger duplicate of the same real photograph — not a
+            second asset, not an upscale presented as sharp — purely a
+            depth/scale cue sitting behind the crisp image so the product
+            reads as large without the crisp pixels themselves being
+            stretched past what a 460×280 source can carry. Decorative:
+            the crisp <Image> below carries the real alt text. */}
+        <Image
+          src="/brand/hero-phones.png"
+          alt=""
+          aria-hidden="true"
+          width={460}
+          height={280}
+          quality={80}
+          className={classes.artEcho}
+        />
 
         <Image
           src="/brand/hero-phones.png"
@@ -113,7 +143,7 @@ export const HomeHero: React.FC = () => (
           priority
           fetchPriority="high"
           quality={92}
-          sizes="(max-width: 1024px) 78vw, 32vw"
+          sizes="(max-width: 1024px) 84vw, 44vw"
           className={classes.artImage}
         />
       </div>

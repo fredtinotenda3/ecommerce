@@ -1,0 +1,136 @@
+@import '../../../_css/common';
+
+// ---------------------------------------------------------------------------
+// Homepage brand-story video band.
+//
+// Deliberately laid out as the mirror of Services/ServicesVideo (player
+// first, narrower column; copy second, wider) rather than an identical
+// copy of that section — the two pages use the same clip for different
+// reasons, and looking visually distinct reinforces that this isn't a
+// duplicated block. The clip is portrait (452×640, its native shape); the
+// player column is capped, not stretched, for the same reason as the
+// Services placement.
+//
+// No additional technology-panel artwork here: the video itself is the
+// section's visual interest, and this project's placement audit (see
+// NewsletterBand's stylesheet) deliberately keeps the artwork to two
+// sections rather than adding it to a third.
+// ---------------------------------------------------------------------------
+
+.section {
+  @extend %th-section;
+}
+
+.wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 0.62fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(2rem, 4vw, 4.5rem);
+
+  @include mid-break {
+    grid-template-columns: 100%;
+    gap: var(--th-space-8);
+    text-align: center;
+    justify-items: center;
+  }
+}
+
+.player {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.playerGlow {
+  position: absolute;
+  inset: 6% 10%;
+  z-index: -1;
+  border-radius: 40px;
+  background: radial-gradient(
+    60% 60% at 50% 42%,
+    color-mix(in srgb, var(--th-brand-400) 26%, transparent) 0%,
+    transparent 72%
+  );
+  filter: blur(30px);
+}
+
+.video {
+  display: block;
+  width: 100%;
+  max-width: 18rem;
+  aspect-ratio: 452 / 640;
+  border-radius: var(--th-radius-xl);
+  background-color: var(--th-surface-sunken);
+  box-shadow: var(--th-shadow-lg);
+  outline: 1px solid var(--th-line);
+  outline-offset: -1px;
+}
+
+.copy {
+  max-width: 32rem;
+  min-width: 0;
+}
+
+.eyebrow {
+  @extend %label;
+  display: block;
+  margin: 0 0 var(--th-space-3);
+  color: var(--th-brand-text);
+}
+
+.heading {
+  margin: 0 0 var(--th-space-4);
+  font-size: var(--th-text-h2);
+  line-height: var(--th-leading-tight);
+  font-weight: var(--th-weight-bold);
+  max-width: 18ch;
+
+  @include mid-break {
+    margin-inline: auto;
+  }
+}
+
+.lede {
+  margin: 0 0 var(--th-space-5);
+  font-size: var(--th-text-body);
+  line-height: var(--th-leading-relaxed);
+  color: var(--th-muted);
+  max-width: 46ch;
+
+  @include mid-break {
+    margin-inline: auto;
+  }
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--th-space-2);
+  font-size: var(--th-text-sm);
+  font-weight: var(--th-weight-semibold);
+  color: var(--th-brand-text);
+  text-decoration: none;
+
+  svg {
+    transition: transform var(--th-transition);
+  }
+
+  &:hover svg {
+    transform: translateX(3px);
+  }
+
+  &:focus-visible {
+    outline: var(--th-focus-outline);
+    outline-offset: 3px;
+    border-radius: var(--th-radius-sm);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    svg,
+    &:hover svg {
+      transition: none;
+      transform: none;
+    }
+  }
+}

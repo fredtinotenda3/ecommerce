@@ -37,25 +37,30 @@
   );
 }
 
-// The client's reference artwork — the dark "feature section" placement.
-// An actual raster crop (see Home/Hero's stylesheet for the full
-// rationale), confined to a small corner accent rather than a background
+// The technology-panel artwork's dark "feature section" placement — the
+// ONE other intentional use of the artwork beyond the hero (see the
+// placement audit in this project's delivery notes: section-transition
+// bands, the footer and the product/category pages were all considered and
+// deliberately left alone, because they already read cleanly without it).
+// A dedicated compact composition (public/brand/tech-panel-corner.svg, not
+// a crop of the larger hero panels — see that file's own generation
+// parameters), confined to a small corner accent rather than a background
 // fill: this panel already carries copy and a form, so the brief's own
 // "restrained... without making the section visually busy" applies most
-// here of all four placements.
+// here of all the placements this pass considered.
 .circuit {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background-image: url('/brand/circuit-feature.webp');
+  background-image: url('/brand/tech-panel-corner.svg');
   background-repeat: no-repeat;
   background-position: top right;
-  background-size: 300px auto;
-  opacity: 0.6;
+  background-size: 320px auto;
+  opacity: 0.7;
 
   @include mid-break {
-    background-size: 220px auto;
-    opacity: 0.5;
+    background-size: 230px auto;
+    opacity: 0.58;
   }
 }
 

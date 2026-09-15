@@ -20,32 +20,37 @@
     radial-gradient(46% 62% at 8% 92%, color-mix(in srgb, var(--th-accent-500) 12%, transparent) 0%, transparent 60%);
 }
 
-// The client's reference artwork — an actual raster crop of the supplied
-// circuit-board photograph (not a CSS/SVG recreation), anchored to the
-// hero's top-right corner so its own diagonal edge reads as a brand accent
-// rather than a filled panel. Painted above `.wash` but still behind the
-// content, in the same negative-z-index layer.
+// The technology-panel artwork — a bespoke vector asset (not a CSS-gradient
+// pile, not a photographic circuit-board crop): deep-navy-to-cyan diagonal
+// gradient, luminous circuit traces, glowing nodes and subtle binary digits,
+// built directly from the four canonical --th-brand-* hex values in
+// public/brand/tech-panel-hero-*.svg. Anchored to the hero's top-right
+// corner so its own diagonal edge reads as a brand accent rather than a
+// filled panel. Painted above `.wash` but still behind the content, in the
+// same negative-z-index layer.
 //
-// A dedicated, shorter crop swaps in below `mid-break`: the desktop crop's
-// tall aspect ratio would otherwise push deep down into the stacked copy
-// on a phone, which is exactly what the brief rules out.
+// A dedicated, shorter crop (a different generated composition, not the
+// same artwork resized — see the SVG's own header comment) swaps in below
+// `mid-break`: the desktop crop's tall aspect ratio would otherwise push
+// deep down into the stacked copy on a phone, which is exactly what the
+// brief rules out.
 .circuit {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background-image: url('/brand/circuit-hero-desktop.webp');
+  background-image: url('/brand/tech-panel-hero-desktop.svg');
   background-repeat: no-repeat;
   background-position: top right;
-  background-size: auto 130%;
-  opacity: 0.92;
+  background-size: auto 132%;
+  opacity: 0.95;
 
   @include mid-break {
-    background-image: url('/brand/circuit-hero-mobile.webp');
+    background-image: url('/brand/tech-panel-hero-mobile.svg');
     // The stacked layout puts the product photo last, so the accent moves
     // to the bottom corner with it rather than sitting behind the heading.
     background-position: bottom right;
-    background-size: auto 68%;
-    opacity: 0.85;
+    background-size: auto 72%;
+    opacity: 0.88;
   }
 }
 
@@ -83,20 +88,37 @@
 
 .wrap {
   display: grid;
-  // The reverse split from a hero whose photograph can carry a big frame:
-  // the supplied art is 460×280, so the copy column takes the room instead
-  // of stretching a small source image to fill an equal or larger column.
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  // The product visual is the primary read, the copy is secondary: roughly
+  // a 36/64 split at full desktop width, giving the art stage the ~60–70%
+  // visual dominance the brief asks for. The crisp photograph itself stays
+  // honestly sized within that stage (see the module header comment and
+  // `.artImage` below) — the WIDE COLUMN, not the raw pixels, is what grew.
+  grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.42fr);
   align-items: center;
-  gap: clamp(2rem, 4vw, 5rem);
+  gap: clamp(2rem, 4vw, 4.5rem);
   padding-block: clamp(3.5rem, 2rem + 6vw, 7.5rem);
 
+  // 1280–1440-ish: still two columns, but a touch less extreme — the art
+  // stage has less horizontal room to work with here than at full desktop
+  // width, so pushing the same 36/64 ratio would start crowding the copy.
+  @include large-break {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.25fr);
+    gap: clamp(1.75rem, 3vw, 3rem);
+  }
+
+  // ≤1024 (tablet and below): the tablet composition is rebalanced, not a
+  // shrunk desktop — single column, but the art stage keeps a generous cap
+  // (see `.art`) instead of collapsing toward the old small-thumbnail size.
   @include mid-break {
     grid-template-columns: 100%;
     gap: var(--th-space-10);
     padding-block: var(--th-space-12) var(--th-space-10);
     text-align: center;
     justify-items: center;
+  }
+
+  @include small-break {
+    padding-block: var(--th-space-10) var(--th-space-8);
   }
 }
 
@@ -243,6 +265,12 @@
 }
 
 // --- The product photograph -------------------------------------------------
+//
+// "Visual dominance" here is a STAGE, not a stretched photograph. `.art` is
+// the whole stage (roughly 60–70% of the row's width via `.wrap`'s grid);
+// the crisp `.artImage` inside it stays close to a resolution the 460×280
+// source can actually carry. Scale, depth and glow do the rest — see the
+// component's own header comment for the full reasoning.
 
 .art {
   position: relative;
@@ -251,36 +279,122 @@
   align-items: center;
   justify-content: center;
 
-  // Capped near the source image's own 460px width rather than stretched to
-  // fill the column: the asset is a small, genuine crop from a supplied
-  // flyer, and enlarging it further would be exactly the upscaling the
-  // brief says not to do. A smaller, honestly-sized photograph reads as
-  // deliberate; a blurry big one does not.
+  // A genuinely large stage — this is the number that changed to give the
+  // product column its visual weight. The photograph inside it (`.artImage`)
+  // is capped separately and much smaller, so growing the stage does not by
+  // itself blow up the source pixels.
   width: 100%;
-  max-width: 30rem;
+  max-width: 44rem;
+  aspect-ratio: 6 / 5;
+
+  @include large-break {
+    max-width: 38rem;
+  }
 
   @include mid-break {
-    max-width: 24rem;
+    // Stacked layout: still a large, deliberate stage — not the old 24rem
+    // "shrunk desktop" cap. A phone gets `width: 100%` of its gutter column
+    // regardless of this rem ceiling, so this mainly governs tablet width.
+    max-width: 32rem;
+    aspect-ratio: 4 / 3;
+  }
+
+  @include small-break {
+    max-width: 26rem;
+    aspect-ratio: 1 / 1;
+  }
+
+  @include extra-small-break {
+    max-width: 22rem;
+  }
+}
+
+// The art stage's own tighter, higher-opacity technology-panel accent — a
+// different crop/scale from the full-band `.circuit` layer (see that rule's
+// comment), so the product visibly sits "in front of" its own energy field
+// rather than merely having the same backdrop repeated at the same size.
+// This is the ONE additional placement inside the hero beyond `.circuit`;
+// nothing else in this component adds another circuit layer.
+.stagePanel {
+  position: absolute;
+  inset: -14% -10%;
+  z-index: -1;
+  background-image: url('/brand/tech-panel-hero-desktop.svg');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  border-radius: var(--th-radius-2xl);
+  opacity: 0.5;
+  mix-blend-mode: normal;
+
+  :root[data-theme='dark'] & {
+    opacity: 0.62;
+  }
+
+  @include mid-break {
+    inset: -8% -6%;
+    opacity: 0.4;
+    background-image: url('/brand/tech-panel-hero-mobile.svg');
   }
 }
 
 .artGlow {
   position: absolute;
-  inset: 4% 4%;
+  inset: 2% 2%;
   z-index: -1;
   border-radius: 28px;
   background: radial-gradient(
-    60% 60% at 50% 50%,
-    color-mix(in srgb, var(--th-brand-500) 24%, transparent) 0%,
-    transparent 72%
+    62% 62% at 50% 48%,
+    color-mix(in srgb, var(--th-brand-400) 34%, transparent) 0%,
+    color-mix(in srgb, var(--th-brand-600) 18%, transparent) 46%,
+    transparent 74%
   );
-  filter: blur(28px);
+  filter: blur(36px);
+}
+
+// A blurred, enlarged duplicate of the real photograph sitting directly
+// behind the crisp one — the depth/scale cue described in the component's
+// header comment. Never the element carrying alt text or LCP priority; it
+// is purely atmospheric, which is why it is marked aria-hidden in the JSX
+// and rendered with a low `quality` (it is never seen sharp).
+.artEcho {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 0;
+  width: 78%;
+  height: auto;
+  transform: translate(-50%, -46%) scale(1.28);
+  filter: blur(22px) saturate(1.15);
+  opacity: 0.5;
+  border-radius: var(--th-radius-xl);
+
+  :root[data-theme='dark'] & {
+    opacity: 0.38;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    // A near-imperceptible drift, not an animation anyone would call
+    // "motion" — reduced-motion users get the static version outright.
+    animation: hero-echo-drift 14s ease-in-out infinite;
+  }
+}
+
+@keyframes hero-echo-drift {
+  0%, 100% { transform: translate(-50%, -46%) scale(1.28); }
+  50% { transform: translate(-50%, -46%) scale(1.32); }
 }
 
 .artImage {
+  position: relative;
+  z-index: 1;
   display: block;
-  width: 100%;
+  // Capped near the source image's own 460px width — this is the number
+  // the brief's "do not destructively enlarge" rule actually governs. The
+  // STAGE around it (`.art`) is what grew; the crisp pixels did not.
+  width: min(100%, 30rem);
   height: auto;
+  margin-inline: auto;
   border-radius: var(--th-radius-xl);
   // A soft contact shadow that follows the feathered rectangle rather than
   // a hard drop shadow, which would draw a crisp edge around a photograph
@@ -289,5 +403,9 @@
 
   :root[data-theme='dark'] & {
     filter: drop-shadow(0 20px 36px rgba(0, 0, 0, 0.55));
+  }
+
+  @include small-break {
+    width: min(100%, 24rem);
   }
 }
