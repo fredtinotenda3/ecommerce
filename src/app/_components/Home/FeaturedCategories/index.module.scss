@@ -3,17 +3,17 @@
 // ---------------------------------------------------------------------------
 // Shop-by-category tiles.
 //
-// Sizing note, because it constrains the design rather than following from
-// it: the supplied category artwork is small once the transparent padding is
-// cropped away — the subjects are 158–398px across in the source files.
-// Rendering them at 300px+ would mean upscaling, which trades real detail
-// for a bigger number and looks soft.
+// The Terro category images are full-bleed photographic crops from the
+// client's own flyers (a phone trio, a disassembled MacBook, a gaming rig,
+// an accessories pile, a printer row) — not transparent product cutouts on
+// a padded neutral well, which is what this grid was originally built for.
+// A photograph letterboxed inside padding on a flat background looks like a
+// mistake, not a design choice, so the tile media is full-bleed and cropped
+// to fill its square (`object-fit: cover`) instead.
 //
-// So the tiles are deliberately compact (a ~190px image well), which is both
-// honest about the assets and a good pattern in its own right: six
-// categories fit in one row, and the row reads as a filter bar rather than
-// as six competing hero cards. The larger product photography carries the
-// visual weight in the bands below.
+// Five categories, not six: the grid runs `repeat(5, …)` at the base
+// breakpoint so a full row fills exactly, rather than leaving one empty
+// column in what was previously a six-up row.
 // ---------------------------------------------------------------------------
 
 .section {
@@ -45,7 +45,7 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: var(--th-space-4);
   margin: 0;
   padding: 0;
@@ -116,7 +116,6 @@
   display: block;
   width: 100%;
   aspect-ratio: 1 / 1;
-  padding: var(--th-space-3);
   border-radius: var(--th-radius);
   background-color: var(--th-surface-subtle);
   overflow: hidden;
@@ -128,9 +127,11 @@
 }
 
 .tileImage {
-  // `contain`, not `cover`: these are cutouts on transparency, and cropping
-  // one to fill a square removes the product.
-  object-fit: contain;
+  // `cover`, not `contain`: these are full-bleed photographic crops, not
+  // cutouts on transparency, so filling the square is the correct fit —
+  // `contain` on a rectangular photo would letterbox it inside the padded
+  // well this component previously reserved for cutouts.
+  object-fit: cover;
   transition: transform var(--th-transition-slow);
 }
 

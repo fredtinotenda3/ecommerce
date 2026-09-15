@@ -40,7 +40,8 @@ export const FeaturedCategories: React.FC<{ categories: StorefrontCategory[] }> 
               Start with what you need
             </h2>
             <p className={classes.lede}>
-              Six categories, everything in stock and ready to ship the same day.
+              Smartphones, computers, gaming and the accessories and repairs that keep them
+              running.
             </p>
           </div>
           <Link href="/products" className={classes.seeAll}>

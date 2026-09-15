@@ -27,6 +27,7 @@ import { AddToCartButton } from '../../_components/AddToCartButton'
 import { Gutter } from '../../_components/Gutter'
 import { Media } from '../../_components/Media'
 import { Price } from '../../_components/Price'
+import { INCLUSIONS } from '../../constants/brand'
 import {
   StorefrontMediaItem,
   StorefrontProductCategoryRef,
@@ -43,14 +44,16 @@ type ProductHeroProduct = Omit<StorefrontProductHeroView, 'meta'> & {
   } | null
 }
 
-/** The promises that matter at the moment of purchase. Deliberately the
- * same ones the rest of the site makes — a product page that invents its
- * own guarantees is how a shop ends up unable to honour them. */
-const ASSURANCES = [
-  { label: 'Free delivery over $150', detail: 'Next day across Zimbabwe' },
-  { label: 'Two-year warranty', detail: 'On top of the manufacturer cover' },
-  { label: '30-day returns', detail: 'Unused and in its packaging' },
-]
+/** The promises that matter at the moment of purchase — Terro's own four
+ * inclusions (`constants/brand.ts`), not a separate list. The previous
+ * (Tech Haven) version hardcoded its own three here — "Free delivery over
+ * $150", "Two-year warranty", "30-day returns" — none of which any supplied
+ * Terro asset confirms, and having two parallel trust-claim lists is how
+ * they drift out of sync with each other in the first place. */
+const ASSURANCES = INCLUSIONS.map(({ title, description }) => ({
+  label: title,
+  detail: description,
+}))
 
 const MAX_QUANTITY = 10
 
@@ -140,9 +143,11 @@ export const ProductHero: React.FC<{ product: ProductHeroProduct }> = ({ product
 
           <p className={isPurchasable ? classes.available : classes.unavailable}>
             <span className={classes.availableDot} aria-hidden="true" />
-            {isPurchasable
-              ? 'Available to order — ships within one working day'
-              : 'Not currently available to order'}
+            {/* No turnaround claim ("ships within one working day") — no
+                supplied Terro asset states one, and the Delivery & returns
+                page asks customers to confirm timing on WhatsApp instead
+                of quoting a fixed promise here. */}
+            {isPurchasable ? 'Available to order' : 'Not currently available to order'}
           </p>
 
           {isPurchasable ? (

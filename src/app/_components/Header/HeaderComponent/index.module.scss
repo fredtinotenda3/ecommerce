@@ -65,7 +65,11 @@
     bottom: -2px;
     height: 2px;
     border-radius: 2px;
-    background: var(--th-brand-fill);
+    // A thin indicator drawn on the header's own surface-coloured
+    // background, not a fill with text on it — so this is the
+    // accessibility alias (2.39:1 against the dark surface with the raw
+    // fill, below the 3:1 floor for a UI indicator).
+    background: var(--th-brand-text);
     transform: scaleX(0);
     transform-origin: left;
     transition: transform var(--th-transition);

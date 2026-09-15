@@ -1,0 +1,83 @@
+@import '../../../_css/common';
+
+// ---------------------------------------------------------------------------
+// Services page video.
+//
+// The clip is portrait (452×640, the source file's native shape), so this
+// is the inverse of most media bands on this site: a compact player column
+// beside the copy rather than a wide one below it. Capping its width rather
+// than letting it stretch keeps a phone-shaped video from ballooning into
+// an oversized column on a wide viewport.
+// ---------------------------------------------------------------------------
+
+.section {
+  @extend %th-section;
+}
+
+.wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr);
+  align-items: center;
+  gap: clamp(2rem, 4vw, 4rem);
+
+  @include mid-break {
+    grid-template-columns: 100%;
+    gap: var(--th-space-8);
+    text-align: center;
+    justify-items: center;
+  }
+}
+
+.copy {
+  max-width: 34rem;
+  min-width: 0;
+}
+
+.eyebrow {
+  @extend %label;
+  display: block;
+  margin: 0 0 var(--th-space-3);
+  color: var(--th-brand-text);
+}
+
+.heading {
+  margin: 0 0 var(--th-space-4);
+  font-size: var(--th-text-h2);
+  line-height: var(--th-leading-tight);
+  font-weight: var(--th-weight-bold);
+  max-width: 20ch;
+
+  @include mid-break {
+    margin-inline: auto;
+  }
+}
+
+.lede {
+  margin: 0;
+  font-size: var(--th-text-body);
+  line-height: var(--th-leading-relaxed);
+  color: var(--th-muted);
+  max-width: 46ch;
+
+  @include mid-break {
+    margin-inline: auto;
+  }
+}
+
+.player {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.video {
+  display: block;
+  width: 100%;
+  max-width: 19rem;
+  aspect-ratio: 452 / 640;
+  border-radius: var(--th-radius-xl);
+  background-color: var(--th-surface-sunken);
+  box-shadow: var(--th-shadow-lg);
+  outline: 1px solid var(--th-line);
+  outline-offset: -1px;
+}

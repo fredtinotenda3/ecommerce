@@ -1,99 +1,73 @@
 // src/app/_components/Logo/index.tsx
 //
-// The Tech Haven lockup: a mark plus the supplied wordmark.
+// The Terro Technology lockup: the client's own shield mark plus a live
+// text wordmark.
 //
-// The mark is inline SVG rather than a file so it inherits `currentColor`
-// and works on any surface without shipping two assets.
+// Two things changed from the previous (Tech Haven) version of this file,
+// both because Terro's actual brand assets are different in kind, not just
+// in colour:
 //
-// The wordmark is the supplied brand asset and exists only as two fixed
-// files, one black and one white. `variant` picks between them for surfaces
-// whose colour is fixed regardless of theme (the footer is always dark, so
-// it always wants the white mark).
+//   1. The mark is a real supplied asset (`public/brand/terro-icon.png`,
+//      cropped and made transparent from the client's own logo artwork —
+//      see docs/image-polish-prompts.md), not a generic abstract glyph. It
+//      is already two-colour (red and blue) and reads correctly on both a
+//      light and a dark surface without a second file, so unlike the old
+//      mark it never needs to change with the theme.
+//   2. The wordmark is live text set in the site's own typeface, not an
+//      image. Terro's supplied wordmark file is a JPEG-sourced graphic that
+//      would render soft at header size and could not adopt the theme's
+//      text colour; real text is crisp at any size and its colour follows
+//      `--th-ink`, so the header wordmark switches from ink to off-white
+//      with the rest of the page automatically. The one surface that does
+//      NOT follow the page theme is the footer, which is always dark
+//      regardless of light/dark mode — `variant="dark"` forces light text
+//      there rather than relying on the (possibly light-mode) theme token.
 //
-// `variant="auto"` — the header's case — is the interesting one. The surface
-// behind it flips with the theme, and the active theme is only known in the
-// browser, so choosing the file in JavaScript would mean either rendering
-// the wrong one on the server (a visible flash, plus a hydration mismatch)
-// or rendering nothing until mount (a hole in the header on first paint).
-// Instead BOTH files are rendered and CSS reveals the right one. It costs
-// one extra request for a ~1KB SVG and is correct at first paint in either
-// theme — which is what the previous version got wrong: the header always
-// used the black wordmark, so in dark mode the brand name was invisible.
+// `variant="auto"` (the header's case) sets no colour at all: it inherits
+// `--th-ink`, which already flips with `data-theme` — there is nothing left
+// for this component to coordinate.
 
 import React from 'react'
 import Image from 'next/image'
 
 import classes from './index.module.scss'
 
-export const LogoMark: React.FC<{ size?: number; className?: string }> = ({
-  size = 34,
+export const LogoMark: React.FC<{ size?: number; className?: string; priority?: boolean }> = ({
+  size = 30,
   className,
+  priority = false,
 }) => (
-  <svg
-    className={className}
-    width={size}
-    height={size}
-    viewBox="0 0 32 32"
-    fill="none"
+  <Image
+    src="/brand/terro-icon.png"
+    alt=""
     aria-hidden="true"
-    focusable="false"
-  >
-    <rect width="32" height="32" rx="9" fill="currentColor" />
-    <path
-      d="M9 21.5V11.5C9 10.6716 9.67157 10 10.5 10H14.5C17.5376 10 20 12.4624 20 15.5C20 18.5376 17.5376 21 14.5 21H13"
-      stroke="var(--th-logo-mark-ink, #fff)"
-      strokeWidth="2.4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <circle cx="21.5" cy="21.5" r="2.5" fill="var(--th-logo-mark-accent, #fcd34d)" />
-  </svg>
+    width={434}
+    height={459}
+    priority={priority}
+    className={[classes.mark, className].filter(Boolean).join(' ')}
+    style={{ height: size, width: 'auto' }}
+  />
 )
 
 export const Logo: React.FC<{
   /**
-   * `light` — dark wordmark, for a surface that is always light.
-   * `dark`  — white wordmark, for a surface that is always dark.
-   * `auto`  — follows the active theme. Use anywhere the surface behind the
-   *           logo changes with the theme, such as the header.
+   * `light` — dark/ink text, for a surface that is always light.
+   * `dark`  — off-white text, for a surface that is always dark (the footer).
+   * `auto`  — inherits `--th-ink`, which already follows the active theme.
    */
   variant?: 'light' | 'dark' | 'auto'
   className?: string
   /** The header logo is above the fold; everything else is not. */
   priority?: boolean
-}> = ({ variant = 'light', className, priority = false }) => {
-  const showBoth = variant === 'auto'
-
-  return (
-    <span className={[classes.logo, classes[variant], className].filter(Boolean).join(' ')}>
-      <LogoMark className={classes.mark} />
-
-      {(showBoth || variant === 'light') && (
-        <Image
-          src="/logo-black.svg"
-          // Only one of the pair is ever visible, so only one carries the
-          // accessible name; the other is decorative.
-          alt={showBoth ? '' : 'Tech Haven'}
-          aria-hidden={showBoth || undefined}
-          width={150}
-          height={25}
-          className={[classes.wordmark, showBoth && classes.wordmarkLight]
-            .filter(Boolean)
-            .join(' ')}
-          priority={priority}
-        />
-      )}
-
-      {(showBoth || variant === 'dark') && (
-        <Image
-          src="/logo-white.svg"
-          alt="Tech Haven"
-          width={150}
-          height={25}
-          className={[classes.wordmark, showBoth && classes.wordmarkDark].filter(Boolean).join(' ')}
-          priority={priority}
-        />
-      )}
+  /** Hide the "Technology" line at very small sizes (e.g. a tight mobile
+   * action row) while keeping "Terro" and the mark. */
+  compact?: boolean
+}> = ({ variant = 'light', className, priority = false, compact = false }) => (
+  <span className={[classes.logo, classes[variant], className].filter(Boolean).join(' ')}>
+    <LogoMark priority={priority} />
+    <span className={classes.wordmark}>
+      <span className={classes.wordmarkTerro}>Terro</span>
+      <span className={compact ? classes.srOnly : classes.wordmarkTechnology}>Technology</span>
     </span>
-  )
-}
+  </span>
+)

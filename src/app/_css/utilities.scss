@@ -21,7 +21,10 @@
   box-shadow: var(--th-shadow-sm);
 }
 
-/// Small uppercase label above a section heading.
+/// Small uppercase label above a section heading. Sits directly on the
+/// page surface, so it uses the accessibility alias (--th-brand-text),
+/// not the raw fill token — see brand.scss for why those differ in dark
+/// theme. In light theme both resolve to the same #0039EE.
 %th-eyebrow {
   display: inline-block;
   font-size: 12px;
@@ -29,7 +32,7 @@
   letter-spacing: 0.14em;
   line-height: 1.4;
   text-transform: uppercase;
-  color: var(--th-brand-600);
+  color: var(--th-brand-text);
 }
 
 /// Pill used for badges and status chips.

@@ -34,10 +34,10 @@
 
 .wrap {
   display: grid;
-  // The copy column is narrower than the image column on purpose. Equal
-  // columns make a hero feel like a two-up comparison; an unequal split
-  // tells the eye which side is the subject.
-  grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
+  // The reverse split from a hero whose photograph can carry a big frame:
+  // the supplied art is 460×280, so the copy column takes the room instead
+  // of stretching a small source image to fill an equal or larger column.
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
   align-items: center;
   gap: clamp(2rem, 4vw, 5rem);
   padding-block: clamp(3.5rem, 2rem + 6vw, 7.5rem);
@@ -202,28 +202,28 @@
   align-items: center;
   justify-content: center;
 
-  // Lets the photograph run slightly past the content column toward the
-  // screen edge. A hero image that stops politely at the same gutter as the
-  // body text always looks inset; a little bleed is what makes it feel
-  // art-directed.
-  margin-right: clamp(-4rem, -2vw, 0rem);
+  // Capped near the source image's own 460px width rather than stretched to
+  // fill the column: the asset is a small, genuine crop from a supplied
+  // flyer, and enlarging it further would be exactly the upscaling the
+  // brief says not to do. A smaller, honestly-sized photograph reads as
+  // deliberate; a blurry big one does not.
+  width: 100%;
+  max-width: 30rem;
 
   @include mid-break {
-    margin-right: 0;
-    width: 100%;
-    max-width: 40rem;
+    max-width: 24rem;
   }
 }
 
 .artGlow {
   position: absolute;
-  inset: 6% 2% 2%;
+  inset: 4% 4%;
   z-index: -1;
-  border-radius: 50%;
+  border-radius: 28px;
   background: radial-gradient(
-    50% 50% at 50% 50%,
-    color-mix(in srgb, var(--th-brand-500) 26%, transparent) 0%,
-    transparent 70%
+    60% 60% at 50% 50%,
+    color-mix(in srgb, var(--th-brand-500) 24%, transparent) 0%,
+    transparent 72%
   );
   filter: blur(28px);
 }
@@ -232,12 +232,13 @@
   display: block;
   width: 100%;
   height: auto;
-  // A soft contact shadow under a cutout that has none of its own. Applied
-  // as a filter rather than a box-shadow so it follows the product's
-  // silhouette instead of its bounding box.
-  filter: drop-shadow(0 26px 42px rgba(9, 11, 16, 0.22));
+  border-radius: var(--th-radius-xl);
+  // A soft contact shadow that follows the feathered rectangle rather than
+  // a hard drop shadow, which would draw a crisp edge around a photograph
+  // whose own corners already fade to transparent.
+  filter: drop-shadow(0 20px 32px rgba(9, 11, 16, 0.18));
 
   :root[data-theme='dark'] & {
-    filter: drop-shadow(0 26px 46px rgba(0, 0, 0, 0.6));
+    filter: drop-shadow(0 20px 36px rgba(0, 0, 0, 0.55));
   }
 }

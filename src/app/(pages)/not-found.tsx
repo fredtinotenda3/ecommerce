@@ -16,10 +16,17 @@ export const metadata: Metadata = {
   robots: { index: false, follow: true },
 }
 
+// Not "/products?category=laptops" / "?category=phones" — neither slug
+// matches this catalogue's real categories (`laptops-computers`,
+// `smartphones`; see `_utilities/categorySlug.ts`), and "MacBooks" /
+// "iPhones, unlocked, network-free" were Tech Haven listings this
+// catalogue does not carry. Terro sells Huawei and Samsung alongside
+// iPhone, not iPhone exclusively, and nothing supplied confirms every
+// device is factory-unlocked.
 const SUGGESTIONS = [
   { href: '/products', label: 'Shop everything', detail: 'The full range, filterable' },
-  { href: '/products?category=laptops', label: 'MacBooks', detail: 'Air and Pro' },
-  { href: '/products?category=phones', label: 'iPhones', detail: 'Unlocked, network-free' },
+  { href: '/products?category=smartphones', label: 'Smartphones', detail: 'Boxed and preloved' },
+  { href: '/services', label: 'Repairs & services', detail: 'Screens, batteries and more' },
 ]
 
 export default function NotFound() {
@@ -56,7 +63,9 @@ export default function NotFound() {
         </ul>
 
         <p className={classes.help}>
-          Still stuck? <Link href="/contact">Talk to someone</Link> — we answer six days a week.
+          {/* Not "we answer six days a week" — no supplied Terro asset
+              states opening hours or a response commitment. */}
+          Still stuck? <Link href="/contact">Talk to someone</Link>.
         </p>
       </div>
     </Gutter>

@@ -36,6 +36,7 @@ import { HomeHero } from '../../_components/Home/Hero'
 import { NewsletterBand } from '../../_components/Home/NewsletterBand'
 import { Testimonials } from '../../_components/Home/Testimonials'
 import { ValueProps } from '../../_components/Home/ValueProps'
+import { ServicesVideo } from '../../_components/Services/ServicesVideo'
 import { fallbackHome } from '../../_data/fallbackPages'
 import type {
   StorefrontCategory,
@@ -97,7 +98,10 @@ export default async function Page({ params: { slug = 'home' } }) {
           id="new-arrivals"
           eyebrow="Just in"
           title="New arrivals"
-          lede="The most recent additions to the shop, all in stock today."
+          // Not "all in stock today" — the app has no stock model (see
+          // ProductHero's own comment on this), so a blanket availability
+          // claim here would be one the system cannot actually back up.
+          lede="The most recent additions to the shop."
           href="/products?sort=newest"
           products={newest}
         />
@@ -125,6 +129,15 @@ export default async function Page({ params: { slug = 'home' } }) {
         blocks={layout}
         disableTopPadding={!hero || hero?.type === 'none' || hero?.type === 'lowImpact'}
       />
+
+      {/* The Services page gets one fixed addition beyond its CMS content,
+          the same way the homepage does above: a real Terro Technology clip
+          that happens to cover exactly this page's subject (see
+          ServicesVideo's own header comment for why). Keyed to the slug
+          rather than a `layout` block so a fresh install with an empty
+          `pages` collection still gets it, and so it survives an editor
+          rewriting the page's prose. */}
+      {slug === 'services' && <ServicesVideo />}
     </React.Fragment>
   )
 }

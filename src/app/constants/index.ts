@@ -1,25 +1,11 @@
-export const inclusions = [
-  {
-    title: 'Free Shipping',
-    description: 'Free shipping for order above $150',
-    icon: '/assets/icons/shipping.svg',
-  },
-  {
-    title: 'Money Guarantee',
-    description: 'Within 30 days for an exchange',
-    icon: '/assets/icons/dollar.svg',
-  },
-  {
-    title: 'Online Support',
-    description: '24 hours a day, 7 days a week',
-    icon: '/assets/icons/support.svg',
-  },
-  {
-    title: 'Flexible Payment',
-    description: 'Pay with multiple credit cards',
-    icon: '/assets/icons/payment.svg',
-  },
-]
+// A dead `inclusions` export used to live here (Free Shipping "above $150",
+// a 30-day "Money Guarantee", 24/7 support) — leftover scaffold content,
+// unused anywhere in the app, and every claim in it is exactly the kind of
+// invented delivery/guarantee promise the Terro Technology brief rules out.
+// The trust claims actually rendered on the storefront live in
+// `constants/brand.ts` (`INCLUSIONS`), sourced from the client's own
+// supplied material. Removed rather than rebranded, since nothing referenced
+// it.
 
 export const profileNavItems = [
   {

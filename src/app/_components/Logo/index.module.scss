@@ -1,54 +1,64 @@
+@import '../../_css/common';
+
 .logo {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   line-height: 1;
 }
 
 .mark {
   flex-shrink: 0;
-  color: var(--th-brand-fill);
 }
 
+// Live text, not an image: crisp at any size, and its colour is the ink
+// token, which already flips with the page theme — this component makes
+// no light/dark decision of its own for `variant="auto"`.
 .wordmark {
-  width: auto;
-  height: 22px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  white-space: nowrap;
 }
 
-// `variant="auto"`: both wordmarks are rendered and CSS reveals the one
-// that suits the active theme, so the correct mark is present at first
-// paint without JavaScript deciding it.
-//
-// `display: none` rather than stacking them: the two files are the same
-// artwork at the same intrinsic size, so hiding one cannot change the
-// lockup's width, and it keeps the hidden image out of the accessibility
-// tree as well as out of the layout.
-.auto {
-  .wordmarkDark {
-    display: none;
-  }
+.wordmarkTerro {
+  font-family: var(--th-font-sans);
+  font-size: 1.15rem;
+  font-weight: var(--th-weight-bold);
+  letter-spacing: var(--th-tracking-normal);
+  color: var(--th-ink);
 }
 
-:root[data-theme='dark'] .auto {
-  .wordmarkLight {
-    display: none;
-  }
-
-  .wordmarkDark {
-    display: block;
-  }
-
-  .mark {
-    color: #fff;
-    --th-logo-mark-ink: #0b0d12;
-    --th-logo-mark-accent: #5b62e8;
-  }
+.wordmarkTechnology {
+  font-family: var(--th-font-sans);
+  font-size: 0.7rem;
+  font-weight: var(--th-weight-medium);
+  letter-spacing: var(--th-tracking-wide);
+  text-transform: uppercase;
+  color: var(--th-muted);
 }
 
+.srOnly {
+  @extend %th-visually-hidden;
+}
+
+// `variant="dark"`: the footer is always a dark surface regardless of the
+// page's light/dark theme, so its wordmark colour is fixed rather than
+// following `--th-ink` (which would go dark-on-dark in light mode).
 .dark {
-  .mark {
+  .wordmarkTerro {
     color: #fff;
-    --th-logo-mark-ink: #0b0d12;
-    --th-logo-mark-accent: #4f46e5;
+  }
+
+  .wordmarkTechnology {
+    color: rgba(255, 255, 255, 0.68);
+  }
+}
+
+// `variant="light"`: the inverse fixed case — a surface that is always
+// light regardless of theme (none currently uses this, kept for parity).
+.light {
+  .wordmarkTerro {
+    color: var(--th-ink);
   }
 }

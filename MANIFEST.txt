@@ -1,0 +1,49 @@
+Brand blue — Round 4 ("largest contiguous region" re-sampling pass)
+=====================================================================
+
+Functional/visual change (token values):
+  src/app/_css/brand.scss
+    --th-brand-600 / --th-brand-fill  : #003AEE -> #0039EE
+    --th-brand-700 / -800 / fill-hover: #01157D -> #011584
+    --th-brand-900                    : #020654 -> #010B62
+    --th-brand-400 / -500 / cyan      : #0099FE -> #009CFE
+    --th-brand-text (light)           : #003AEE -> #0039EE
+    --th-brand-text (dark)            : #0099FE -> #009CFE
+    --th-shadow-brand rgba            : re-derived from #0039EE
+    dark-theme --th-focus-ring rgba   : re-derived from #009CFE
+    All comments rewritten to document the new "largest contiguous
+    same-family pixel region" sampling methodology and exact pixel
+    counts for each of the four canonical colors.
+
+Comment-only changes (inline WCAG contrast-ratio figures updated to
+match the marginally shifted hex values above; no selectors, no
+properties, no visual output changed):
+  src/app/_css/app.scss
+    ::selection comment: "#003AEE, 7.39:1" -> "canonical #0039EE, 7.45:1"
+  src/app/_css/utilities.scss
+    %th-eyebrow comment: "#003AEE" -> "#0039EE"
+  src/app/_components/Button/index.module.scss
+    .appearance--secondary:hover comment: contrast figures refreshed
+    to "6.70:1 light, 6.35:1 dark" against --th-brand-50
+  src/app/_components/CartLink/index.module.scss
+    :hover comment: "1.09:1" -> "1.12:1" (navy vs dark surface-sunken)
+  src/app/_providers/Toast/index.module.scss
+    .info comment: "2.40:1" -> "2.39:1" (primary vs dark surface)
+  src/app/_components/Header/HeaderComponent/index.module.scss
+    .navLink::after comment: "2.40:1" -> "2.39:1" (primary vs dark surface)
+  src/app/(admin)/admin/_components/admin.module.scss
+    .button:hover comment: "1.24:1" -> "1.22:1" (navy vs dark surface)
+
+No selectors, properties, class names, markup, business logic,
+database behavior, auth, checkout, or Paynow integration touched.
+Excludes node_modules, .next, .git, .env, and all build output.
+
+Verification (this pass):
+  npx tsc --noEmit    -> clean
+  npx eslint src       -> clean
+  npx vitest run       -> 481 passed, 46 files
+  npm run build        -> 29/29 routes, shared JS unchanged at 80.9 kB
+                          (temporary next/font/google stub used only to
+                          run the build in this sandbox, which cannot
+                          reach fonts.gstatic.com; layout.tsx confirmed
+                          byte-identical to the original afterward)

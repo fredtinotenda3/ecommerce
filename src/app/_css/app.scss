@@ -96,13 +96,17 @@ body {
   flex: 1 1 auto;
 }
 
+// Selected text needs real, sustained contrast, unlike the glow/border uses
+// --th-brand-500 otherwise plays — so this pairs with --th-brand-fill (the
+// canonical #0039EE, 7.45:1 with white text in both themes) rather than the
+// brighter cyan highlight, which would only measure 3.01:1 here.
 ::selection {
-  background: var(--th-brand-500);
+  background: var(--th-brand-fill);
   color: #fff;
 }
 
 ::-moz-selection {
-  background: var(--th-brand-500);
+  background: var(--th-brand-fill);
   color: #fff;
 }
 

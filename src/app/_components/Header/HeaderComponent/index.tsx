@@ -20,7 +20,7 @@ import { usePathname, useSearchParams } from 'next/navigation'
 
 import { useAuth } from '../../../_providers/Auth'
 import { noHeaderFooterUrls } from '../../../constants'
-import { PRIMARY_NAV } from '../../../constants/brand'
+import { PRIMARY_NAV, SITE_NAME } from '../../../constants/brand'
 import { StorefrontHeader } from '../../../_types/storefront'
 import { CartLink } from '../../CartLink'
 import { Gutter } from '../../Gutter'
@@ -90,7 +90,7 @@ const HeaderComponent = ({ header }: { header: StorefrontHeader | null }) => {
   return (
     <header className={classes.header}>
       <Gutter className={classes.wrap}>
-        <Link href="/" className={classes.brand} aria-label="Tech Haven home">
+        <Link href="/" className={classes.brand} aria-label={`${SITE_NAME} home`}>
           <Logo variant="auto" priority />
         </Link>
 

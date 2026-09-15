@@ -72,7 +72,7 @@ export const CartPage: React.FC<{
         title="Your cart is empty"
         description={
           user
-            ? 'Nothing here yet. Everything in stock ships within one working day.'
+            ? 'Nothing here yet. Have a look through the shop and add what you need.'
             : 'Nothing here yet. If you added items while signed in, sign back in to pick up where you left off.'
         }
         action={{ label: 'Browse the shop', href: shopHref }}
@@ -184,7 +184,11 @@ export const CartPage: React.FC<{
                 />
                 <path d="M4 5v6h6" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
               </svg>
-              30-day returns on everything
+              {/* Not "30-day returns" — no supplied Terro asset states a
+                  return window, and the Delivery & returns page is
+                  deliberately hedged rather than quoting one. This claim is
+                  the one thing the client's own flyers do confirm. */}
+              Free collection from our Harare shop
             </li>
           </ul>
         </aside>

@@ -51,7 +51,9 @@
 .brandBadge {
   @extend %th-pill;
   background-color: var(--th-brand-50);
-  color: var(--th-brand-700);
+  // Text on its own tint background, not a fill with white text — the
+  // accessibility alias, verified against --th-brand-50 in both themes.
+  color: var(--th-brand-text);
   border: 1px solid var(--th-brand-100);
 }
 
@@ -281,7 +283,8 @@
 
 .rowLink {
   font-weight: 600;
-  color: var(--th-brand-700);
+  // Sits directly on the table row's surface — the accessibility alias.
+  color: var(--th-brand-text);
   text-decoration: none;
 
   &:hover {
@@ -370,9 +373,12 @@
   border-color: var(--th-line);
   color: var(--th-ink);
 
+  // Hover text stays on this button's own --th-surface background (only
+  // the border color changes) — the accessibility alias, not the raw navy
+  // (1.22:1 against the dark surface).
   &:hover:not(:disabled) {
     border-color: var(--th-brand-300);
-    color: var(--th-brand-700);
+    color: var(--th-brand-text);
   }
 }
 

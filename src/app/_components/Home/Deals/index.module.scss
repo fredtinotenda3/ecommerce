@@ -1,16 +1,23 @@
 @import '../../../_css/common';
 
 // ---------------------------------------------------------------------------
-// Deals of the Month.
+// Custom Gaming PC spotlight (formerly "Deals of the Month").
 //
 // A dark panel, because this is the one band on the page that should stop
 // the scroll — and inverting the surface does that without resorting to a
 // saturated colour block, which would fight the product photography.
 //
-// The image is floated right with the copy wrapping around it, as briefed.
-// A float, not a grid column: a grid column would put the text in a fixed
-// track beside the image, which is a different (and blockier) composition.
-// Below the mid breakpoint the float is dropped and the image leads.
+// The image is floated right with the copy wrapping around it, as briefed
+// for the original deals band. A float, not a grid column: a grid column
+// would put the text in a fixed track beside the image, which is a
+// different (and blockier) composition. Below the mid breakpoint the float
+// is dropped and the image leads.
+//
+// No countdown here any more. The original band counted down to a "15% off"
+// claim with no supporting price data anywhere in the supplied assets —
+// see index.tsx for why that was replaced with the one build-to-order
+// service the catalogue can actually stand behind. The `.spec` pills below
+// replace the four-digit countdown clock at the same visual weight.
 // ---------------------------------------------------------------------------
 
 .section {
@@ -107,16 +114,19 @@
   max-width: 54ch;
 }
 
-// --- Countdown --------------------------------------------------------------
+// --- Build highlights ---------------------------------------------------
+//
+// Three short, checkable facts about the build service — not a discount
+// countdown, since no genuine time-boxed price exists to count down to.
 
-.countdownLabel {
+.specsLabel {
   @extend %label;
   display: block;
   margin: var(--th-space-8) 0 var(--th-space-3);
   color: var(--th-on-inverse-muted);
 }
 
-.countdown {
+.specs {
   display: flex;
   flex-wrap: wrap;
   gap: var(--th-space-2);
@@ -125,33 +135,22 @@
   list-style: none;
 }
 
-.unit {
-  display: flex;
-  flex-direction: column;
+.spec {
+  display: inline-flex;
   align-items: center;
-  gap: 2px;
-  min-width: 74px;
+  gap: var(--th-space-2);
   padding: var(--th-space-3) var(--th-space-4);
   border-radius: var(--th-radius);
   background-color: var(--th-inverse-raised);
   border: 1px solid var(--th-inverse-line);
-}
-
-.unitValue {
-  font-size: 1.75rem;
-  font-weight: var(--th-weight-semibold);
-  line-height: 1.1;
-  letter-spacing: var(--th-tracking-heading);
-  // Stops the whole row shifting as the seconds tick over.
-  font-variant-numeric: tabular-nums;
+  font-size: var(--th-text-sm);
+  font-weight: var(--th-weight-medium);
   color: var(--th-on-inverse);
-}
 
-.unitLabel {
-  font-size: var(--th-text-micro);
-  letter-spacing: var(--th-tracking-caps);
-  text-transform: uppercase;
-  color: var(--th-on-inverse-muted);
+  svg {
+    color: var(--th-accent-300);
+    flex-shrink: 0;
+  }
 }
 
 .actions {

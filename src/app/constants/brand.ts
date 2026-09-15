@@ -1,44 +1,63 @@
 // src/app/constants/brand.ts
 //
-// Tech Haven's brand facts in one place: the name, the voice, the contact
-// details and the navigation. Anything that appears in more than one
-// component and would look wrong if the two copies disagreed lives here.
+// Terro Technology's brand facts in one place: the name, the voice, the
+// contact details and the navigation. Anything that appears in more than
+// one component and would look wrong if the two copies disagreed lives
+// here.
 //
-// Contact details are placeholders a store owner is expected to edit
-// before launch — they are marked as such in the README rather than left
-// looking like real support channels.
+// Every contact detail below — phone numbers, email, both shop addresses,
+// Instagram and Facebook handles — is transcribed verbatim from the
+// client's own supplied promotional flyers (terro-services.jpeg,
+// boxed-iphones.jpeg, back-to-school.jpeg and others), not invented. See
+// docs/terro-technology-setup.md for the source of each fact and the small
+// number of fields (opening hours, a second WhatsApp line, a public
+// storefront domain) the client still needs to confirm.
 
-export const SITE_NAME = 'Tech Haven'
+export const SITE_NAME = 'Terro Technology'
 
-export const SITE_TAGLINE = 'Premium tech, honestly priced'
+export const SITE_TAGLINE = 'Smartphones and consumer technology, sorted properly'
 
 export const SITE_DESCRIPTION =
-  'Tech Haven stocks the latest Apple laptops, phones, tablets, watches and audio — genuine stock, two-year warranty, and free next-day delivery on orders over $150.'
+  'Terro Technology sells boxed and preloved smartphones, laptops, gaming PCs and accessories in Harare, and repairs the devices other shops sell you.'
 
 /** Used for the Open Graph/Twitter card and the JSON-LD organisation. */
-export const SITE_OG_IMAGE = '/static-image.jpg'
+export const SITE_OG_IMAGE = '/brand/og-image.jpg'
 
+/** Two physical counters, both named on the client's own flyers. The first
+ * is treated as primary (used in the footer and the JSON-LD address); the
+ * second is surfaced on the Contact page. */
 export const CONTACT = {
-  email: 'support@techhaven.example',
-  phone: '+263 77 000 0000',
-  addressLines: ['Tech Haven Retail', '14 Samora Machel Avenue', 'Harare, Zimbabwe'],
-  hours: 'Mon–Sat, 08:00–18:00 CAT',
+  email: 'terrotechnologies@gmail.com',
+  phone: '+263 77 381 8274',
+  phoneSecondary: '+263 77 555 8702',
+  /** Same numbers double as WhatsApp lines on every supplied flyer. */
+  whatsapp: '263773818274',
+  addressLines: ['Terro Technology', 'Shop No. 9, First Floor, Nhaka Parade', 'Cnr Angwa & George Silundika, Harare'],
+  secondAddressLines: ['Terro Technology (2nd counter)', 'Shop 28, Huawei Shop', 'Cnr Angwa & Speke, Harare'],
+  /** Not stated on any supplied asset — a placeholder until the client
+   * confirms real opening hours. Flagged again in the setup guide. */
+  hours: 'Contact us on WhatsApp to confirm today’s hours',
 }
 
 export const SOCIAL_LINKS = [
-  { label: 'Instagram', href: 'https://instagram.com', icon: '/assets/icons/social/instagram.svg' },
-  { label: 'Facebook', href: 'https://facebook.com', icon: '/assets/icons/social/facebook.svg' },
-  { label: 'Twitter', href: 'https://twitter.com', icon: '/assets/icons/social/twitter.svg' },
+  { label: 'Instagram', href: 'https://instagram.com/terrotechzw', icon: '/assets/icons/social/instagram.svg' },
+  { label: 'Facebook', href: 'https://facebook.com/terrotech61', icon: '/assets/icons/social/facebook.svg' },
+  {
+    label: 'WhatsApp',
+    href: 'https://wa.me/263773818274',
+    icon: '/assets/icons/social/whatsapp.svg',
+  },
 ]
 
 /** Primary navigation. Rendered in the header and mirrored in the mobile
- * drawer, so the two can never drift apart. */
+ * drawer, so the two can never drift apart. Mirrors the five categories
+ * the catalogue is actually seeded with — see scripts/seed/catalogue.ts. */
 export const PRIMARY_NAV: { label: string; href: string }[] = [
   { label: 'Shop all', href: '/products' },
-  { label: 'Laptops', href: '/products?category=laptops' },
-  { label: 'Phones', href: '/products?category=phones' },
-  { label: 'Tablets', href: '/products?category=ipads' },
-  { label: 'Audio', href: '/products?category=accessories' },
+  { label: 'Smartphones', href: '/products?category=smartphones' },
+  { label: 'Laptops & computers', href: '/products?category=laptops-computers' },
+  { label: 'Gaming', href: '/products?category=gaming' },
+  { label: 'Accessories', href: '/products?category=accessories-parts' },
 ]
 
 export const FOOTER_LINK_GROUPS: { title: string; links: { label: string; href: string }[] }[] = [
@@ -46,10 +65,10 @@ export const FOOTER_LINK_GROUPS: { title: string; links: { label: string; href: 
     title: 'Shop',
     links: [
       { label: 'All products', href: '/products' },
-      { label: 'Laptops', href: '/products?category=laptops' },
-      { label: 'Phones', href: '/products?category=phones' },
-      { label: 'Tablets', href: '/products?category=ipads' },
-      { label: 'Watches', href: '/products?category=watches' },
+      { label: 'Smartphones', href: '/products?category=smartphones' },
+      { label: 'Laptops & computers', href: '/products?category=laptops-computers' },
+      { label: 'Gaming', href: '/products?category=gaming' },
+      { label: 'Accessories & parts', href: '/products?category=accessories-parts' },
     ],
   },
   {
@@ -65,30 +84,29 @@ export const FOOTER_LINK_GROUPS: { title: string; links: { label: string; href: 
   {
     title: 'Help',
     links: [
+      { label: 'Repairs & services', href: '/services' },
       { label: 'Delivery & returns', href: '/delivery-and-returns' },
-      { label: 'Warranty', href: '/warranty' },
+      { label: 'FAQ', href: '/faq' },
       { label: 'Contact us', href: '/contact' },
-      { label: 'About Tech Haven', href: '/about' },
+      { label: 'About Terro Technology', href: '/about' },
     ],
   },
 ]
 
-/** The four promises shown above the footer and on the homepage. Icons are
- * the supplied asset set. */
+/** The four promises shown above the footer and on the homepage. Every
+ * line here is something the supplied flyers actually show Terro doing —
+ * "2-year warranty" or "free delivery" are NOT included because no
+ * supplied asset states either, and inventing a policy the client has not
+ * approved is worse than a shorter, honest list. */
 export const INCLUSIONS = [
   {
-    title: 'Free delivery',
-    description: 'On every order over $150, anywhere in Zimbabwe.',
+    title: 'Boxed & preloved stock',
+    description: 'New, sealed devices and budget-friendly preloved phones, side by side.',
     icon: '/assets/icons/shipping.svg',
   },
   {
-    title: '30-day returns',
-    description: 'Changed your mind? Send it back, no questions asked.',
-    icon: '/assets/icons/dollar.svg',
-  },
-  {
-    title: 'Real humans',
-    description: 'Talk to someone who knows the product, six days a week.',
+    title: 'Repairs & accessories',
+    description: 'Screens, batteries, covers and computer repairs — not just sales.',
     icon: '/assets/icons/support.svg',
   },
   {
@@ -96,27 +114,15 @@ export const INCLUSIONS = [
     description: 'EcoCash, OneMoney, Visa and Mastercard, all secured.',
     icon: '/assets/icons/payment.svg',
   },
+  {
+    title: 'Message us directly',
+    description: 'WhatsApp or call — a person who knows the stock answers.',
+    icon: '/assets/icons/dollar.svg',
+  },
 ]
 
-/** Homepage social proof. Written as plausible customer voices rather than
- * superlatives — an obviously fake five-star wall reads worse than none. */
-export const TESTIMONIALS = [
-  {
-    quote:
-      'Ordered a MacBook Pro on Tuesday afternoon and it arrived the next morning, sealed and with the local warranty paperwork already in the box.',
-    name: 'Tendai M.',
-    role: 'Architect, Harare',
-  },
-  {
-    quote:
-      'I had a question about which iPad would handle my drawing app. They actually answered it properly instead of upselling me to the most expensive one.',
-    name: 'Rufaro C.',
-    role: 'Illustrator, Bulawayo',
-  },
-  {
-    quote:
-      'Paying with EcoCash went through first time and the order status updated straight away. That sounds small until you have had it go wrong elsewhere.',
-    name: 'Kudzai N.',
-    role: 'Small business owner',
-  },
-]
+/** No testimonials have been supplied. Inventing customer quotes for a
+ * real, named business is not something this project will do — the
+ * `Testimonials` component renders nothing at all when this is empty,
+ * which is the correct behaviour until the client supplies real ones. */
+export const TESTIMONIALS: { quote: string; name: string; role: string }[] = []

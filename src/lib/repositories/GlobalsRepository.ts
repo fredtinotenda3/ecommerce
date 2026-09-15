@@ -37,6 +37,7 @@ const toNavItemDocuments = (navItems: NavItem[]): GlobalNavItemDocument[] =>
       type: item.link.type === 'reference' ? 'reference' : 'custom',
       newTab: Boolean(item.link.newTab),
       label: item.link.label ?? undefined,
+      
     }
 
     if (item.link.type === 'reference' && item.link.referencePageId) {

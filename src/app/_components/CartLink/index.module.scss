@@ -12,9 +12,12 @@
   color: var(--th-ink-soft);
   transition: background-color var(--th-transition), color var(--th-transition);
 
+  // Text on this link's own hover background (surface-sunken), not inside
+  // a filled control — the accessibility alias, not the raw navy, which
+  // measures only 1.12:1 against surface-sunken in dark theme.
   &:hover {
     background: var(--th-surface-sunken);
-    color: var(--th-brand-700);
+    color: var(--th-brand-text);
   }
 }
 

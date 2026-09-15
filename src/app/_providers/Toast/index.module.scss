@@ -101,10 +101,14 @@
   }
 }
 
+// The toast card's own background is --th-surface, i.e. the raw page
+// surface — so this border/icon uses the accessibility alias, not the raw
+// fill (2.39:1 against the dark surface, below the 3:1 floor for a
+// graphical indicator).
 .info {
-  border-left-color: var(--th-brand-600);
+  border-left-color: var(--th-brand-text);
 
   .icon {
-    color: var(--th-brand-600);
+    color: var(--th-brand-text);
   }
 }

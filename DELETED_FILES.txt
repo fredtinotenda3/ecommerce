@@ -1,23 +1,30 @@
-Delete these from your working copy — they are removed by this pass:
+Stale Tech Haven assets removed during the Terro Technology rebrand.
 
-public/file.svg
-public/globe.svg
-public/next.svg
-public/vercel.svg
-public/window.svg
-src/app/(pages)/styleguide/buttons/page.tsx
-src/app/(pages)/styleguide/call-to-action/page.tsx
-src/app/(pages)/styleguide/content-block/page.tsx
-src/app/(pages)/styleguide/media-block/page.tsx
-src/app/(pages)/styleguide/message/page.tsx
-src/app/(pages)/styleguide/page.tsx
-src/app/(pages)/styleguide/typography/page.tsx
-src/app/_components/Categories/CategoryCard/index.module.scss
-src/app/_components/Categories/CategoryCard/index.tsx
-src/app/_components/Categories/index.module.scss
-src/app/_components/Categories/index.tsx
-src/app/_components/Promotion/index.module.scss
-src/app/_components/Promotion/index.tsx
-src/app/_providers/Theme/ThemeSelector/index.module.scss
-src/app/_providers/Theme/ThemeSelector/index.tsx
-src/app/_providers/Theme/ThemeSelector/types.ts
+Each was confirmed unreferenced anywhere in src/, scripts/, or tests/ (by
+exact filename, individually) before deletion. Delete these same paths in
+any other checkout of the pre-rebrand codebase to match.
+
+public/brand/hero-1.png
+public/brand/hero-2.png
+public/brand/hero-apple.png
+public/media/11-inch-ipad-pro-512gb-space-gray.png
+public/media/13-inch-macbokk-air-256gb-space-gray.png
+public/media/14-inch-macbook-pro-12-core-1tb-space-black.png
+public/media/15-inch-macbook-air-2tb-midnight.png
+public/media/accessories-category.png
+public/media/airpods-max.png
+public/media/airpods-pro-2nd-generation.png
+public/media/apple-ipad-air-256gb-purple.png
+public/media/apple-iphone-14-128gb-blue.png
+public/media/apple-iphone-15-pro-1tb-blue-titanium.png
+public/media/apple-iphone-15-pro-max-256gb-natural-titanium.png
+public/media/apple-pencil-1st-generation.png
+public/media/apple-tv-4k-wifi.png
+public/media/apple-watch-series-9-aluminum.png
+public/media/apple-watch-ultra-2.png
+public/media/ipads-category.png
+public/media/laptops-category.png
+public/media/phones-category.png
+public/media/silver-lamicall-adjustable-laptop-riser.png
+public/media/tv-home-category.png
+public/media/watches-category.png

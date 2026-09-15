@@ -16,6 +16,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { getAdminAccess } from '../../_api/adminAccess'
+import { SITE_NAME } from '../../constants/brand'
 import { AdminNav } from './_components/AdminNav'
 
 import classes from './_components/admin.module.scss'
@@ -34,7 +35,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       <div className={classes.topBar}>
         <div className={classes.topBarInner}>
           <Link href="/admin" className={classes.brand}>
-            Tech Haven
+            {SITE_NAME}
             <span className={classes.brandBadge}>Admin</span>
           </Link>
 

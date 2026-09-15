@@ -12,6 +12,7 @@
 // on a half-configured store should see a shop that happens to be quiet,
 // not a developer's setup note.
 
+import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from '../constants/brand'
 import type { StorefrontPage } from '../_types/storefront'
 
 const now = new Date(0).toISOString()
@@ -24,24 +25,22 @@ export const fallbackHome: StorefrontPage = {
   createdAt: now,
   updatedAt: now,
   meta: {
-    title: 'Tech Haven — Premium tech, honestly priced',
-    description:
-      'Genuine Apple laptops, phones, tablets, watches and audio, with a two-year warranty and free delivery over $150.',
+    title: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    // No warranty term or delivery threshold invented here — the previous
+    // (Tech Haven) fallback stated "a two-year warranty and free delivery
+    // over $150", neither of which any Terro Technology asset confirms.
+    description: SITE_DESCRIPTION,
   },
   hero: {
     type: 'lowImpact',
     richText: [
       {
         type: 'h1',
-        children: [{ text: 'Premium tech, honestly priced' }],
+        children: [{ text: SITE_TAGLINE }],
       },
       {
         type: 'p',
-        children: [
-          {
-            text: 'Genuine Apple laptops, phones, tablets, watches and audio — with a two-year warranty on every device and free delivery across Zimbabwe on orders over $150.',
-          },
-        ],
+        children: [{ text: SITE_DESCRIPTION }],
       },
     ],
   },
@@ -56,8 +55,8 @@ export const fallbackCart: StorefrontPage = {
   createdAt: now,
   updatedAt: now,
   meta: {
-    title: 'Your cart | Tech Haven',
-    description: 'Review the items in your Tech Haven cart and check out securely with Paynow.',
+    title: `Your cart | ${SITE_NAME}`,
+    description: `Review the items in your cart and check out securely with Paynow.`,
   },
   hero: {
     type: 'lowImpact',

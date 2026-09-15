@@ -69,9 +69,13 @@
   border-color: var(--th-line-strong);
   color: var(--th-ink);
 
+  // Text/border sitting on this button's own tint background (not inside
+  // a filled control with white text), so it uses the accessibility
+  // alias --th-brand-text rather than the raw --th-brand-600 — verified
+  // against --th-brand-50 in both themes (6.70:1 light, 6.35:1 dark).
   &:hover {
-    border-color: var(--th-brand-600);
-    color: var(--th-brand-600);
+    border-color: var(--th-brand-text);
+    color: var(--th-brand-text);
     background-color: var(--th-brand-50);
   }
 }
@@ -81,10 +85,11 @@
   border-color: #fff;
   color: var(--th-ink);
 
+  // Same reasoning as .appearance--secondary above.
   &:hover {
     background-color: var(--th-brand-50);
     border-color: var(--th-brand-50);
-    color: var(--th-brand-700);
+    color: var(--th-brand-text);
   }
 }
 
@@ -104,8 +109,10 @@
   padding: 0;
   color: var(--th-ink);
 
+  // Text-only link sitting directly on the page surface — the
+  // accessibility alias, not the raw fill (see brand.scss).
   &:hover {
-    color: var(--th-brand-600);
+    color: var(--th-brand-text);
   }
 }
 
