@@ -29,8 +29,43 @@
 .panelWash {
   position: absolute;
   inset: 0;
+  z-index: -2;
+  background: radial-gradient(
+    60% 100% at 100% 0%,
+    color-mix(in srgb, var(--th-brand-500) 30%, transparent) 0%,
+    transparent 62%
+  );
+}
+
+// The client's reference artwork — the dark "feature section" placement.
+// An actual raster crop (see Home/Hero's stylesheet for the full
+// rationale), confined to a small corner accent rather than a background
+// fill: this panel already carries copy and a form, so the brief's own
+// "restrained... without making the section visually busy" applies most
+// here of all four placements.
+.circuit {
+  position: absolute;
+  inset: 0;
   z-index: -1;
-  background: radial-gradient(60% 100% at 100% 0%, rgba(99, 102, 241, 0.28) 0%, transparent 62%);
+  background-image: url('/brand/circuit-feature.webp');
+  background-repeat: no-repeat;
+  background-position: top right;
+  background-size: 300px auto;
+  opacity: 0.6;
+
+  @include mid-break {
+    background-size: 220px auto;
+    opacity: 0.5;
+  }
+}
+
+// Dissolves the crop's own rectangular edge into the panel rather than
+// letting it end abruptly — the corner glows, it doesn't sit in a box.
+.circuitScrim {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(46% 70% at 100% 0%, transparent 0%, var(--th-inverse) 76%);
 }
 
 .copy {

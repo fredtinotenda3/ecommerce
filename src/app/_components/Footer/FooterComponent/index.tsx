@@ -107,6 +107,11 @@ const FooterComponent = ({ footer }: { footer: StorefrontFooter | null }) => {
   return (
     <footer className={classes.footer}>
       <div className={classes.main}>
+        {/* The client's reference artwork, faded along the footer's top
+            edge. Decorative only. */}
+        <div className={classes.circuit} aria-hidden="true" />
+        <div className={classes.circuitScrim} aria-hidden="true" />
+
         <Gutter>
           <div className={classes.columns}>
             <div className={classes.brandColumn}>

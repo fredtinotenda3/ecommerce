@@ -38,6 +38,12 @@ export const HomeHero: React.FC = () => (
         carries no information and should not be announced. */}
     <div className={classes.wash} aria-hidden="true" />
 
+    {/* The client's reference artwork (an actual raster crop, see the
+        module's stylesheet) plus the scrim that keeps it off the copy
+        column. Both are decorative only. */}
+    <div className={classes.circuit} aria-hidden="true" />
+    <div className={classes.circuitScrim} aria-hidden="true" />
+
     <Gutter className={classes.wrap}>
       <div className={classes.copy}>
         <p className={classes.eyebrow}>

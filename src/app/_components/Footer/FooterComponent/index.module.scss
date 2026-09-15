@@ -5,12 +5,53 @@
 }
 
 .main {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   background: var(--th-inverse);
   color: var(--th-on-inverse-muted);
   padding: var(--th-space-20) 0 var(--th-space-8);
 
   @include small-break {
     padding: var(--th-space-12) 0 var(--th-space-6);
+  }
+}
+
+// The client's reference artwork — the footer's "top edge" placement. A
+// shallow, quiet slice of the actual raster (see Home/Hero's stylesheet
+// for the crop rationale) laid along the top of the panel and faded
+// straight back into it, so it reads as a hairline brand accent rather
+// than a banner sitting on top of the link columns.
+.circuit {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 130px;
+  z-index: -2;
+  background-image: url('/brand/circuit-footer.webp');
+  background-repeat: no-repeat;
+  background-position: top center;
+  background-size: cover;
+  opacity: 0.5;
+
+  @include small-break {
+    height: 90px;
+    opacity: 0.4;
+  }
+}
+
+.circuitScrim {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 130px;
+  z-index: -1;
+  background: linear-gradient(180deg, transparent 0%, var(--th-inverse) 92%);
+
+  @include small-break {
+    height: 90px;
   }
 }
 

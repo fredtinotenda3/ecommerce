@@ -14,10 +14,59 @@
 .wash {
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: -2;
   background:
     radial-gradient(58% 78% at 78% 18%, color-mix(in srgb, var(--th-brand-500) 22%, transparent) 0%, transparent 62%),
     radial-gradient(46% 62% at 8% 92%, color-mix(in srgb, var(--th-accent-500) 12%, transparent) 0%, transparent 60%);
+}
+
+// The client's reference artwork — an actual raster crop of the supplied
+// circuit-board photograph (not a CSS/SVG recreation), anchored to the
+// hero's top-right corner so its own diagonal edge reads as a brand accent
+// rather than a filled panel. Painted above `.wash` but still behind the
+// content, in the same negative-z-index layer.
+//
+// A dedicated, shorter crop swaps in below `mid-break`: the desktop crop's
+// tall aspect ratio would otherwise push deep down into the stacked copy
+// on a phone, which is exactly what the brief rules out.
+.circuit {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: url('/brand/circuit-hero-desktop.webp');
+  background-repeat: no-repeat;
+  background-position: top right;
+  background-size: auto 130%;
+  opacity: 0.92;
+
+  @include mid-break {
+    background-image: url('/brand/circuit-hero-mobile.webp');
+    // The stacked layout puts the product photo last, so the accent moves
+    // to the bottom corner with it rather than sitting behind the heading.
+    background-position: bottom right;
+    background-size: auto 68%;
+    opacity: 0.85;
+  }
+}
+
+// Keeps the copy column on a clean surface: opaque at the left edge,
+// fully transparent by a little past the midpoint, so the artwork only
+// ever shows behind the art column and never behind a heading, button or
+// line of body copy. `--th-surface` flips with the theme automatically, so
+// this scrim is correct in both light and dark without a separate rule.
+.circuitScrim {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(90deg, var(--th-surface) 0%, var(--th-surface) 36%, transparent 62%);
+
+  @include mid-break {
+    // Single-column layout: the risk is the accent sitting behind the
+    // heading at the top, not behind a column that no longer exists. The
+    // fade runs top-to-bottom instead, protecting all of the stacked copy
+    // and only revealing the artwork low enough to sit behind the photo.
+    background: linear-gradient(180deg, var(--th-surface) 0%, var(--th-surface) 58%, transparent 82%);
+  }
 }
 
 // A hairline rather than a hard border: it separates the hero from the band

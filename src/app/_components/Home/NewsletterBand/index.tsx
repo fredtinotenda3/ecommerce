@@ -20,6 +20,8 @@ export const NewsletterBand: React.FC = () => (
     <Gutter>
       <div className={classes.panel}>
         <div className={classes.panelWash} aria-hidden="true" />
+        <div className={classes.circuit} aria-hidden="true" />
+        <div className={classes.circuitScrim} aria-hidden="true" />
 
         <div className={classes.copy}>
           <h2 id="newsletter-heading" className={classes.heading}>
