@@ -1,11 +1,12 @@
 // tests/fakes/FakeGlobalsRepository.ts
-import type { Footer, Header, NavItem, Settings } from '../../src/lib/domain/types'
-import type { GlobalsRepository } from '../../src/lib/repositories/GlobalsRepository'
+import type { Footer, Header, Home, NavItem, Settings } from '../../src/lib/domain/types'
+import type { GlobalsRepository, HomeWriteInput } from '../../src/lib/repositories/GlobalsRepository'
 
 export class FakeGlobalsRepository implements GlobalsRepository {
   private header: Header | null = null
   private footer: Footer | null = null
   private settings: Settings | null = null
+  private home: Home | null = null
 
   seedHeader(header: Header): void {
     this.header = header
@@ -19,6 +20,10 @@ export class FakeGlobalsRepository implements GlobalsRepository {
     this.settings = settings
   }
 
+  seedHome(home: Home): void {
+    this.home = home
+  }
+
   async getHeader(): Promise<Header | null> {
     return this.header
   }
@@ -29,6 +34,10 @@ export class FakeGlobalsRepository implements GlobalsRepository {
 
   async getSettings(): Promise<Settings | null> {
     return this.settings
+  }
+
+  async getHome(): Promise<Home | null> {
+    return this.home
   }
 
   async saveHeader(input: { navItems: NavItem[] }): Promise<Header> {
@@ -61,6 +70,16 @@ export class FakeGlobalsRepository implements GlobalsRepository {
     }
     return this.settings
   }
+
+  async saveHome(input: HomeWriteInput): Promise<Home> {
+    this.home = {
+      id: this.home?.id ?? 'home',
+      ...input,
+      createdAt: this.home?.createdAt ?? new Date(),
+      updatedAt: new Date(),
+    }
+    return this.home
+  }
 }
 
 export const buildTestHeader = (overrides: Partial<Header> = {}): Header => ({
@@ -83,6 +102,30 @@ export const buildTestFooter = (overrides: Partial<Footer> = {}): Footer => ({
 export const buildTestSettings = (overrides: Partial<Settings> = {}): Settings => ({
   id: overrides.id ?? Math.random().toString(36).slice(2),
   productsPageId: null,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  ...overrides,
+})
+
+export const buildTestHome = (overrides: Partial<Home> = {}): Home => ({
+  id: overrides.id ?? Math.random().toString(36).slice(2),
+  heroEyebrow: null,
+  heroHeading: null,
+  heroHeadingAccent: null,
+  heroLede: null,
+  heroProofPoints: [],
+  heroPrimaryCtaLabel: null,
+  heroPrimaryCtaHref: null,
+  heroSecondaryCtaLabel: null,
+  heroSecondaryCtaHref: null,
+  heroImageId: null,
+  videoEyebrow: null,
+  videoHeading: null,
+  videoLede: null,
+  videoLinkLabel: null,
+  videoLinkHref: null,
+  videoId: null,
+  videoPosterId: null,
   createdAt: new Date(),
   updatedAt: new Date(),
   ...overrides,

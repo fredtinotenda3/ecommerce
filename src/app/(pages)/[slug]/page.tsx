@@ -31,6 +31,7 @@ import { draftMode } from 'next/headers'
 import { notFound } from 'next/navigation'
 
 import { fetchCategories } from '../../_api/fetchCategories'
+import { fetchHome } from '../../_api/fetchGlobals'
 import { fetchPage, fetchPageSlugs } from '../../_api/fetchPage'
 import { fetchProducts } from '../../_api/fetchProduct'
 import { Blocks } from '../../_components/Blocks'
@@ -47,6 +48,7 @@ import { ServicesVideo } from '../../_components/Services/ServicesVideo'
 import { fallbackHome } from '../../_data/fallbackPages'
 import type {
   StorefrontCategory,
+  StorefrontHome,
   StorefrontPage,
   StorefrontProductCard,
 } from '../../_types/storefront'
@@ -66,20 +68,23 @@ export default async function Page({ params: { slug = 'home' } }) {
   let page: StorefrontPage | null = null
   let categories: StorefrontCategory[] = []
   let newest: StorefrontProductCard[] = []
+  let home: StorefrontHome | null = null
 
   try {
     page = await fetchPage(slug, statusFor(isDraftMode))
 
-    // Only the homepage needs the catalogue reads; every other page pays
-    // nothing for them.
+    // Only the homepage needs the catalogue reads (and the Home global);
+    // every other page pays nothing for them.
     if (isHome) {
-      const [categoryList, newestPage] = await Promise.all([
+      const [categoryList, newestPage, homeContent] = await Promise.all([
         fetchCategories(),
         fetchProducts({ limit: 4, sort: 'newest' }),
+        fetchHome(),
       ])
 
       categories = categoryList
       newest = newestPage.docs
+      home = homeContent
     }
   } catch (error) {
     // Render whatever is available rather than failing the request: a
@@ -99,7 +104,7 @@ export default async function Page({ params: { slug = 'home' } }) {
   if (isHome) {
     return (
       <React.Fragment>
-        <HomeHero />
+        <HomeHero home={home} />
         <FeaturedCategories categories={categories} />
         <FeaturedProducts
           id="new-arrivals"
@@ -114,7 +119,7 @@ export default async function Page({ params: { slug = 'home' } }) {
         />
         <Deals />
         <ValueProps />
-        <BrandStory />
+        <BrandStory home={home} />
         <Testimonials />
         <NewsletterBand />
 

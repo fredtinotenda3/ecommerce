@@ -521,6 +521,57 @@ export interface Settings {
   updatedAt: Date
 }
 
+/** The homepage's editorial content: the fixed hero and the brand-story
+ * video band (see `src/app/_components/Home/Hero`,
+ * `src/app/_components/Home/BrandStory`). The homepage's *composition* —
+ * which sections exist, in which order — stays a fixed layout in
+ * `[slug]/page.tsx` (see that file's own header comment for why); this
+ * global only owns the CONTENT inside the two sections a client actually
+ * needs to change without a code deploy: the hero's copy/CTAs/photo, and
+ * the video's copy/clip/poster.
+ *
+ * Every field is optional and every consumer falls back to the current
+ * hardcoded copy/asset when unset — same "null is not an error" treatment
+ * as Header/Footer/Settings above, so a fresh install with no `home`
+ * document still renders the full designed homepage. */
+export interface Home {
+  id: string
+
+  heroEyebrow: string | null
+  heroHeading: string | null
+  /** Rendered in the muted second tone (see `.headingAccent`), not a
+   * separate headline — together with `heroHeading` this makes up the one
+   * H1 sentence. */
+  heroHeadingAccent: string | null
+  heroLede: string | null
+  /** Up to three short trust claims under the CTA buttons ("Boxed &
+   * preloved stock", etc). Validated to at most 3 entries — a fourth
+   * always wraps to a second line on a phone. */
+  heroProofPoints: string[]
+  heroPrimaryCtaLabel: string | null
+  heroPrimaryCtaHref: string | null
+  heroSecondaryCtaLabel: string | null
+  heroSecondaryCtaHref: string | null
+  /** Id of the Media doc used as the hero's product photograph. Its own
+   * `alt` field is the accessible description used in the rendered
+   * `<img>` — there is no separate alt override here, so an editor has
+   * exactly one place to fix the alt text. */
+  heroImageId: string | null
+
+  videoEyebrow: string | null
+  videoHeading: string | null
+  videoLede: string | null
+  videoLinkLabel: string | null
+  videoLinkHref: string | null
+  /** Id of a video Media doc (mp4/webm). */
+  videoId: string | null
+  /** Id of an image Media doc shown before the video is played. */
+  videoPosterId: string | null
+
+  createdAt: Date
+  updatedAt: Date
+}
+
 // ---------------------------------------------------------------------------
 // Redirects
 // ---------------------------------------------------------------------------

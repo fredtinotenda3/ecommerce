@@ -203,6 +203,14 @@ export const saveSettings = async (input: { productsPageId?: unknown }) => {
   })
 }
 
+export const saveHome = async (input: AdminContentService.HomeWriteRequest) => {
+  const { globals, media } = await getRepositories()
+  return AdminContentService.saveHome(input, {
+    globalsRepository: globals,
+    mediaRepository: media,
+  })
+}
+
 // --- Redirects -------------------------------------------------------------
 
 export const createRedirect = async (input: AdminContentService.RedirectWriteRequest) => {

@@ -33,7 +33,16 @@ export default async function AdminMediaDetailPage({
       </p>
       <h1>{item.filename ?? 'Media'}</h1>
 
-      {item.url && (
+      {item.url && item.mimeType?.startsWith('video/') && (
+        <video
+          src={item.url}
+          controls
+          preload="metadata"
+          style={{ maxWidth: 420, height: 'auto', borderRadius: 6, marginBottom: '1rem' }}
+        />
+      )}
+
+      {item.url && !item.mimeType?.startsWith('video/') && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={item.url}

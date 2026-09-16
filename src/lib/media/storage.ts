@@ -40,10 +40,25 @@ export class MediaUploadError extends Error {
   }
 }
 
-/** Upload size ceiling. A request larger than this is refused before the
- * body is buffered into memory where possible, and always before it
- * reaches the disk. */
+/** Upload size ceiling for images. A request larger than this is refused
+ * before the body is buffered into memory where possible, and always
+ * before it reaches the disk. */
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+
+/** Video ceiling, kept as its own constant rather than reusing
+ * `MAX_UPLOAD_BYTES`: a short promotional clip (the homepage/services
+ * brand-story video is a ~40s portrait recording) is legitimately tens of
+ * megabytes, an order of magnitude past what any image upload here needs.
+ * Still bounded — this is an admin-only upload endpoint, not user
+ * content, but an unbounded body is still a resource-exhaustion risk. */
+export const MAX_VIDEO_UPLOAD_BYTES = 100 * 1024 * 1024
+
+/** The size ceiling for a given declared mime type, checked against the
+ * type-specific allow-list rather than a single flat cap — used both by
+ * the upload route's pre-buffer `content-length` check and by
+ * `storeUpload`'s real check on the received bytes. */
+export const maxUploadBytesFor = (mimeType: string): number =>
+  mimeType.startsWith('video/') ? MAX_VIDEO_UPLOAD_BYTES : MAX_UPLOAD_BYTES
 
 /** Accepted types, mapped to the extension the stored file gets.
  *
@@ -51,19 +66,37 @@ export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024
  * and these files are served from the application's own origin, so an
  * uploaded SVG would be a stored-XSS vector against any logged-in user who
  * opened it. Supporting SVG safely needs sanitising or an isolated origin,
- * which is a bigger change than an allow-list entry. */
+ * which is a bigger change than an allow-list entry.
+ *
+ * `video/mp4` and `video/webm` exist so a brand-story/hero video can be a
+ * real Media relation an operator manages from the admin, the same way a
+ * hero photo already is, rather than a path hardcoded into a component
+ * (see `Home/BrandStory`). Both are short-form, muxed container formats
+ * every current browser plays natively — no server-side transcoding is
+ * introduced here, so a file that will not play in a browser as uploaded
+ * will not play after storage either; that is a content responsibility,
+ * not something this layer can fix. */
 export const ALLOWED_MIME_TYPES: Record<string, string> = {
   'image/jpeg': '.jpg',
   'image/png': '.png',
   'image/gif': '.gif',
   'image/webp': '.webp',
   'image/avif': '.avif',
+  'video/mp4': '.mp4',
+  'video/webm': '.webm',
 }
 
 /** Magic-number prefixes, checked against the declared type. A client
  * controls the `Content-Type` it sends; the first bytes of the file are
  * harder to lie about, and disagreement between the two is exactly the
- * shape of a "picture" that is really something else. */
+ * shape of a "picture" that is really something else.
+ *
+ * MP4's signature is looser than the image checks above by necessity: the
+ * ISO base media file format allows a handful of different `ftyp` major
+ * brands (`isom`, `mp42`, `mp41`, `M4V `, `qt  ` from QuickTime-derived
+ * encoders, etc.), so this checks for the `ftyp` box itself (present in
+ * every valid MP4, always at byte offset 4) rather than enumerating every
+ * brand string a real encoder might write. */
 const MAGIC_NUMBERS: { mime: string; matches: (buffer: Buffer) => boolean }[] = [
   { mime: 'image/jpeg', matches: b => b.length > 3 && b[0] === 0xff && b[1] === 0xd8 },
   { mime: 'image/png', matches: b => b.length > 8 && b.readUInt32BE(0) === 0x89504e47 },
@@ -78,6 +111,15 @@ const MAGIC_NUMBERS: { mime: string; matches: (buffer: Buffer) => boolean }[] = 
   {
     mime: 'image/avif',
     matches: b => b.length > 12 && b.toString('ascii', 4, 8) === 'ftyp',
+  },
+  {
+    mime: 'video/mp4',
+    matches: b => b.length > 8 && b.toString('ascii', 4, 8) === 'ftyp',
+  },
+  // EBML header, the container format WebM is built on.
+  {
+    mime: 'video/webm',
+    matches: b => b.length > 4 && b.readUInt32BE(0) === 0x1a45dfa3,
   },
 ]
 
@@ -172,19 +214,18 @@ export interface StoredUpload {
 
 /** Validates and writes an upload, returning what the database record
  * needs. The declared type must be allowed AND agree with the file's own
- * magic number. */
+ * magic number.
+ *
+ * Type is validated before size: which ceiling applies (`maxUploadBytesFor`)
+ * depends on the mime type, so checking size first would either reject
+ * every legitimate video against the image limit or have to duplicate the
+ * type lookup. */
 export const storeUpload = async (
   buffer: Buffer,
   originalName: string,
   declaredMimeType: string,
 ): Promise<StoredUpload> => {
   if (buffer.length === 0) throw new MediaUploadError('The uploaded file is empty.')
-  if (buffer.length > MAX_UPLOAD_BYTES) {
-    throw new MediaUploadError(
-      `Files must be ${Math.floor(MAX_UPLOAD_BYTES / (1024 * 1024))}MB or smaller.`,
-      413,
-    )
-  }
 
   const mimeType = declaredMimeType.split(';')[0].trim().toLowerCase()
   if (!ALLOWED_MIME_TYPES[mimeType]) {
@@ -194,9 +235,20 @@ export const storeUpload = async (
     )
   }
 
+  const sizeLimit = maxUploadBytesFor(mimeType)
+  if (buffer.length > sizeLimit) {
+    throw new MediaUploadError(
+      `Files must be ${Math.floor(sizeLimit / (1024 * 1024))}MB or smaller.`,
+      413,
+    )
+  }
+
   const signature = MAGIC_NUMBERS.find(entry => entry.mime === mimeType)
   if (signature && !signature.matches(buffer)) {
-    throw new MediaUploadError(`That file is not a valid ${mimeType} image.`, 415)
+    throw new MediaUploadError(
+      `That file is not a valid ${mimeType} ${mimeType.startsWith('video/') ? 'video' : 'image'}.`,
+      415,
+    )
   }
 
   const filename = buildStoredFilename(originalName, mimeType)

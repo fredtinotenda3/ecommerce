@@ -4,9 +4,16 @@ import type { ResolvedNavRelations } from '../src/lib/repositories/adapters/glob
 import {
   toStorefrontFooter,
   toStorefrontHeader,
+  toStorefrontHome,
   toStorefrontSettings,
 } from '../src/lib/repositories/adapters/globalsStorefrontAdapter'
-import { buildTestFooter, buildTestHeader, buildTestSettings } from './fakes/FakeGlobalsRepository'
+import {
+  buildTestFooter,
+  buildTestHeader,
+  buildTestHome,
+  buildTestSettings,
+} from './fakes/FakeGlobalsRepository'
+import type { StorefrontMediaItem } from '../src/app/_types/storefront'
 
 const emptyRelations = (): ResolvedNavRelations => ({
   pageSlugsById: new Map(),
@@ -165,5 +172,38 @@ describe('toStorefrontSettings', () => {
     const settings = buildTestSettings({ productsPageId: 'missing-page' })
     const result = toStorefrontSettings(settings, null)
     expect(result.productsPage).toBeUndefined()
+  })
+})
+
+describe('toStorefrontHome', () => {
+  it('carries copy fields through and resolves the three media relations', () => {
+    const home = buildTestHome({
+      heroHeading: 'Heading',
+      heroImageId: 'hero1',
+      videoId: 'video1',
+      videoPosterId: 'poster1',
+    })
+
+    const mediaById = new Map<string, StorefrontMediaItem | null>([
+      ['hero1', { url: '/media/hero.png' }],
+      ['video1', { url: '/media/clip.mp4', mimeType: 'video/mp4' }],
+      ['poster1', { url: '/media/poster.jpg' }],
+    ])
+
+    const result = toStorefrontHome(home, mediaById)
+
+    expect(result.heroHeading).toBe('Heading')
+    expect(result.heroImage).toEqual({ url: '/media/hero.png' })
+    expect(result.video).toEqual({ url: '/media/clip.mp4', mimeType: 'video/mp4' })
+    expect(result.videoPoster).toEqual({ url: '/media/poster.jpg' })
+  })
+
+  it('leaves media fields null when no id is set', () => {
+    const home = buildTestHome()
+    const result = toStorefrontHome(home, new Map())
+
+    expect(result.heroImage).toBeNull()
+    expect(result.video).toBeNull()
+    expect(result.videoPoster).toBeNull()
   })
 })

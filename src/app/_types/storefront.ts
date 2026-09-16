@@ -109,6 +109,33 @@ export interface StorefrontSettingsLike {
   productsPage?: string | StorefrontLinkablePage | null
 }
 
+/** What `Home/Hero` and `Home/BrandStory` read off the Home global, with
+ * `heroImage`/`video`/`videoPoster` already resolved to `StorefrontMediaItem`s
+ * by `fetchGlobals.ts`. Every field is optional: both components fall back
+ * to their built-in copy/asset field-by-field when this is `null` or a
+ * given field is unset, so a fresh install (or an editor who has only
+ * filled in some fields) still renders a complete section. */
+export interface StorefrontHome {
+  heroEyebrow?: string | null
+  heroHeading?: string | null
+  heroHeadingAccent?: string | null
+  heroLede?: string | null
+  heroProofPoints?: string[]
+  heroPrimaryCtaLabel?: string | null
+  heroPrimaryCtaHref?: string | null
+  heroSecondaryCtaLabel?: string | null
+  heroSecondaryCtaHref?: string | null
+  heroImage?: StorefrontMediaItem | null
+
+  videoEyebrow?: string | null
+  videoHeading?: string | null
+  videoLede?: string | null
+  videoLinkLabel?: string | null
+  videoLinkHref?: string | null
+  video?: StorefrontMediaItem | null
+  videoPoster?: StorefrontMediaItem | null
+}
+
 /** What `CMSLink` reads off a referenced page when resolving an internal
  * link's href. */
 export interface StorefrontLinkablePage {

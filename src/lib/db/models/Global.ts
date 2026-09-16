@@ -45,10 +45,32 @@ export interface GlobalNavItemDocument {
 
 export interface GlobalDocument extends Document {
   _id: Types.ObjectId
-  globalType: 'header' | 'footer' | 'settings' | string
+  globalType: 'header' | 'footer' | 'settings' | 'home' | string
   copyright?: string
   navItems?: GlobalNavItemDocument[]
   productsPage?: Types.ObjectId | null
+
+  // `home` global fields. Flat rather than nested (`heroImage` not
+  // `hero.image`) so the `strict: false` schema stores them exactly as
+  // `GlobalsRepository`'s `$set` writes them, with no separate migration.
+  heroEyebrow?: string | null
+  heroHeading?: string | null
+  heroHeadingAccent?: string | null
+  heroLede?: string | null
+  heroProofPoints?: string[]
+  heroPrimaryCtaLabel?: string | null
+  heroPrimaryCtaHref?: string | null
+  heroSecondaryCtaLabel?: string | null
+  heroSecondaryCtaHref?: string | null
+  heroImage?: Types.ObjectId | null
+  videoEyebrow?: string | null
+  videoHeading?: string | null
+  videoLede?: string | null
+  videoLinkLabel?: string | null
+  videoLinkHref?: string | null
+  video?: Types.ObjectId | null
+  videoPoster?: Types.ObjectId | null
+
   createdAt: Date
   updatedAt: Date
 }

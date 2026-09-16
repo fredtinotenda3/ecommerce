@@ -45,8 +45,25 @@ export const MediaTable = ({ rows }: { rows: MediaRow[] }) => (
       },
       {
         header: 'Preview',
-        render: row =>
-          row.url ? (
+        render: row => {
+          if (!row.url) return '—'
+
+          // A video file cannot render as an <img>; a muted, non-playing
+          // <video> gives the same "thumbnail" role (most browsers paint
+          // its first frame) without adding a script-driven frame-grab.
+          if (row.mimeType?.startsWith('video/')) {
+            return (
+              <video
+                src={row.url}
+                muted
+                playsInline
+                preload="metadata"
+                style={{ height: 40, width: 'auto', borderRadius: 4, display: 'block' }}
+              />
+            )
+          }
+
+          return (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={row.url}
@@ -56,9 +73,8 @@ export const MediaTable = ({ rows }: { rows: MediaRow[] }) => (
               style={{ height: 40, width: 'auto', borderRadius: 4, display: 'block' }}
               loading="lazy"
             />
-          ) : (
-            '—'
-          ),
+          )
+        },
       },
       { header: 'Filename', render: row => row.filename ?? '—' },
       { header: 'Type', render: row => row.mimeType ?? '—' },

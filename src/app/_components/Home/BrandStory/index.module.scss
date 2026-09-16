@@ -59,7 +59,13 @@
   display: block;
   width: 100%;
   max-width: 18rem;
+  // The current clip's real aspect ratio (portrait, 452:640). `object-fit`
+  // is the safety net for an admin-uploaded replacement clip of a
+  // different shape — this project has no video dimension reader (see this
+  // component's header comment), so the box itself cannot resize to match
+  // an unknown aspect; cropping to fill it is preferable to stretching.
   aspect-ratio: 452 / 640;
+  object-fit: cover;
   border-radius: var(--th-radius-xl);
   background-color: var(--th-surface-sunken);
   box-shadow: var(--th-shadow-lg);

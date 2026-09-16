@@ -12,12 +12,15 @@ import type {
   StorefrontCMSLink,
   StorefrontFooter,
   StorefrontHeader,
+  StorefrontHome,
+  StorefrontMediaItem,
   StorefrontNavItem,
   StorefrontSettingsLike,
 } from '../../../app/_types/storefront'
 import type {
   Footer as NativeFooter,
   Header as NativeHeader,
+  Home as NativeHome,
   NavItem,
   Settings as NativeSettings,
 } from '../../domain/types'
@@ -82,4 +85,30 @@ export const toStorefrontSettings = (
 ): StorefrontSettingsLike => ({
   productsPage:
     settings.productsPageId && productsPageSlug ? { slug: productsPageSlug } : undefined,
+})
+
+/** `mediaById` is already relation-resolved by the caller (see
+ * `buildStorefrontHome` in `fetchGlobals.ts`) — this stays a pure mapping,
+ * consistent with every other function in this file. */
+export const toStorefrontHome = (
+  home: NativeHome,
+  mediaById: Map<string, StorefrontMediaItem | null>,
+): StorefrontHome => ({
+  heroEyebrow: home.heroEyebrow,
+  heroHeading: home.heroHeading,
+  heroHeadingAccent: home.heroHeadingAccent,
+  heroLede: home.heroLede,
+  heroProofPoints: home.heroProofPoints,
+  heroPrimaryCtaLabel: home.heroPrimaryCtaLabel,
+  heroPrimaryCtaHref: home.heroPrimaryCtaHref,
+  heroSecondaryCtaLabel: home.heroSecondaryCtaLabel,
+  heroSecondaryCtaHref: home.heroSecondaryCtaHref,
+  heroImage: home.heroImageId ? mediaById.get(home.heroImageId) ?? null : null,
+  videoEyebrow: home.videoEyebrow,
+  videoHeading: home.videoHeading,
+  videoLede: home.videoLede,
+  videoLinkLabel: home.videoLinkLabel,
+  videoLinkHref: home.videoLinkHref,
+  video: home.videoId ? mediaById.get(home.videoId) ?? null : null,
+  videoPoster: home.videoPosterId ? mediaById.get(home.videoPosterId) ?? null : null,
 })

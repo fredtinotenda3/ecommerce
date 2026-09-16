@@ -17,6 +17,7 @@ import {
   createRedirect,
   deleteCategory,
   deletePage,
+  saveHome,
   saveSettings,
   setProductPrice,
   updateCategory,
@@ -27,6 +28,7 @@ import {
 } from '../src/lib/services/AdminContentService'
 import { FakeCategoryRepository, buildTestCategory } from './fakes/FakeCategoryRepository'
 import { FakeGlobalsRepository } from './fakes/FakeGlobalsRepository'
+import { FakeMediaRepository, buildTestMedia } from './fakes/FakeMediaRepository'
 import { FakeOrderRepository } from './fakes/FakeOrderRepository'
 import { FakePageRepository, buildTestPage } from './fakes/FakePageRepository'
 import { FakePaymentRepository } from './fakes/FakePaymentRepository'
@@ -526,5 +528,102 @@ describe('redirect writes', () => {
     await expect(
       createRedirect({ from: '/old', to: '/other' }, { redirectRepository }),
     ).rejects.toThrow(/already exists/)
+  })
+})
+
+describe('home global writes', () => {
+  let globalsRepository: FakeGlobalsRepository
+  let mediaRepository: FakeMediaRepository
+
+  beforeEach(() => {
+    globalsRepository = new FakeGlobalsRepository()
+    mediaRepository = new FakeMediaRepository()
+  })
+
+  it('saves hero and video copy, trimming the proof-point list', async () => {
+    const home = await saveHome(
+      {
+        heroEyebrow: 'Eyebrow',
+        heroHeading: 'Heading',
+        heroHeadingAccent: 'Accent',
+        heroLede: 'Lede',
+        heroProofPoints: ['One', 'Two', 'Three'],
+      },
+      { globalsRepository, mediaRepository },
+    )
+
+    expect(home.heroEyebrow).toBe('Eyebrow')
+    expect(home.heroProofPoints).toEqual(['One', 'Two', 'Three'])
+  })
+
+  it('rejects a fourth proof point', async () => {
+    await expect(
+      saveHome(
+        { heroProofPoints: ['One', 'Two', 'Three', 'Four'] },
+        { globalsRepository, mediaRepository },
+      ),
+    ).rejects.toThrow(/at most 3/)
+  })
+
+  it('rejects a CTA label with no link', async () => {
+    await expect(
+      saveHome({ heroPrimaryCtaLabel: 'Shop now' }, { globalsRepository, mediaRepository }),
+    ).rejects.toThrow(/set both a label and a link/)
+  })
+
+  it('rejects a CTA link with no label', async () => {
+    await expect(
+      saveHome({ heroPrimaryCtaHref: '/products' }, { globalsRepository, mediaRepository }),
+    ).rejects.toThrow(/set both a label and a link/)
+  })
+
+  it('rejects a javascript: CTA link', async () => {
+    await expect(
+      saveHome(
+        { heroPrimaryCtaLabel: 'Go', heroPrimaryCtaHref: 'javascript:alert(1)' },
+        { globalsRepository, mediaRepository },
+      ),
+    ).rejects.toThrow(AdminValidationError)
+  })
+
+  // Media ids are validated as 24-character hex strings (Mongo ObjectId
+  // shape) before a repository lookup even happens — see `optionalId` in
+  // AdminContentService — so the fakes below are seeded under ids in that
+  // shape rather than short readable labels.
+  const IMAGE_ID = '507f1f77bcf86cd799439011'
+  const VIDEO_ID = '507f1f77bcf86cd799439012'
+  const MISSING_ID = '507f1f77bcf86cd799439099'
+
+  it('accepts a hero image that is actually an image', async () => {
+    mediaRepository.seed(buildTestMedia({ id: IMAGE_ID, mimeType: 'image/png' }))
+
+    const home = await saveHome(
+      { heroImageId: IMAGE_ID },
+      { globalsRepository, mediaRepository },
+    )
+
+    expect(home.heroImageId).toBe(IMAGE_ID)
+  })
+
+  it('rejects a hero image that is actually a video', async () => {
+    mediaRepository.seed(buildTestMedia({ id: VIDEO_ID, mimeType: 'video/mp4' }))
+
+    await expect(
+      saveHome({ heroImageId: VIDEO_ID }, { globalsRepository, mediaRepository }),
+    ).rejects.toThrow(/must be an image/)
+  })
+
+  it('rejects a video field that is actually an image', async () => {
+    mediaRepository.seed(buildTestMedia({ id: IMAGE_ID, mimeType: 'image/png' }))
+
+    await expect(
+      saveHome({ videoId: IMAGE_ID }, { globalsRepository, mediaRepository }),
+    ).rejects.toThrow(/must be a video/)
+  })
+
+  it('rejects a reference to media that does not exist', async () => {
+    await expect(
+      saveHome({ videoId: MISSING_ID }, { globalsRepository, mediaRepository }),
+    ).rejects.toThrow(/does not exist/)
   })
 })

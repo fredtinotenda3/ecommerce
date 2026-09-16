@@ -21,6 +21,8 @@ import {
   contentTypeForPath,
   deleteStoredFile,
   MAX_UPLOAD_BYTES,
+  MAX_VIDEO_UPLOAD_BYTES,
+  maxUploadBytesFor,
   MediaUploadError,
   resolveMediaPath,
   storeUpload,
@@ -37,6 +39,20 @@ const buildPng = (width: number, height: number): Buffer => {
   buffer.writeUInt32BE(height, 20)
   return buffer
 }
+
+/** A minimal, valid-enough MP4: a `ftyp` box (size, "ftyp", major brand) —
+ * everything `storeUpload`'s magic-number check actually looks at. */
+const buildMp4 = (): Buffer => {
+  const buffer = Buffer.alloc(16)
+  buffer.writeUInt32BE(16, 0)
+  buffer.write('ftyp', 4, 'ascii')
+  buffer.write('isom', 8, 'ascii')
+  return buffer
+}
+
+/** A minimal WebM: just the EBML header magic number, padded past the
+ * 4-byte length the check requires. */
+const buildWebm = (): Buffer => Buffer.from([0x1a, 0x45, 0xdf, 0xa3, 0x00, 0x00])
 
 let mediaDir: string
 
@@ -149,6 +165,53 @@ describe('storeUpload', () => {
 
     expect(stored.mimeType).toBe('image/png')
   })
+
+  it('accepts a valid MP4 upload, with no dimensions (no video parser)', async () => {
+    const stored = await storeUpload(buildMp4(), 'clip.mp4', 'video/mp4')
+
+    expect(stored.mimeType).toBe('video/mp4')
+    expect(stored.url).toBe(`/media/${stored.filename}`)
+    expect(stored.width).toBeNull()
+    expect(stored.height).toBeNull()
+  })
+
+  it('accepts a valid WebM upload', async () => {
+    const stored = await storeUpload(buildWebm(), 'clip.webm', 'video/webm')
+
+    expect(stored.mimeType).toBe('video/webm')
+  })
+
+  it('rejects a file claiming to be MP4 whose bytes are not', async () => {
+    await expect(
+      storeUpload(Buffer.from('not a real video file'), 'fake.mp4', 'video/mp4'),
+    ).rejects.toThrow(/not a valid video\/mp4 video/)
+  })
+
+  it('allows a video well past the image size limit, up to its own higher ceiling', async () => {
+    const big = Buffer.alloc(MAX_UPLOAD_BYTES + 1024 * 1024)
+    buildMp4().copy(big, 0)
+
+    const stored = await storeUpload(big, 'clip.mp4', 'video/mp4')
+    expect(stored.mimeType).toBe('video/mp4')
+  })
+
+  it('still rejects a video over the video size limit', async () => {
+    const tooBig = Buffer.alloc(MAX_VIDEO_UPLOAD_BYTES + 1)
+    buildMp4().copy(tooBig, 0)
+
+    await expect(storeUpload(tooBig, 'clip.mp4', 'video/mp4')).rejects.toThrow(/or smaller/)
+  })
+})
+
+describe('maxUploadBytesFor', () => {
+  it('gives video its own, larger ceiling', () => {
+    expect(maxUploadBytesFor('video/mp4')).toBe(MAX_VIDEO_UPLOAD_BYTES)
+    expect(maxUploadBytesFor('video/webm')).toBe(MAX_VIDEO_UPLOAD_BYTES)
+  })
+
+  it('gives every image type the standard ceiling', () => {
+    expect(maxUploadBytesFor('image/png')).toBe(MAX_UPLOAD_BYTES)
+  })
 })
 
 describe('resolveMediaPath', () => {
@@ -227,6 +290,8 @@ describe('contentTypeForPath', () => {
   it('maps known extensions', () => {
     expect(contentTypeForPath('/x/photo.jpg')).toBe('image/jpeg')
     expect(contentTypeForPath('/x/photo.WEBP')).toBe('image/webp')
+    expect(contentTypeForPath('/x/clip.mp4')).toBe('video/mp4')
+    expect(contentTypeForPath('/x/clip.webm')).toBe('video/webm')
   })
 
   it('falls back to an opaque type rather than guessing', () => {

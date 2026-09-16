@@ -12,7 +12,7 @@
 import React, { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-const ACCEPT = 'image/jpeg,image/png,image/gif,image/webp,image/avif'
+const ACCEPT = 'image/jpeg,image/png,image/gif,image/webp,image/avif,video/mp4,video/webm'
 
 export const MediaUploadForm: React.FC = () => {
   const router = useRouter()
@@ -132,8 +132,9 @@ export const MediaUploadForm: React.FC = () => {
       </div>
 
       <p style={{ color: '#666', fontSize: '0.85rem', margin: 0 }}>
-        JPEG, PNG, GIF, WebP or AVIF, up to 10MB. SVG is not accepted: it can carry script, and
-        these files are served from this site&apos;s own origin.
+        Images: JPEG, PNG, GIF, WebP or AVIF, up to 10MB. Video: MP4 or WebM, up to 100MB. SVG is
+        not accepted: it can carry script, and these files are served from this site&apos;s own
+        origin.
       </p>
     </form>
   )

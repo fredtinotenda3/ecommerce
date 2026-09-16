@@ -3,9 +3,16 @@ import { describe, expect, it } from 'vitest'
 import {
   buildStorefrontFooter,
   buildStorefrontHeader,
+  buildStorefrontHome,
   buildStorefrontSettings,
 } from '../src/app/_api/fetchGlobals'
-import { buildTestFooter, buildTestHeader, buildTestSettings, FakeGlobalsRepository } from './fakes/FakeGlobalsRepository'
+import {
+  buildTestFooter,
+  buildTestHeader,
+  buildTestHome,
+  buildTestSettings,
+  FakeGlobalsRepository,
+} from './fakes/FakeGlobalsRepository'
 import { FakeMediaRepository, buildTestMedia } from './fakes/FakeMediaRepository'
 import { buildTestPage, FakePageRepository } from './fakes/FakePageRepository'
 
@@ -130,5 +137,65 @@ describe('buildStorefrontSettings', () => {
     const result = await buildStorefrontSettings(globalsRepo, new FakePageRepository())
 
     expect(result?.productsPage).toBeUndefined()
+  })
+})
+
+describe('buildStorefrontHome', () => {
+  it('resolves the hero image, video and video poster media relations', async () => {
+    const globalsRepo = new FakeGlobalsRepository()
+    const mediaRepo = new FakeMediaRepository()
+
+    mediaRepo.seed(
+      buildTestMedia({ id: 'hero1', url: '/media/hero.png', width: 900, height: 540, alt: 'A phone' }),
+    )
+    mediaRepo.seed(
+      buildTestMedia({ id: 'video1', url: '/media/clip.mp4', mimeType: 'video/mp4' }),
+    )
+    mediaRepo.seed(buildTestMedia({ id: 'poster1', url: '/media/poster.jpg' }))
+
+    globalsRepo.seedHome(
+      buildTestHome({
+        heroHeading: 'Custom heading',
+        heroProofPoints: ['Fast delivery'],
+        heroImageId: 'hero1',
+        videoId: 'video1',
+        videoPosterId: 'poster1',
+      }),
+    )
+
+    const result = await buildStorefrontHome(globalsRepo, mediaRepo)
+
+    expect(result?.heroHeading).toBe('Custom heading')
+    expect(result?.heroProofPoints).toEqual(['Fast delivery'])
+    expect(result?.heroImage).toMatchObject({ url: '/media/hero.png', width: 900, height: 540 })
+    expect(result?.video).toMatchObject({ url: '/media/clip.mp4', mimeType: 'video/mp4' })
+    expect(result?.videoPoster).toMatchObject({ url: '/media/poster.jpg' })
+  })
+
+  it('returns null when no Home global exists yet, rather than throwing', async () => {
+    const result = await buildStorefrontHome(new FakeGlobalsRepository(), new FakeMediaRepository())
+    expect(result).toBeNull()
+  })
+
+  it('leaves a media field null when the referenced media no longer resolves', async () => {
+    const globalsRepo = new FakeGlobalsRepository()
+    globalsRepo.seedHome(buildTestHome({ heroImageId: 'missing' }))
+
+    const result = await buildStorefrontHome(globalsRepo, new FakeMediaRepository())
+
+    expect(result?.heroImage).toBeNull()
+  })
+
+  it('resolves a shared id (e.g. the same image reused as poster) only once', async () => {
+    const globalsRepo = new FakeGlobalsRepository()
+    const mediaRepo = new FakeMediaRepository()
+    mediaRepo.seed(buildTestMedia({ id: 'shared1', url: '/media/shared.jpg' }))
+
+    globalsRepo.seedHome(buildTestHome({ heroImageId: 'shared1', videoPosterId: 'shared1' }))
+
+    const result = await buildStorefrontHome(globalsRepo, mediaRepo)
+
+    expect(result?.heroImage?.url).toBe('/media/shared.jpg')
+    expect(result?.videoPoster?.url).toBe('/media/shared.jpg')
   })
 })

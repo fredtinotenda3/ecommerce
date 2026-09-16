@@ -1,6 +1,7 @@
 // src/app/api/admin/globals/[slug]/route.ts
 //
-// PUT — replace one of the singleton globals: header, footer or settings.
+// PUT — replace one of the singleton globals: header, footer, settings or
+// home (the homepage hero + brand-story video content).
 //
 // PUT rather than PATCH because each of these is edited and saved whole:
 // nav items are an ordered list, and a partial update of an ordered list
@@ -10,7 +11,7 @@
 
 import { NextResponse } from 'next/server'
 
-import { saveFooter, saveHeader, saveSettings } from '../../../../_api/adminMutations'
+import { saveFooter, saveHeader, saveHome, saveSettings } from '../../../../_api/adminMutations'
 import { requireAdmin } from '../../../../_api/requireAdmin'
 import { adminErrorResponse, readJsonBody } from '../../_shared/respond'
 
@@ -33,6 +34,8 @@ export async function PUT(
         return NextResponse.json({ global: await saveFooter(body) })
       case 'settings':
         return NextResponse.json({ global: await saveSettings(body) })
+      case 'home':
+        return NextResponse.json({ global: await saveHome(body) })
       default:
         return NextResponse.json({ error: 'Unknown global.' }, { status: 404 })
     }

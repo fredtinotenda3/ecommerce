@@ -3,11 +3,12 @@
 // Read-only reads for the Header, Footer and Settings globals, with nav
 // item relations (referenced page -> slug, icon media -> url) resolved.
 
-import type { NavItem } from '../../lib/domain/types'
+import type { Home, NavItem } from '../../lib/domain/types'
 import {
   type ResolvedNavRelations,
   toStorefrontFooter,
   toStorefrontHeader,
+  toStorefrontHome,
   toStorefrontSettings,
 } from '../../lib/repositories/adapters/globalsStorefrontAdapter'
 import type { GlobalsRepository } from '../../lib/repositories/GlobalsRepository'
@@ -16,6 +17,8 @@ import type { PageRepository } from '../../lib/repositories/PageRepository'
 import type {
   StorefrontFooter,
   StorefrontHeader,
+  StorefrontHome,
+  StorefrontMediaItem,
   StorefrontSettingsLike,
 } from '../_types/storefront'
 import { getRepositories } from './repositories'
@@ -97,6 +100,46 @@ export const buildStorefrontSettings = async (
   return toStorefrontSettings(settings, productsPageSlug)
 }
 
+/** See `buildStorefrontHeader` for the null-is-not-an-error rationale.
+ * `mediaRepository` resolves `heroImageId`/`videoId`/`videoPosterId` the
+ * same way `resolveNavRelations` resolves an icon: an id looked up once,
+ * ids deduplicated via the `Set`, so a shared id (an operator reusing the
+ * hero photo as the video poster, say) is only fetched once. */
+export const buildStorefrontHome = async (
+  globalsRepository: GlobalsRepository,
+  mediaRepository: MediaRepository,
+): Promise<StorefrontHome | null> => {
+  const home = await globalsRepository.getHome()
+  if (!home) return null
+
+  const ids = [home.heroImageId, home.videoId, home.videoPosterId].filter(
+    (id): id is string => Boolean(id),
+  )
+  const uniqueIds = Array.from(new Set(ids))
+
+  const mediaById = new Map<string, StorefrontMediaItem | null>()
+  await Promise.all(
+    uniqueIds.map(async id => {
+      const media = await mediaRepository.getById(id)
+      mediaById.set(
+        id,
+        media
+          ? {
+              url: media.url,
+              width: media.width,
+              height: media.height,
+              alt: media.alt,
+              filename: media.filename,
+              mimeType: media.mimeType,
+            }
+          : null,
+      )
+    }),
+  )
+
+  return toStorefrontHome(home as Home, mediaById)
+}
+
 export const fetchHeader = async (): Promise<StorefrontHeader | null> => {
   const { globals, pages, media } = await getRepositories()
   return buildStorefrontHeader(globals, pages, media)
@@ -112,19 +155,26 @@ export const fetchSettings = async (): Promise<StorefrontSettingsLike | null> =>
   return buildStorefrontSettings(globals, pages)
 }
 
-/** All three over a single shared connection. */
+export const fetchHome = async (): Promise<StorefrontHome | null> => {
+  const { globals, media } = await getRepositories()
+  return buildStorefrontHome(globals, media)
+}
+
+/** All four over a single shared connection. */
 export const fetchGlobals = async (): Promise<{
   settings: StorefrontSettingsLike | null
   header: StorefrontHeader | null
   footer: StorefrontFooter | null
+  home: StorefrontHome | null
 }> => {
   const { globals, pages, media } = await getRepositories()
 
-  const [settings, header, footer] = await Promise.all([
+  const [settings, header, footer, home] = await Promise.all([
     buildStorefrontSettings(globals, pages),
     buildStorefrontHeader(globals, pages, media),
     buildStorefrontFooter(globals, pages, media),
+    buildStorefrontHome(globals, media),
   ])
 
-  return { settings, header, footer }
+  return { settings, header, footer, home }
 }

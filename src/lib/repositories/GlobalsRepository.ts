@@ -15,15 +15,37 @@ import {
   type GlobalDocument,
   type GlobalNavItemDocument,
 } from '../db/models/Global'
-import type { Footer, Header, NavItem, Settings } from '../domain/types'
+import type { Footer, Header, Home, NavItem, Settings } from '../domain/types'
+
+export interface HomeWriteInput {
+  heroEyebrow: string | null
+  heroHeading: string | null
+  heroHeadingAccent: string | null
+  heroLede: string | null
+  heroProofPoints: string[]
+  heroPrimaryCtaLabel: string | null
+  heroPrimaryCtaHref: string | null
+  heroSecondaryCtaLabel: string | null
+  heroSecondaryCtaHref: string | null
+  heroImageId: string | null
+  videoEyebrow: string | null
+  videoHeading: string | null
+  videoLede: string | null
+  videoLinkLabel: string | null
+  videoLinkHref: string | null
+  videoId: string | null
+  videoPosterId: string | null
+}
 
 export interface GlobalsRepository {
   getHeader(): Promise<Header | null>
   getFooter(): Promise<Footer | null>
   getSettings(): Promise<Settings | null>
+  getHome(): Promise<Home | null>
   saveHeader(input: { navItems: NavItem[] }): Promise<Header>
   saveFooter(input: { copyright: string | null; navItems: NavItem[] }): Promise<Footer>
   saveSettings(input: { productsPageId: string | null }): Promise<Settings>
+  saveHome(input: HomeWriteInput): Promise<Home>
 }
 
 /** Inverse of `toNavItems`: maps the domain shape back onto the stored
@@ -68,6 +90,29 @@ const toNavItems = (navItems: GlobalNavItemDocument[] | undefined): NavItem[] =>
       iconMediaId: item.link?.icon ? item.link.icon.toString() : null,
     },
   }))
+
+const toHome = (global: GlobalDocument): Home => ({
+  id: global._id.toString(),
+  heroEyebrow: global.heroEyebrow ?? null,
+  heroHeading: global.heroHeading ?? null,
+  heroHeadingAccent: global.heroHeadingAccent ?? null,
+  heroLede: global.heroLede ?? null,
+  heroProofPoints: Array.isArray(global.heroProofPoints) ? global.heroProofPoints : [],
+  heroPrimaryCtaLabel: global.heroPrimaryCtaLabel ?? null,
+  heroPrimaryCtaHref: global.heroPrimaryCtaHref ?? null,
+  heroSecondaryCtaLabel: global.heroSecondaryCtaLabel ?? null,
+  heroSecondaryCtaHref: global.heroSecondaryCtaHref ?? null,
+  heroImageId: global.heroImage ? global.heroImage.toString() : null,
+  videoEyebrow: global.videoEyebrow ?? null,
+  videoHeading: global.videoHeading ?? null,
+  videoLede: global.videoLede ?? null,
+  videoLinkLabel: global.videoLinkLabel ?? null,
+  videoLinkHref: global.videoLinkHref ?? null,
+  videoId: global.video ? global.video.toString() : null,
+  videoPosterId: global.videoPoster ? global.videoPoster.toString() : null,
+  createdAt: global.createdAt,
+  updatedAt: global.updatedAt,
+})
 
 export class MongoGlobalsRepository implements GlobalsRepository {
   private readonly connection: Connection
@@ -183,5 +228,49 @@ export class MongoGlobalsRepository implements GlobalsRepository {
       createdAt: global.createdAt,
       updatedAt: global.updatedAt,
     }
+  }
+
+  async getHome(): Promise<Home | null> {
+    const Model = getGlobalModel(this.connection)
+    const doc = await Model.findOne({ globalType: 'home' }).lean<GlobalDocument>().exec()
+    if (!doc) return null
+    return toHome(doc as unknown as GlobalDocument)
+  }
+
+  async saveHome(input: HomeWriteInput): Promise<Home> {
+    const Model = getGlobalModel(this.connection)
+    const asId = (value: string | null): Types.ObjectId | null =>
+      value ? new Types.ObjectId(value) : null
+
+    const doc = await Model.findOneAndUpdate(
+      { globalType: 'home' },
+      {
+        $set: {
+          heroEyebrow: input.heroEyebrow,
+          heroHeading: input.heroHeading,
+          heroHeadingAccent: input.heroHeadingAccent,
+          heroLede: input.heroLede,
+          heroProofPoints: input.heroProofPoints,
+          heroPrimaryCtaLabel: input.heroPrimaryCtaLabel,
+          heroPrimaryCtaHref: input.heroPrimaryCtaHref,
+          heroSecondaryCtaLabel: input.heroSecondaryCtaLabel,
+          heroSecondaryCtaHref: input.heroSecondaryCtaHref,
+          heroImage: asId(input.heroImageId),
+          videoEyebrow: input.videoEyebrow,
+          videoHeading: input.videoHeading,
+          videoLede: input.videoLede,
+          videoLinkLabel: input.videoLinkLabel,
+          videoLinkHref: input.videoLinkHref,
+          video: asId(input.videoId),
+          videoPoster: asId(input.videoPosterId),
+        },
+        $setOnInsert: { globalType: 'home' },
+      },
+      { new: true, upsert: true },
+    )
+      .lean<GlobalDocument>()
+      .exec()
+
+    return toHome(doc as unknown as GlobalDocument)
   }
 }

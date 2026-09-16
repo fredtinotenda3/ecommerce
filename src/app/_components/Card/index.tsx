@@ -44,8 +44,16 @@ export const Card: React.FC<{
   title?: string
   relationTo?: 'products'
   doc?: StorefrontProductCard
+  /** How wide this card actually renders at each breakpoint, so the
+   * browser fetches a tile-sized image rendition instead of guessing from
+   * a value tuned for a different grid. Defaults to the shape used by the
+   * main product-listing grid (`CollectionArchive`: 3-up desktop, single
+   * column ≤768px) — callers with a different layout (a fixed column
+   * count that does not collapse to one, or a horizontal rail) should pass
+   * their own. */
+  sizes?: string
 }> = props => {
-  const { title: titleFromProps, doc, className } = props
+  const { title: titleFromProps, doc, className, sizes } = props
 
   const { slug, title, meta, price, compareAtPrice, createdAt } = doc || {}
   const { description, image: metaImage } = meta || {}
@@ -78,10 +86,10 @@ export const Card: React.FC<{
             imgClassName={classes.image}
             resource={metaImage}
             fill
-            // The grid is 4-up on desktop, 2-up on tablet, 1-up on a phone.
-            // Declared accurately so the browser fetches a tile-sized
-            // rendition rather than a full-width one.
-            sizes="(max-width: 640px) 92vw, (max-width: 1024px) 44vw, 22vw"
+            // See the `sizes` prop's own doc comment: this default matches
+            // CollectionArchive's grid (3-up desktop down to 1024px, single
+            // column ≤768px); other callers override it for their own grid.
+            sizes={sizes || '(max-width: 768px) 92vw, (max-width: 1024px) 30vw, 22vw'}
           />
         )}
       </div>

@@ -90,6 +90,59 @@ const optionalId = (value: unknown, field: string): string | null | undefined =>
   return value
 }
 
+/** A root-relative path on this site, or a full http(s) URL. Rejects a
+ * protocol-relative `//evil.example` and non-http(s) schemes like
+ * `javascript:` — anywhere an operator can type a URL that later renders as
+ * an `href`/`src` is a place an attacker would like to put one. Shared by
+ * redirects and the Home global's hero/video CTAs, which are the same kind
+ * of value. */
+const assertSafeHref = (value: string, field: string): string => {
+  if (value.startsWith('//')) {
+    throw new AdminValidationError(`${field} must start with "/" or be a full http(s) URL.`)
+  }
+
+  if (value.startsWith('/')) return value
+
+  let url: URL
+  try {
+    url = new URL(value)
+  } catch {
+    throw new AdminValidationError(`${field} must start with "/" or be a full http(s) URL.`)
+  }
+
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new AdminValidationError(`${field} must use http or https.`)
+  }
+
+  return value
+}
+
+const optionalHref = (value: unknown, field: string, max = 2000): string | null | undefined => {
+  const text = optionalText(value, field, max)
+  if (text === undefined) return undefined
+  return assertSafeHref(text, field)
+}
+
+/** Up to `max` short strings — the Home global's hero "proof points" today,
+ * capped because a fourth item always wraps a phone layout to a second
+ * line (see the field's own domain-type comment). */
+const stringList = (value: unknown, field: string, max: number, itemMax = 120): string[] => {
+  if (value === undefined || value === null) return []
+  if (!Array.isArray(value)) throw new AdminValidationError(`${field} must be a list.`)
+  if (value.length > max) throw new AdminValidationError(`${field} allows at most ${max} items.`)
+
+  return value.map((entry, index) => {
+    if (typeof entry !== 'string' || entry.trim().length === 0) {
+      throw new AdminValidationError(`${field}[${index + 1}] must be non-empty text.`)
+    }
+    const trimmed = entry.trim()
+    if (trimmed.length > itemMax) {
+      throw new AdminValidationError(`${field}[${index + 1}] must be ${itemMax} characters or fewer.`)
+    }
+    return trimmed
+  })
+}
+
 const idList = (value: unknown, field: string): string[] | undefined => {
   if (value === undefined) return undefined
   if (!Array.isArray(value)) throw new AdminValidationError(`${field} must be a list of ids.`)
@@ -746,6 +799,106 @@ export const saveSettings = async (
   return deps.globalsRepository.saveSettings({ productsPageId })
 }
 
+export interface HomeWriteRequest {
+  heroEyebrow?: unknown
+  heroHeading?: unknown
+  heroHeadingAccent?: unknown
+  heroLede?: unknown
+  heroProofPoints?: unknown
+  heroPrimaryCtaLabel?: unknown
+  heroPrimaryCtaHref?: unknown
+  heroSecondaryCtaLabel?: unknown
+  heroSecondaryCtaHref?: unknown
+  heroImageId?: unknown
+  videoEyebrow?: unknown
+  videoHeading?: unknown
+  videoLede?: unknown
+  videoLinkLabel?: unknown
+  videoLinkHref?: unknown
+  videoId?: unknown
+  videoPosterId?: unknown
+}
+
+/** A CTA is either fully set (label and href) or fully empty — half a CTA
+ * (a label with nowhere to go, or a link with no visible text) is always a
+ * mistake, and rejecting it here is cheaper than an operator discovering a
+ * dead button on the live homepage. */
+const assertCtaComplete = (
+  label: string | null,
+  href: string | null,
+  field: string,
+): void => {
+  if (Boolean(label) !== Boolean(href)) {
+    throw new AdminValidationError(
+      `${field}: set both a label and a link, or leave both empty.`,
+    )
+  }
+}
+
+/** Confirms a referenced Media doc exists and, when `expectedKind` is
+ * given, that its `mimeType` actually matches — the hero photo field is
+ * rejected if pointed at the uploaded video, and vice versa. The check is
+ * a prefix match (`image/`, `video/`) rather than an exact list, so it
+ * does not need updating every time `ALLOWED_MIME_TYPES` grows. */
+const assertMediaMatches = async (
+  id: string | null,
+  field: string,
+  expectedKind: 'image' | 'video',
+  deps: { mediaRepository: MediaRepository },
+): Promise<void> => {
+  if (!id) return
+  const media = await deps.mediaRepository.getById(id)
+  if (!media) throw new AdminValidationError(`${field}: that media item does not exist.`)
+  if (media.mimeType && !media.mimeType.startsWith(`${expectedKind}/`)) {
+    throw new AdminValidationError(`${field} must be a${expectedKind === 'image' ? 'n' : ''} ${expectedKind} file.`)
+  }
+}
+
+export const saveHome = async (
+  input: HomeWriteRequest,
+  deps: { globalsRepository: GlobalsRepository; mediaRepository: MediaRepository },
+) => {
+  const heroPrimaryCtaLabel = optionalText(input.heroPrimaryCtaLabel, 'Hero primary CTA label', 60) ?? null
+  const heroPrimaryCtaHref = optionalHref(input.heroPrimaryCtaHref, 'Hero primary CTA link') ?? null
+  const heroSecondaryCtaLabel =
+    optionalText(input.heroSecondaryCtaLabel, 'Hero secondary CTA label', 60) ?? null
+  const heroSecondaryCtaHref = optionalHref(input.heroSecondaryCtaHref, 'Hero secondary CTA link') ?? null
+  assertCtaComplete(heroPrimaryCtaLabel, heroPrimaryCtaHref, 'Hero primary CTA')
+  assertCtaComplete(heroSecondaryCtaLabel, heroSecondaryCtaHref, 'Hero secondary CTA')
+
+  const videoLinkLabel = optionalText(input.videoLinkLabel, 'Video link label', 60) ?? null
+  const videoLinkHref = optionalHref(input.videoLinkHref, 'Video link') ?? null
+  assertCtaComplete(videoLinkLabel, videoLinkHref, 'Video link')
+
+  const heroImageId = optionalId(input.heroImageId, 'Hero image') ?? null
+  const videoId = optionalId(input.videoId, 'Video') ?? null
+  const videoPosterId = optionalId(input.videoPosterId, 'Video poster') ?? null
+
+  await assertMediaMatches(heroImageId, 'Hero image', 'image', deps)
+  await assertMediaMatches(videoId, 'Video', 'video', deps)
+  await assertMediaMatches(videoPosterId, 'Video poster', 'image', deps)
+
+  return deps.globalsRepository.saveHome({
+    heroEyebrow: optionalText(input.heroEyebrow, 'Hero eyebrow', 120) ?? null,
+    heroHeading: optionalText(input.heroHeading, 'Hero heading', 160) ?? null,
+    heroHeadingAccent: optionalText(input.heroHeadingAccent, 'Hero heading accent', 160) ?? null,
+    heroLede: optionalText(input.heroLede, 'Hero description', 500) ?? null,
+    heroProofPoints: stringList(input.heroProofPoints, 'Hero proof points', 3, 80),
+    heroPrimaryCtaLabel,
+    heroPrimaryCtaHref,
+    heroSecondaryCtaLabel,
+    heroSecondaryCtaHref,
+    heroImageId,
+    videoEyebrow: optionalText(input.videoEyebrow, 'Video eyebrow', 120) ?? null,
+    videoHeading: optionalText(input.videoHeading, 'Video heading', 160) ?? null,
+    videoLede: optionalText(input.videoLede, 'Video description', 500) ?? null,
+    videoLinkLabel,
+    videoLinkHref,
+    videoId,
+    videoPosterId,
+  })
+}
+
 // ---------------------------------------------------------------------------
 // Redirects
 // ---------------------------------------------------------------------------
@@ -760,29 +913,11 @@ export interface RedirectWriteRequest {
 /** `from` must be a root-relative path on this site. `to` may also be an
  * absolute http(s) URL, for moving a page to another domain. Anything else
  * — a protocol-relative `//evil.example`, a `javascript:` url — is
- * rejected: a redirect is a place an attacker would like to put one. */
-const parseRedirectTarget = (value: unknown, field: string): string => {
-  const raw = requireText(value, field, 2000)
-
-  if (raw.startsWith('//')) {
-    throw new AdminValidationError(`${field} must start with "/" or be a full http(s) URL.`)
-  }
-
-  if (raw.startsWith('/')) return raw
-
-  let url: URL
-  try {
-    url = new URL(raw)
-  } catch {
-    throw new AdminValidationError(`${field} must start with "/" or be a full http(s) URL.`)
-  }
-
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-    throw new AdminValidationError(`${field} must use http or https.`)
-  }
-
-  return raw
-}
+ * rejected: a redirect is a place an attacker would like to put one.
+ * (Delegates the scheme/shape check to `assertSafeHref`, shared with the
+ * Home global's CTA links.) */
+const parseRedirectTarget = (value: unknown, field: string): string =>
+  assertSafeHref(requireText(value, field, 2000), field)
 
 const parseRedirectSource = (value: unknown): string => {
   const raw = requireText(value, 'From', 2000)

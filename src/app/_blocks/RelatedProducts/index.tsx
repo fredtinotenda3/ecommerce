@@ -35,7 +35,16 @@ export const RelatedProducts: React.FC<RelatedProductsProps> = props => {
         </h2>
         <div className={classes.grid}>
           {resolved.map(doc => (
-            <Card key={doc.id} relationTo={relationTo} doc={doc} />
+            <Card
+              key={doc.id}
+              relationTo={relationTo}
+              doc={doc}
+              // This grid never drops to a single column (see
+              // index.module.scss: 4-up above 1024px, 2-up at every width
+              // below that), unlike Card's own single-column-on-mobile
+              // default.
+              sizes="(max-width: 1024px) 46vw, 22vw"
+            />
           ))}
         </div>
       </Gutter>

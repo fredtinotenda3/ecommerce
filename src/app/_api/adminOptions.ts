@@ -41,14 +41,22 @@ export const listProductOptions = async (excludeId?: string): Promise<AdminOptio
 }
 
 /** Media options carry the filename so an operator can tell two images
- * with the same alt text apart. */
-export const listMediaOptions = async (): Promise<AdminOption[]> => {
+ * with the same alt text apart. `kind` narrows the list to `image/*` or
+ * `video/*` records (by mime-type prefix) — used by screens with a field
+ * that only accepts one kind, such as the Home global's video vs. poster
+ * pickers, so an operator cannot select an image where a video belongs
+ * from the dropdown itself. A record with no recorded `mimeType` is kept
+ * in either list rather than hidden, since a legacy media doc without one
+ * is not evidence of the wrong kind. */
+export const listMediaOptions = async (kind?: 'image' | 'video'): Promise<AdminOption[]> => {
   const { media } = await getRepositories()
   const all = await media.list(500)
-  return all.map(item => ({
-    value: item.id,
-    label: item.filename ? `${item.alt || 'Untitled'} — ${item.filename}` : item.alt || item.id,
-  }))
+  return all
+    .filter(item => !kind || !item.mimeType || item.mimeType.startsWith(`${kind}/`))
+    .map(item => ({
+      value: item.id,
+      label: item.filename ? `${item.alt || 'Untitled'} — ${item.filename}` : item.alt || item.id,
+    }))
 }
 
 /** A select needs an explicit "none" entry: an empty string is how the

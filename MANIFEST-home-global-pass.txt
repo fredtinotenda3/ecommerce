@@ -1,0 +1,41 @@
+Admin-managed hero/video + responsive/visual pass — Terro Technology
+=====================================================================
+
+Modified files (28):
+  src/lib/domain/types.ts
+  src/lib/db/models/Global.ts
+  src/lib/repositories/GlobalsRepository.ts
+  src/lib/services/AdminContentService.ts
+  src/app/_api/adminMutations.ts
+  src/app/api/admin/globals/[slug]/route.ts
+  src/app/_api/adminOptions.ts
+  src/lib/media/storage.ts
+  src/app/api/admin/media/route.ts
+  src/app/(admin)/admin/_components/MediaUploadForm.tsx
+  src/app/(admin)/admin/media/MediaTable.tsx
+  src/app/(admin)/admin/media/[id]/page.tsx
+  src/app/(admin)/admin/globals/page.tsx
+  src/app/_types/storefront.ts
+  src/lib/repositories/adapters/globalsStorefrontAdapter.ts
+  src/app/_api/fetchGlobals.ts
+  src/app/(pages)/[slug]/page.tsx
+  src/app/_components/Home/Hero/index.tsx
+  src/app/_components/Home/BrandStory/index.tsx
+  src/app/_components/Home/BrandStory/index.module.scss
+  src/app/_components/Card/index.tsx
+  src/app/_components/Home/FeaturedProducts/index.tsx
+  src/app/_blocks/RelatedProducts/index.tsx
+  tests/fakes/FakeGlobalsRepository.ts
+  tests/adminContentService.test.ts
+  tests/fetchGlobals.test.ts
+  tests/globalsStorefrontAdapter.test.ts
+  tests/mediaStorage.test.ts
+
+No new files. No architecture, auth, checkout, payment, tenancy, or
+catalogue business-logic files touched outside what's listed above.
+`Home/Hero/index.module.scss` was NOT modified — the existing CSS already
+supported a variable-aspect image (`width: min(100%, 30rem); height: auto`),
+so parameterising its content needed no layout change.
+
+Verified: `npx tsc --noEmit` clean · `npx eslint src` clean · `npx vitest run`
+503 passed / 46 files (481 pre-existing + 22 new), no regressions.

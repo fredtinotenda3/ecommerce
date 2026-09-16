@@ -68,7 +68,16 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
 
         <div className={classes.grid}>
           {products.map(product => (
-            <Card key={product.id} relationTo="products" doc={product} />
+            <Card
+              key={product.id}
+              relationTo="products"
+              doc={product}
+              // This grid's own shape (see index.module.scss): 4-up above
+              // 1024px, 2-up from 769–1024px, then a horizontal rail of
+              // 68%-wide cards at ≤768px — not the single-column layout
+              // Card's own default `sizes` assumes.
+              sizes="(max-width: 768px) 68vw, (max-width: 1024px) 44vw, 22vw"
+            />
           ))}
         </div>
       </Gutter>
