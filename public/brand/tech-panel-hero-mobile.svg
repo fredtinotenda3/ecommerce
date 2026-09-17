@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 900" width="1000" height="900" role="img" aria-hidden="true" focusable="false">
+<defs>
+<linearGradient id="thp-hero-mobile-bg" x1="20" y1="54" x2="980" y2="882" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#010B62"/><stop offset="38%" stop-color="#011584"/><stop offset="72%" stop-color="#0039EE"/><stop offset="100%" stop-color="#009CFE"/></linearGradient>
+<linearGradient id="thp-hero-mobile-fade" x1="1000" y1="900" x2="100" y2="90" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#fff" stop-opacity="1"/><stop offset="80%" stop-color="#fff" stop-opacity="1"/><stop offset="100%" stop-color="#fff" stop-opacity="0"/></linearGradient>
+<mask id="thp-hero-mobile-mask"><rect width="1000" height="900" fill="url(#thp-hero-mobile-fade)"/></mask>
+<filter id="thp-hero-mobile-glow" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="4.2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<filter id="thp-hero-mobile-softblur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="38"/></filter>
+</defs>
+<g mask="url(#thp-hero-mobile-mask)">
+<rect width="1000" height="900" fill="url(#thp-hero-mobile-bg)"/>
+<circle cx="820" cy="765" r="260" fill="#009CFE" opacity="0.16" filter="url(#thp-hero-mobile-softblur)"/>
+<circle cx="350" cy="450" r="180" fill="#0039EE" opacity="0.12" filter="url(#thp-hero-mobile-softblur)"/>
+<g fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M -60.0,1040.0 L 74.7,1040.0 L 74.7,918.9 L 198.8,918.9 L 198.8,769.1 L 316.5,769.1 L 316.5,637.9 L 316.5,526.5 L 438.9,526.5 L 438.9,383.1 L 559.3,383.1 L 579.6,364.4 L 579.6,262.6 L 690.1,262.6 L 726.4,223.7 L 813.9,223.7 L 813.9,130.0 L 832.4,106.5 L 832.4,-14.7 L 928.1,-14.7 L 1057.4,-14.7 L 1057.4,-138.6" stroke="#FFFFFF" stroke-width="1.53" opacity="0.52"/>
+<path d="M -60.0,961.3 L -7.2,915.2 L -7.2,800.6 L 123.9,800.6 L 299.3,800.6 L 299.3,612.3 L 342.9,578.7 L 342.9,447.1 L 513.5,447.1 L 561.4,395.6 L 561.4,268.0 L 680.2,268.0 L 701.5,248.6 L 701.5,102.0 L 862.6,102.0 L 1051.0,102.0 L 1051.0,-59.7" stroke="#006AF6" stroke-width="2.34" opacity="0.27"/>
+<path d="M -60.0,882.7 L -24.0,857.1 L -24.0,806.9 L 46.5,806.9 L 168.0,806.9 L 168.0,698.4 L 200.9,676.4 L 269.2,676.4 L 269.2,630.7 L 310.0,595.8 L 376.5,595.8 L 376.5,538.8 L 376.5,462.9 L 498.7,462.9 L 549.7,418.2 L 549.7,354.6 L 622.3,354.6 L 622.3,268.2 L 717.0,268.2 L 717.0,203.0 L 827.5,203.0 L 878.9,155.1 L 945.8,155.1 L 945.8,92.8 L 945.8,10.5 L 1065.7,10.5" stroke="#009CFE" stroke-width="1.60" opacity="0.29"/>
+<path d="M -60.0,804.0 L -29.0,783.0 L 107.0,783.0 L 107.0,690.8 L 253.9,690.8 L 253.9,602.6 L 303.7,569.6 L 303.7,499.2 L 409.9,499.2 L 592.5,499.2 L 592.5,401.9 L 635.1,369.6 L 736.0,369.6 L 736.0,293.0 L 760.4,276.8 L 887.9,276.8 L 887.9,191.9 L 887.9,83.2 L 1056.3,83.2" stroke="#FFFFFF" stroke-width="1.32" opacity="0.61"/>
+<path d="M -60.0,725.3 L -36.4,713.2 L 38.4,713.2 L 38.4,674.8 L 76.8,651.1 L 152.5,651.1 L 152.5,604.4 L 288.2,604.4 L 288.2,565.6 L 389.2,565.6 L 389.2,505.6 L 488.5,505.6 L 488.5,436.6 L 488.5,399.4 L 619.8,399.4 L 619.8,329.9 L 720.3,329.9 L 843.1,329.9 L 843.1,280.4 L 891.5,253.9 L 891.5,227.1 L 940.8,227.1 L 973.3,211.4 L 973.3,166.3 L 1067.1,166.3" stroke="#FFFFFF" stroke-width="1.46" opacity="0.27"/>
+<path d="M -60.0,646.7 L -11.7,634.0 L -11.7,606.8 L 91.9,606.8 L 226.1,606.8 L 226.1,557.9 L 226.1,493.0 L 369.2,493.0 L 369.2,445.9 L 493.9,445.9 L 552.4,427.3 L 643.9,427.3 L 643.9,398.2 L 787.8,398.2 L 787.8,360.0 L 909.1,360.0 L 909.1,303.5 L 1048.2,303.5 L 1048.2,244.9" stroke="#009CFE" stroke-width="2.31" opacity="0.52"/>
+<path d="M -60.0,568.0 L 97.0,568.0 L 97.0,542.5 L 142.9,533.1 L 142.9,506.8 L 272.1,506.8 L 272.1,463.4 L 431.5,463.4 L 431.5,445.6 L 588.3,445.6 L 588.3,405.6 L 731.7,405.6 L 731.7,357.7 L 906.1,357.7 L 1073.4,357.7 L 1073.4,333.0" stroke="#FFFFFF" stroke-width="2.65" opacity="0.56"/>
+<path d="M -60.0,489.3 L 117.5,489.3 L 117.5,471.6 L 117.5,463.6 L 303.5,463.6 L 303.5,462.5 L 505.3,462.5 L 675.1,462.5 L 675.1,429.1 L 675.1,427.7 L 879.7,427.7 L 944.1,419.8 L 944.1,405.4 L 1061.7,405.4" stroke="#FFFFFF" stroke-width="1.45" opacity="0.56"/>
+<path d="M -60.0,410.7 L -9.5,415.7 L 126.4,415.7 L 126.4,429.1 L 174.0,433.8 L 326.1,433.8 L 326.1,448.7 L 498.1,448.7 L 498.1,458.8 L 498.1,454.5 L 681.5,454.5 L 716.0,460.1 L 863.0,460.1 L 863.0,484.0 L 917.5,484.1 L 1065.2,484.1 L 1065.2,484.4" stroke="#FFFFFF" stroke-width="2.34" opacity="0.27"/>
+<path d="M -60.0,332.0 L -60.0,356.4 L 55.9,356.4 L 55.9,371.7 L 174.0,371.7 L 240.7,387.0 L 287.3,387.0 L 287.3,397.6 L 322.3,409.7 L 322.3,437.3 L 402.0,437.3 L 493.3,437.3 L 493.3,438.7 L 549.7,449.6 L 620.1,449.6 L 620.1,463.1 L 620.1,502.3 L 715.6,502.3 L 715.6,521.0 L 825.2,521.0 L 855.9,524.5 L 953.2,524.5 L 953.2,535.7 L 1061.4,535.7 L 1061.4,568.4" stroke="#009CFE" stroke-width="1.41" opacity="0.30"/>
+<path d="M -60.0,253.3 L -7.0,268.7 L 47.9,268.7 L 47.9,284.5 L 87.6,301.1 L 87.6,329.4 L 155.6,329.4 L 278.9,329.4 L 278.9,360.0 L 278.9,420.2 L 376.4,420.2 L 427.9,432.3 L 512.3,432.3 L 512.3,452.0 L 570.1,468.8 L 619.3,468.8 L 619.3,483.2 L 668.0,497.8 L 736.1,497.8 L 736.1,518.4 L 768.0,531.6 L 768.0,559.1 L 834.1,559.1 L 834.1,596.2 L 942.4,596.2 L 1009.8,616.0 L 1071.3,616.0 L 1071.3,634.1" stroke="#009CFE" stroke-width="1.47" opacity="0.38"/>
+<path d="M -60.0,174.7 L 64.6,174.7 L 64.6,243.2 L 111.7,262.3 L 182.1,262.3 L 182.1,290.8 L 222.2,314.2 L 222.2,367.9 L 313.9,367.9 L 439.2,367.9 L 439.2,424.1 L 439.2,477.4 L 574.5,477.4 L 687.8,477.4 L 687.8,544.5 L 733.4,566.1 L 805.1,566.1 L 805.1,600.1 L 805.1,676.2 L 929.1,676.2 L 929.1,733.0 L 1046.8,733.0" stroke="#009CFE" stroke-width="1.79" opacity="0.49"/>
+<path d="M -60.0,96.0 L -60.0,185.9 L 87.3,185.9 L 133.6,221.6 L 250.0,221.6 L 250.0,311.2 L 417.7,311.2 L 417.7,388.7 L 454.6,414.8 L 454.6,496.7 L 570.3,496.7 L 621.2,529.0 L 621.2,606.8 L 743.9,606.8 L 784.9,632.1 L 784.9,697.0 L 889.8,697.0 L 1054.6,697.0 L 1054.6,804.2" stroke="#009CFE" stroke-width="2.14" opacity="0.51"/>
+<path d="M -60.0,17.3 L -20.4,49.4 L 77.9,49.4 L 77.9,129.0 L 77.9,238.6 L 208.4,238.6 L 242.8,262.4 L 242.8,341.2 L 356.4,341.2 L 409.9,375.0 L 409.9,438.1 L 509.5,438.1 L 647.5,438.1 L 647.5,550.1 L 647.5,662.7 L 788.7,662.7 L 788.7,775.9 L 915.1,775.9 L 968.8,814.6 L 1058.0,814.6 L 1058.0,879.0" stroke="#006AF6" stroke-width="1.24" opacity="0.45"/>
+<path d="M -60.0,-61.3 L -15.4,-22.1 L 73.9,-22.1 L 73.9,56.5 L 73.9,200.2 L 209.3,200.2 L 209.3,333.7 L 372.3,333.7 L 423.4,380.2 L 423.4,444.9 L 494.5,444.9 L 525.8,474.0 L 633.0,474.0 L 633.0,574.0 L 633.0,697.1 L 776.9,697.1 L 921.1,697.1 L 921.1,842.9 L 941.4,860.8 L 941.4,972.0 L 1067.3,972.0" stroke="#009CFE" stroke-width="2.03" opacity="0.45"/>
+<path d="M -60.0,-140.0 L -60.0,46.7 L 130.4,46.7 L 130.4,245.5 L 306.2,245.5 L 356.0,295.4 L 356.0,447.0 L 507.4,447.0 L 507.4,647.7 L 686.5,647.7 L 686.5,840.8 L 885.0,840.8 L 885.0,1048.6 L 1069.9,1048.6" stroke="#FFFFFF" stroke-width="2.73" opacity="0.48"/>
+</g>
+<g>
+<circle cx="701.5" cy="248.6" r="4.17" fill="#FFFFFF" opacity="0.9" filter="url(#thp-hero-mobile-glow)"/>
+<circle cx="701.5" cy="102.0" r="3.85" fill="#009CFE" opacity="0.55"/>
+<circle cx="269.2" cy="676.4" r="3.05" fill="#009CFE" opacity="0.55"/>
+<circle cx="549.7" cy="354.6" r="3.20" fill="#FFFFFF" opacity="0.9" filter="url(#thp-hero-mobile-glow)"/>
+<circle cx="107.0" cy="783.0" r="3.86" fill="#009CFE" opacity="0.55"/>
+<circle cx="887.9" cy="276.8" r="3.66" fill="#009CFE" opacity="0.55"/>
+<circle cx="973.3" cy="211.4" r="4.07" fill="#FFFFFF" opacity="0.9" filter="url(#thp-hero-mobile-glow)"/>
+<circle cx="38.4" cy="713.2" r="2.04" fill="#009CFE" opacity="0.55"/>
+<circle cx="369.2" cy="493.0" r="3.62" fill="#009CFE" opacity="0.55"/>
+<circle cx="369.2" cy="445.9" r="4.06" fill="#009CFE" opacity="0.55"/>
+<circle cx="97.0" cy="542.5" r="3.03" fill="#009CFE" opacity="0.55"/>
+<circle cx="431.5" cy="463.4" r="2.87" fill="#FFFFFF" opacity="0.9" filter="url(#thp-hero-mobile-glow)"/>
+<circle cx="272.1" cy="506.8" r="3.70" fill="#FFFFFF" opacity="0.9" filter="url(#thp-hero-mobile-glow)"/>
+<circle cx="675.1" cy="462.5" r="1.90" fill="#FFFFFF" opacity="0.9" filter="url(#thp-hero-mobile-glow)"/>
+<circle cx="117.5" cy="463.6" r="2.58" fill="#009CFE" opacity="0.55"/>
+<circle cx="505.3" cy="462.5" r="1.71" fill="#009CFE" opacity="0.55"/>
+<circle cx="675.1" cy="429.1" r="3.01" fill="#009CFE" opacity="0.55"/>
+<circle cx="326.1" cy="448.7" r="3.25" fill="#009CFE" opacity="0.55"/>
+<circle cx="863.0" cy="484.0" r="3.20" fill="#009CFE" opacity="0.55"/>
+<circle cx="953.2" cy="524.5" r="1.76" fill="#009CFE" opacity="0.55"/>
+<circle cx="55.9" cy="371.7" r="2.80" fill="#009CFE" opacity="0.55"/>
+<circle cx="715.6" cy="521.0" r="2.45" fill="#009CFE" opacity="0.55"/>
+<circle cx="47.9" cy="268.7" r="3.27" fill="#009CFE" opacity="0.55"/>
+<circle cx="512.3" cy="432.3" r="3.58" fill="#009CFE" opacity="0.55"/>
+<circle cx="619.3" cy="483.2" r="1.66" fill="#009CFE" opacity="0.55"/>
+<circle cx="619.3" cy="468.8" r="3.52" fill="#FFFFFF" opacity="0.9" filter="url(#thp-hero-mobile-glow)"/>
+<circle cx="574.5" cy="477.4" r="4.17" fill="#009CFE" opacity="0.55"/>
+<circle cx="64.6" cy="174.7" r="1.79" fill="#009CFE" opacity="0.55"/>
+<circle cx="805.1" cy="676.2" r="2.72" fill="#009CFE" opacity="0.55"/>
+<circle cx="454.6" cy="414.8" r="2.91" fill="#009CFE" opacity="0.55"/>
+<circle cx="417.7" cy="388.7" r="2.11" fill="#009CFE" opacity="0.55"/>
+<circle cx="417.7" cy="311.2" r="3.23" fill="#FFFFFF" opacity="0.9" filter="url(#thp-hero-mobile-glow)"/>
+<circle cx="647.5" cy="662.7" r="2.41" fill="#009CFE" opacity="0.55"/>
+<circle cx="409.9" cy="375.0" r="3.17" fill="#009CFE" opacity="0.55"/>
+<circle cx="77.9" cy="49.4" r="2.89" fill="#009CFE" opacity="0.55"/>
+<circle cx="633.0" cy="574.0" r="2.39" fill="#009CFE" opacity="0.55"/>
+<circle cx="941.4" cy="860.8" r="2.47" fill="#FFFFFF" opacity="0.9" filter="url(#thp-hero-mobile-glow)"/>
+<circle cx="921.1" cy="842.9" r="1.87" fill="#FFFFFF" opacity="0.9" filter="url(#thp-hero-mobile-glow)"/>
+<circle cx="356.0" cy="447.0" r="4.00" fill="#009CFE" opacity="0.55"/>
+</g>
+<g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#FFFFFF">
+<text x="245.7" y="146.0" font-size="13.1" opacity="0.09" transform="rotate(-1.8 245.7 146.0)">0</text>
+<text x="529.1" y="246.6" font-size="11.8" opacity="0.13" transform="rotate(-3.1 529.1 246.6)">01</text>
+<text x="155.5" y="827.8" font-size="13.5" opacity="0.05" transform="rotate(-0.3 155.5 827.8)">01</text>
+<text x="800.4" y="281.3" font-size="10.1" opacity="0.07" transform="rotate(-4.2 800.4 281.3)">10</text>
+<text x="717.2" y="535.3" font-size="11.7" opacity="0.15" transform="rotate(-1.6 717.2 535.3)">10</text>
+<text x="910.7" y="843.6" font-size="14.1" opacity="0.10" transform="rotate(-1.6 910.7 843.6)">0</text>
+<text x="955.7" y="594.2" font-size="11.9" opacity="0.07" transform="rotate(-7.2 955.7 594.2)">01</text>
+<text x="947.5" y="721.3" font-size="14.9" opacity="0.14" transform="rotate(4.4 947.5 721.3)">0</text>
+<text x="787.7" y="52.1" font-size="14.4" opacity="0.15" transform="rotate(6.5 787.7 52.1)">10</text>
+<text x="450.0" y="221.9" font-size="12.6" opacity="0.07" transform="rotate(-5.5 450.0 221.9)">0</text>
+<text x="321.8" y="233.5" font-size="12.8" opacity="0.16" transform="rotate(-3.7 321.8 233.5)">10</text>
+<text x="534.6" y="135.6" font-size="9.0" opacity="0.14" transform="rotate(5.5 534.6 135.6)">10</text>
+<text x="822.1" y="74.2" font-size="12.7" opacity="0.11" transform="rotate(6.2 822.1 74.2)">1</text>
+<text x="693.7" y="74.6" font-size="9.1" opacity="0.07" transform="rotate(-4.9 693.7 74.6)">1</text>
+<text x="682.2" y="703.3" font-size="10.3" opacity="0.11" transform="rotate(0.4 682.2 703.3)">0</text>
+<text x="157.6" y="748.8" font-size="10.9" opacity="0.09" transform="rotate(0.9 157.6 748.8)">1</text>
+<text x="997.3" y="600.4" font-size="11.2" opacity="0.13" transform="rotate(-6.3 997.3 600.4)">01</text>
+<text x="394.2" y="415.6" font-size="12.9" opacity="0.05" transform="rotate(-2.0 394.2 415.6)">01</text>
+<text x="710.0" y="213.7" font-size="11.7" opacity="0.05" transform="rotate(7.9 710.0 213.7)">01</text>
+<text x="799.5" y="186.1" font-size="10.7" opacity="0.09" transform="rotate(0.6 799.5 186.1)">10</text>
+<text x="298.2" y="303.7" font-size="12.3" opacity="0.06" transform="rotate(-5.0 298.2 303.7)">0</text>
+<text x="376.5" y="98.6" font-size="14.7" opacity="0.11" transform="rotate(3.6 376.5 98.6)">1</text>
+<text x="331.7" y="744.2" font-size="9.6" opacity="0.12" transform="rotate(-5.9 331.7 744.2)">01</text>
+<text x="630.4" y="161.3" font-size="11.4" opacity="0.14" transform="rotate(1.5 630.4 161.3)">10</text>
+<text x="90.1" y="203.9" font-size="14.9" opacity="0.10" transform="rotate(4.3 90.1 203.9)">10</text>
+<text x="341.7" y="740.9" font-size="12.9" opacity="0.13" transform="rotate(5.1 341.7 740.9)">10</text>
+<text x="385.9" y="298.3" font-size="12.7" opacity="0.13" transform="rotate(1.8 385.9 298.3)">0</text>
+<text x="317.7" y="709.9" font-size="13.0" opacity="0.12" transform="rotate(-7.7 317.7 709.9)">10</text>
+<text x="331.0" y="308.0" font-size="9.6" opacity="0.09" transform="rotate(0.1 331.0 308.0)">0</text>
+<text x="788.6" y="742.7" font-size="10.5" opacity="0.11" transform="rotate(-3.2 788.6 742.7)">10</text>
+<text x="233.9" y="550.8" font-size="12.4" opacity="0.07" transform="rotate(6.9 233.9 550.8)">10</text>
+<text x="998.4" y="636.1" font-size="12.4" opacity="0.05" transform="rotate(2.6 998.4 636.1)">10</text>
+<text x="776.6" y="122.6" font-size="12.5" opacity="0.13" transform="rotate(-2.7 776.6 122.6)">0</text>
+<text x="929.1" y="325.1" font-size="14.3" opacity="0.10" transform="rotate(3.7 929.1 325.1)">0</text>
+<text x="238.6" y="512.4" font-size="12.4" opacity="0.08" transform="rotate(6.5 238.6 512.4)">01</text>
+<text x="992.1" y="735.8" font-size="9.7" opacity="0.14" transform="rotate(-3.4 992.1 735.8)">10</text>
+<text x="897.0" y="216.8" font-size="14.0" opacity="0.07" transform="rotate(0.8 897.0 216.8)">1</text>
+<text x="76.3" y="28.8" font-size="13.7" opacity="0.15" transform="rotate(8.0 76.3 28.8)">10</text>
+<text x="138.3" y="680.5" font-size="12.7" opacity="0.12" transform="rotate(4.2 138.3 680.5)">0</text>
+<text x="158.5" y="370.8" font-size="9.9" opacity="0.09" transform="rotate(1.1 158.5 370.8)">01</text>
+<text x="173.7" y="467.8" font-size="10.5" opacity="0.15" transform="rotate(-7.1 173.7 467.8)">1</text>
+<text x="784.0" y="649.5" font-size="11.4" opacity="0.10" transform="rotate(-6.4 784.0 649.5)">10</text>
+<text x="345.4" y="807.0" font-size="13.5" opacity="0.10" transform="rotate(7.9 345.4 807.0)">0</text>
+<text x="838.2" y="769.5" font-size="14.0" opacity="0.06" transform="rotate(-6.2 838.2 769.5)">0</text>
+<text x="938.9" y="297.3" font-size="11.5" opacity="0.05" transform="rotate(6.5 938.9 297.3)">0</text>
+<text x="296.0" y="554.6" font-size="13.4" opacity="0.12" transform="rotate(4.0 296.0 554.6)">0</text>
+<text x="304.8" y="534.1" font-size="10.5" opacity="0.14" transform="rotate(-4.1 304.8 534.1)">01</text>
+<text x="873.1" y="875.3" font-size="13.2" opacity="0.11" transform="rotate(-4.2 873.1 875.3)">0</text>
+<text x="306.3" y="356.0" font-size="14.3" opacity="0.16" transform="rotate(3.7 306.3 356.0)">10</text>
+<text x="871.5" y="331.9" font-size="12.4" opacity="0.07" transform="rotate(2.4 871.5 331.9)">0</text>
+<text x="421.6" y="110.4" font-size="9.6" opacity="0.14" transform="rotate(-6.0 421.6 110.4)">01</text>
+</g>
+<g stroke="#FFFFFF" stroke-linecap="round">
+<line x1="142" y1="777" x2="454" y2="76" stroke-width="0.91" opacity="0.12"/>
+<line x1="112" y1="639" x2="448" y2="-114" stroke-width="1.35" opacity="0.20"/>
+<line x1="167" y1="778" x2="394" y2="268" stroke-width="1.15" opacity="0.14"/>
+</g>
+</g>
+</svg>
