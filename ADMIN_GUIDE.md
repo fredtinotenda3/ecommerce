@@ -1,4 +1,4 @@
-# Terro Technology — Admin Guide
+# Terro Technology — Admin Guide - Dynamic
 
 This guide covers the admin panel as it stands after this change set: every
 piece of site content that previously lived in source code — the site
