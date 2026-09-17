@@ -1,6 +1,11 @@
 // tests/fakes/FakeGlobalsRepository.ts
 import type { Footer, Header, Home, NavItem, Settings } from '../../src/lib/domain/types'
-import type { GlobalsRepository, HomeWriteInput } from '../../src/lib/repositories/GlobalsRepository'
+import type {
+  FooterWriteInput,
+  GlobalsRepository,
+  HomeWriteInput,
+  SettingsWriteInput,
+} from '../../src/lib/repositories/GlobalsRepository'
 
 export class FakeGlobalsRepository implements GlobalsRepository {
   private header: Header | null = null
@@ -50,21 +55,36 @@ export class FakeGlobalsRepository implements GlobalsRepository {
     return this.header
   }
 
-  async saveFooter(input: { copyright: string | null; navItems: NavItem[] }): Promise<Footer> {
+  async saveFooter(input: FooterWriteInput): Promise<Footer> {
     this.footer = {
       id: this.footer?.id ?? 'footer',
       copyright: input.copyright,
       navItems: input.navItems,
+      linkGroups: input.linkGroups,
       createdAt: this.footer?.createdAt ?? new Date(),
       updatedAt: new Date(),
     }
     return this.footer
   }
 
-  async saveSettings(input: { productsPageId: string | null }): Promise<Settings> {
+  async saveSettings(input: SettingsWriteInput): Promise<Settings> {
     this.settings = {
       id: this.settings?.id ?? 'settings',
       productsPageId: input.productsPageId,
+      siteName: input.siteName,
+      siteTagline: input.siteTagline,
+      siteDescription: input.siteDescription,
+      contactEmail: input.contactEmail,
+      contactPhone: input.contactPhone,
+      contactPhoneSecondary: input.contactPhoneSecondary,
+      contactWhatsapp: input.contactWhatsapp,
+      addressLines: input.addressLines,
+      secondAddressLines: input.secondAddressLines,
+      hours: input.hours,
+      socialLinks: input.socialLinks,
+      inclusions: input.inclusions,
+      testimonials: input.testimonials,
+      brandBackgroundImageId: input.brandBackgroundImageId,
       createdAt: this.settings?.createdAt ?? new Date(),
       updatedAt: new Date(),
     }
@@ -94,6 +114,7 @@ export const buildTestFooter = (overrides: Partial<Footer> = {}): Footer => ({
   id: overrides.id ?? Math.random().toString(36).slice(2),
   copyright: '© Test',
   navItems: [],
+  linkGroups: [],
   createdAt: new Date(),
   updatedAt: new Date(),
   ...overrides,
@@ -102,6 +123,20 @@ export const buildTestFooter = (overrides: Partial<Footer> = {}): Footer => ({
 export const buildTestSettings = (overrides: Partial<Settings> = {}): Settings => ({
   id: overrides.id ?? Math.random().toString(36).slice(2),
   productsPageId: null,
+  siteName: null,
+  siteTagline: null,
+  siteDescription: null,
+  contactEmail: null,
+  contactPhone: null,
+  contactPhoneSecondary: null,
+  contactWhatsapp: null,
+  addressLines: [],
+  secondAddressLines: [],
+  hours: null,
+  socialLinks: [],
+  inclusions: [],
+  testimonials: [],
+  brandBackgroundImageId: null,
   createdAt: new Date(),
   updatedAt: new Date(),
   ...overrides,

@@ -12,7 +12,7 @@
 // on a half-configured store should see a shop that happens to be quiet,
 // not a developer's setup note.
 
-import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from '../constants/brand'
+import { DEFAULT_SITE_DESCRIPTION, DEFAULT_SITE_NAME, DEFAULT_SITE_TAGLINE } from '../../lib/domain/siteDefaults'
 import type { StorefrontPage } from '../_types/storefront'
 
 const now = new Date(0).toISOString()
@@ -25,22 +25,22 @@ export const fallbackHome: StorefrontPage = {
   createdAt: now,
   updatedAt: now,
   meta: {
-    title: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    title: `${DEFAULT_SITE_NAME} — ${DEFAULT_SITE_TAGLINE}`,
     // No warranty term or delivery threshold invented here — the previous
     // (Tech Haven) fallback stated "a two-year warranty and free delivery
     // over $150", neither of which any Terro Technology asset confirms.
-    description: SITE_DESCRIPTION,
+    description: DEFAULT_SITE_DESCRIPTION,
   },
   hero: {
     type: 'lowImpact',
     richText: [
       {
         type: 'h1',
-        children: [{ text: SITE_TAGLINE }],
+        children: [{ text: DEFAULT_SITE_TAGLINE }],
       },
       {
         type: 'p',
-        children: [{ text: SITE_DESCRIPTION }],
+        children: [{ text: DEFAULT_SITE_DESCRIPTION }],
       },
     ],
   },
@@ -55,7 +55,7 @@ export const fallbackCart: StorefrontPage = {
   createdAt: now,
   updatedAt: now,
   meta: {
-    title: `Your cart | ${SITE_NAME}`,
+    title: `Your cart | ${DEFAULT_SITE_NAME}`,
     description: `Review the items in your cart and check out securely with Paynow.`,
   },
   hero: {

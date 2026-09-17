@@ -13,7 +13,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { SITE_NAME, SITE_OG_IMAGE, SITE_TAGLINE } from '../src/app/constants/brand'
+import { DEFAULT_SITE_NAME, DEFAULT_SITE_TAGLINE } from '../src/lib/domain/siteDefaults'
 import { generateMeta } from '../src/app/_utilities/generateMeta'
 
 const ORIGINAL_SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL
@@ -27,10 +27,12 @@ describe('generateMeta', () => {
 
   it('falls back to a generic title when no meta.title is present', async () => {
     const result = await generateMeta({ doc: {} })
-    // Asserted against the brand constants rather than a copy of the
-    // string, so renaming the shop does not need this test edited — only
-    // that the fallback still comes from one place.
-    const expected = `${SITE_NAME} — ${SITE_TAGLINE}`
+    // Asserted against the last-resort site defaults rather than a copy of
+    // the string, so renaming the shop does not need this test edited —
+    // only that the fallback still comes from one place. This is the
+    // no-`siteInfo` case: a caller that hasn't fetched Settings (or a fresh
+    // install with none configured) still gets a coherent title.
+    const expected = `${DEFAULT_SITE_NAME} — ${DEFAULT_SITE_TAGLINE}`
     expect(result.title).toEqual(expected)
     expect(result.openGraph?.title).toEqual(expected)
   })
@@ -64,19 +66,34 @@ describe('generateMeta', () => {
 
   it('does not set an ogImage when meta.image is an unpopulated id string', async () => {
     const result = await generateMeta({ doc: { meta: { image: 'media-id-123' } } })
-    // falls back to mergeOpenGraph's default images
-    // Falls back to the site-wide social card. Only the url is asserted:
-    // the default also carries dimensions and alt text, which are a
-    // presentation detail this test should not freeze.
-    expect(result.openGraph?.images).toMatchObject([{ url: SITE_OG_IMAGE }])
+    // Falls back to mergeOpenGraph's default images, which is the admin's
+    // configured brand background image (Settings -> Brand background
+    // image) surfaced via `siteInfo.shareImageUrl` — never a bundled static
+    // asset. No `siteInfo` was passed here, so there is nothing to fall
+    // back to and the images array is omitted entirely, which is the
+    // correct behaviour for a caller that hasn't fetched Settings.
+    expect(result.openGraph?.images).toBeUndefined()
   })
 
   it('does not set an ogImage when meta.image is absent', async () => {
     const result = await generateMeta({ doc: {} })
-    // Falls back to the site-wide social card. Only the url is asserted:
-    // the default also carries dimensions and alt text, which are a
-    // presentation detail this test should not freeze.
-    expect(result.openGraph?.images).toMatchObject([{ url: SITE_OG_IMAGE }])
+    // Same reasoning as above: no `siteInfo`, so no share image to fall
+    // back to.
+    expect(result.openGraph?.images).toBeUndefined()
+  })
+
+  it('falls back to the live share image from siteInfo when meta.image is absent', async () => {
+    process.env.NEXT_PUBLIC_SERVER_URL = 'https://example.com'
+    const result = await generateMeta({
+      doc: {},
+      siteInfo: { shareImageUrl: '/media/brand-background.webp' },
+    })
+    // The admin-configured background image, not a bundled static asset —
+    // this is the fallback `layout.tsx`/`generateMeta.ts` callers actually
+    // get once Settings has a `brandBackgroundImage` configured.
+    expect(result.openGraph?.images).toMatchObject([
+      { url: 'https://example.com/media/brand-background.webp' },
+    ])
   })
 
   it('accepts a plain narrow object with none of the other Page/Product fields', async () => {

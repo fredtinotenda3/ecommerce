@@ -16,10 +16,10 @@
 // seeded fields are rewritten and anything else on the document is left
 // alone.
 //
-// The images this references are the ones committed under `public/media/`.
-// `src/lib/media/storage.ts` falls back to that directory when a file is
-// not in MEDIA_DIR, so the seeded `/media/<filename>` URLs resolve on a
-// fresh checkout without copying anything.
+// The images this references are the ones committed under `media/` at the
+// repo root (`src/lib/media/storage.ts`'s `getMediaDir`, overridable with
+// `MEDIA_DIR`), so the seeded `/media/<filename>` URLs resolve on a fresh
+// checkout without copying anything.
 //
 // This script writes through Mongoose models directly rather than through
 // the repository/service layer: the services enforce admin-session rules
@@ -40,14 +40,32 @@ import { getGlobalModel } from '../../src/lib/db/models/Global'
 import { getMediaModel } from '../../src/lib/db/models/Media'
 import { getPageModel } from '../../src/lib/db/models/Page'
 import { getProductModel } from '../../src/lib/db/models/Product'
+import { getMediaDir } from '../../src/lib/media/storage'
 import { toCategorySlug } from '../../src/app/_utilities/categorySlug'
-import { CONTACT, SITE_NAME } from '../../src/app/constants/brand'
-import { SEED_CATEGORIES, SEED_MEDIA, SEED_PRODUCTS } from './catalogue'
+import {
+  DEFAULT_CONTACT,
+  DEFAULT_FOOTER_LINK_GROUPS,
+  DEFAULT_INCLUSIONS,
+  DEFAULT_PRIMARY_NAV,
+  DEFAULT_SITE_DESCRIPTION,
+  DEFAULT_SITE_NAME,
+  DEFAULT_SITE_TAGLINE,
+  DEFAULT_SOCIAL_LINKS,
+  DEFAULT_TESTIMONIALS,
+} from '../../src/lib/domain/siteDefaults'
+import { BRAND_BACKGROUND_IMAGE_FILENAME, SEED_CATEGORIES, SEED_MEDIA, SEED_PRODUCTS } from './catalogue'
 
 /* eslint-disable no-console */
 
 const OVERWRITE = process.env.SEED_OVERWRITE === 'true'
-const PUBLIC_MEDIA_DIR = path.resolve(process.cwd(), 'public', 'media')
+// The same directory the running application reads uploads from (see
+// `src/lib/media/storage.ts`'s `getMediaDir`, overridable with `MEDIA_DIR`) —
+// NOT `public/media`, which is where a previous CMS wrote uploads and which
+// this repository's committed sample images no longer live under. Seeding
+// against the actual serving directory means `npm run seed:store` validates
+// against where the bytes really are, not a legacy path that would fail the
+// existence check on every fresh checkout.
+const SEEDED_MEDIA_DIR = getMediaDir()
 
 interface Counts {
   created: number
@@ -87,8 +105,8 @@ const validateCatalogue = (): void => {
   const mediaFilenames = new Set(SEED_MEDIA.map(item => item.filename))
 
   SEED_MEDIA.forEach(item => {
-    if (!existsSync(path.join(PUBLIC_MEDIA_DIR, item.filename))) {
-      problems.push(`media file missing on disk: public/media/${item.filename}`)
+    if (!existsSync(path.join(SEEDED_MEDIA_DIR, item.filename))) {
+      problems.push(`media file missing on disk: ${path.join(SEEDED_MEDIA_DIR, item.filename)}`)
     }
     if (!item.alt.trim()) problems.push(`media ${item.filename} has no alt text`)
   })
@@ -290,7 +308,7 @@ const seedProducts = async (
         },
       ],
       meta: {
-        title: `${product.title} | ${SITE_NAME}`,
+        title: `${product.title} | ${DEFAULT_SITE_NAME}`,
         description: product.description,
         image: imageId ?? null,
       },
@@ -481,7 +499,7 @@ const SEED_PAGES: SeedPage[] = [
       'Talk to Terro Technology in Harare — by phone, WhatsApp, email, or at either shop counter.',
     heroHeading: 'Talk to someone who knows the stock',
     heroBody: [
-      `The fastest way to reach us is WhatsApp or a call: ${CONTACT.phone} or ${CONTACT.phoneSecondary}. Email reaches the same people at ${CONTACT.email}.`,
+      `The fastest way to reach us is WhatsApp or a call: ${DEFAULT_CONTACT.phone} or ${DEFAULT_CONTACT.phoneSecondary}. Email reaches the same people at ${DEFAULT_CONTACT.email}.`,
       `Shop No. 9, First Floor, Nhaka Parade, corner Angwa & George Silundika, Harare. A second counter trades from Shop 28, Huawei Shop, corner Angwa & Speke.`,
       'For an order already placed through this site, quote your order number and we can tell you exactly where it is.',
     ],
@@ -547,31 +565,70 @@ const seedPages = async (
 // ---------------------------------------------------------------------------
 // Globals
 //
-// The header and footer both render a built-in navigation from
-// `constants/brand.ts`, so these globals only carry what genuinely belongs
-// to an editor: the copyright line and the products-page relation used by
-// the cart and checkout screens.
+// Header, footer and settings are now fully admin-driven (see
+// `/admin/globals`) — nothing about navigation, contact details, social
+// links, trust badges or the brand background image is hardcoded in the
+// rendering path any more (see `src/lib/domain/siteDefaults.ts`'s doc
+// comment). This is the ONE place those defaults are written into the
+// database, and only on first seed: re-running without SEED_OVERWRITE=true
+// never touches a field an admin has since edited, and SEED_OVERWRITE
+// refreshes them back to these starting values, which is exactly the
+// "reset to the shipped defaults" escape hatch an operator who has made a
+// mess of the admin UI needs.
 // ---------------------------------------------------------------------------
+
+/** Maps the plain `{label, href}` shape `DEFAULT_PRIMARY_NAV` uses onto the
+ * `NavItem`/`link` document shape the Header/Footer globals actually store
+ * (see `GlobalsRepository.ts`'s `toNavItemDocuments`) — every seeded link is
+ * a plain external-style URL (`type: 'custom'`), never a page reference, so
+ * renaming or removing a page later can never silently break the seeded
+ * nav. */
+const toSeedNavItem = (item: { label: string; href: string }): Record<string, unknown> => ({
+  link: { type: 'custom', url: item.href, label: item.label, newTab: false },
+})
 
 const seedGlobals = async (
   connection: Connection,
   pageIds: Map<string, Types.ObjectId>,
+  mediaIds: Map<string, Types.ObjectId>,
 ): Promise<void> => {
   const Global = getGlobalModel(connection)
   const counts = emptyCounts()
 
+  const brandBackgroundImageId = mediaIds.get(BRAND_BACKGROUND_IMAGE_FILENAME) ?? null
+
   const desired: { globalType: string; fields: Record<string, unknown> }[] = [
-    { globalType: 'header', fields: { navItems: [] } },
+    {
+      globalType: 'header',
+      fields: { navItems: DEFAULT_PRIMARY_NAV.map(toSeedNavItem) },
+    },
     {
       globalType: 'footer',
       fields: {
-        copyright: `© ${new Date().getFullYear()} ${SITE_NAME}. All rights reserved.`,
+        copyright: `© ${new Date().getFullYear()} ${DEFAULT_SITE_NAME}. All rights reserved.`,
         navItems: [],
+        linkGroups: DEFAULT_FOOTER_LINK_GROUPS,
       },
     },
     {
       globalType: 'settings',
-      fields: { productsPage: pageIds.get('products') ?? null },
+      fields: {
+        productsPage: pageIds.get('products') ?? null,
+        siteName: DEFAULT_SITE_NAME,
+        siteTagline: DEFAULT_SITE_TAGLINE,
+        siteDescription: DEFAULT_SITE_DESCRIPTION,
+        contactEmail: DEFAULT_CONTACT.email,
+        contactPhone: DEFAULT_CONTACT.phone,
+        contactPhoneSecondary: DEFAULT_CONTACT.phoneSecondary,
+        contactWhatsapp: DEFAULT_CONTACT.whatsapp,
+        addressLines: DEFAULT_CONTACT.addressLines,
+        secondAddressLines: DEFAULT_CONTACT.secondAddressLines,
+        hours: DEFAULT_CONTACT.hours,
+        socialLinks: DEFAULT_SOCIAL_LINKS,
+        inclusions: DEFAULT_INCLUSIONS,
+        testimonials: DEFAULT_TESTIMONIALS,
+        brandBackgroundImage: brandBackgroundImageId,
+      },
     },
   ]
 
@@ -609,7 +666,7 @@ const main = async (): Promise<void> => {
   const categoryIds = await seedCategories(connection, mediaIds)
   await seedProducts(connection, mediaIds, categoryIds)
   const pageIds = await seedPages(connection, mediaIds)
-  await seedGlobals(connection, pageIds)
+  await seedGlobals(connection, pageIds, mediaIds)
 
   console.log('Done. Sign in at /admin to review and edit the catalogue.')
 

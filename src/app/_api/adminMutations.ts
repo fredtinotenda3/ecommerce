@@ -190,16 +190,21 @@ export const saveHeader = async (input: { navItems?: unknown }) => {
   return AdminContentService.saveHeader(input, { globalsRepository: globals })
 }
 
-export const saveFooter = async (input: { copyright?: unknown; navItems?: unknown }) => {
+export const saveFooter = async (input: {
+  copyright?: unknown
+  navItems?: unknown
+  linkGroups?: unknown
+}) => {
   const { globals } = await getRepositories()
   return AdminContentService.saveFooter(input, { globalsRepository: globals })
 }
 
-export const saveSettings = async (input: { productsPageId?: unknown }) => {
-  const { globals, pages } = await getRepositories()
+export const saveSettings = async (input: AdminContentService.SettingsWriteRequest) => {
+  const { globals, pages, media } = await getRepositories()
   return AdminContentService.saveSettings(input, {
     globalsRepository: globals,
     pageRepository: pages,
+    mediaRepository: media,
   })
 }
 

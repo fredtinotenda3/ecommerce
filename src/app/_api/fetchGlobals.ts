@@ -83,10 +83,13 @@ export const buildStorefrontFooter = async (
   return toStorefrontFooter(footer, resolved)
 }
 
-/** See `buildStorefrontHeader` for the null-is-not-an-error rationale. */
+/** See `buildStorefrontHeader` for the null-is-not-an-error rationale.
+ * `mediaRepository` resolves `brandBackgroundImageId` the same way
+ * `buildStorefrontHome` resolves its own media fields. */
 export const buildStorefrontSettings = async (
   globalsRepository: GlobalsRepository,
   pageRepository: PageRepository,
+  mediaRepository: MediaRepository,
 ): Promise<StorefrontSettingsLike | null> => {
   const settings = await globalsRepository.getSettings()
   if (!settings) return null
@@ -97,7 +100,22 @@ export const buildStorefrontSettings = async (
     productsPageSlug = page?.slug ?? null
   }
 
-  return toStorefrontSettings(settings, productsPageSlug)
+  let brandBackgroundImage: StorefrontMediaItem | null = null
+  if (settings.brandBackgroundImageId) {
+    const media = await mediaRepository.getById(settings.brandBackgroundImageId)
+    brandBackgroundImage = media
+      ? {
+          url: media.url,
+          width: media.width,
+          height: media.height,
+          alt: media.alt,
+          filename: media.filename,
+          mimeType: media.mimeType,
+        }
+      : null
+  }
+
+  return toStorefrontSettings(settings, productsPageSlug, brandBackgroundImage)
 }
 
 /** See `buildStorefrontHeader` for the null-is-not-an-error rationale.
@@ -151,8 +169,8 @@ export const fetchFooter = async (): Promise<StorefrontFooter | null> => {
 }
 
 export const fetchSettings = async (): Promise<StorefrontSettingsLike | null> => {
-  const { globals, pages } = await getRepositories()
-  return buildStorefrontSettings(globals, pages)
+  const { globals, pages, media } = await getRepositories()
+  return buildStorefrontSettings(globals, pages, media)
 }
 
 export const fetchHome = async (): Promise<StorefrontHome | null> => {
@@ -170,7 +188,7 @@ export const fetchGlobals = async (): Promise<{
   const { globals, pages, media } = await getRepositories()
 
   const [settings, header, footer, home] = await Promise.all([
-    buildStorefrontSettings(globals, pages),
+    buildStorefrontSettings(globals, pages, media),
     buildStorefrontHeader(globals, pages, media),
     buildStorefrontFooter(globals, pages, media),
     buildStorefrontHome(globals, media),

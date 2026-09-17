@@ -8,6 +8,7 @@ import { Gutter } from '../../_components/Gutter'
 import { fallbackCart } from '../../_data/fallbackPages'
 import type { StorefrontPage, StorefrontSettingsLike } from '../../_types/storefront'
 import { generateMeta } from '../../_utilities/generateMeta'
+import { siteInfoFromSettings } from '../../_utilities/mergeOpenGraph'
 import { CartPage } from './CartPage'
 
 import classes from './index.module.scss'
@@ -52,5 +53,15 @@ export default async function Cart() {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  return generateMeta({ doc: await loadCartPage() })
+  let settings: StorefrontSettingsLike | null = null
+  try {
+    settings = await fetchSettings()
+  } catch (error) {
+    // Fall through to the defaults in `generateMeta`.
+  }
+
+  return generateMeta({
+    doc: await loadCartPage(),
+    siteInfo: siteInfoFromSettings(settings, settings?.brandBackgroundImage?.url ?? null),
+  })
 }

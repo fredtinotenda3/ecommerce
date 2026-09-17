@@ -5,12 +5,14 @@ import { Metadata } from 'next'
 import { draftMode } from 'next/headers'
 import { notFound } from 'next/navigation'
 
+import { fetchSettings } from '../../../_api/fetchGlobals'
 import { fetchProduct, fetchProductSlugs } from '../../../_api/fetchProduct'
 import { Blocks } from '../../../_components/Blocks'
 import { PaywallBlocks } from '../../../_components/PaywallBlocks'
 import { ProductHero } from '../../../_heros/Product'
-import type { StorefrontProductDetail } from '../../../_types/storefront'
+import type { StorefrontProductDetail, StorefrontSettingsLike } from '../../../_types/storefront'
 import { generateMeta } from '../../../_utilities/generateMeta'
+import { siteInfoFromSettings } from '../../../_utilities/mergeOpenGraph'
 
 // Dynamic so a price or stock change is never served from a stale render.
 export const dynamic = 'force-dynamic'
@@ -19,6 +21,7 @@ export default async function ProductPage({ params: { slug } }) {
   const { isEnabled: isDraftMode } = draftMode()
 
   let product: StorefrontProductDetail | null = null
+  let settings: StorefrontSettingsLike | null = null
 
   try {
     product = await fetchProduct(slug, isDraftMode ? undefined : 'published')
@@ -30,11 +33,20 @@ export default async function ProductPage({ params: { slug } }) {
     notFound()
   }
 
+  try {
+    // Only the trust badges on the buying panel come from this — a failed
+    // read here should never turn into a 404 for an otherwise-good product
+    // page, so it is caught independently of the fetch above.
+    settings = await fetchSettings()
+  } catch (error) {
+    console.error('settings read failed:', error) // eslint-disable-line no-console
+  }
+
   const { relatedProducts, layout } = product
 
   return (
     <>
-      <ProductHero product={product} />
+      <ProductHero product={product} settings={settings} />
 
       {/* The product's own body copy. Rendered before the paywall and the
           related row so the page reads top to bottom as description, then
@@ -78,6 +90,7 @@ export async function generateMetadata({ params: { slug } }): Promise<Metadata> 
   const { isEnabled: isDraftMode } = draftMode()
 
   let product: StorefrontProductDetail | null = null
+  let settings: StorefrontSettingsLike | null = null
 
   try {
     product = await fetchProduct(slug, isDraftMode ? undefined : 'published')
@@ -85,5 +98,14 @@ export async function generateMetadata({ params: { slug } }): Promise<Metadata> 
     // Metadata falls back to defaults.
   }
 
-  return generateMeta({ doc: product })
+  try {
+    settings = await fetchSettings()
+  } catch (error) {
+    // Metadata falls back to defaults.
+  }
+
+  return generateMeta({
+    doc: product,
+    siteInfo: siteInfoFromSettings(settings, settings?.brandBackgroundImage?.url ?? null),
+  })
 }

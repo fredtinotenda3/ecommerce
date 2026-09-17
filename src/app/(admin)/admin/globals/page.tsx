@@ -22,6 +22,20 @@ export const dynamic = 'force-dynamic'
 const NAV_HELP =
   'JSON array. Each entry: { "type": "reference", "label": "Shop", "referencePageId": "<page id>" } or { "type": "custom", "label": "Blog", "url": "https://…" }. Optional: "newTab", "iconMediaId".'
 
+const ADDRESS_HELP = 'JSON array of up to 6 short lines, printed one per line, e.g. ["Shop 9, First Floor", "Cnr Main St & 2nd Ave, Harare"].'
+
+const SOCIAL_HELP =
+  'JSON array, up to 8 entries. Each entry: { "platform": "instagram", "url": "https://instagram.com/…" }. Platform is one of instagram, facebook, whatsapp, tiktok, x, youtube, linkedin, other — "other" also needs a "label".'
+
+const INCLUSIONS_HELP =
+  'JSON array, up to 6 entries — the trust badges shown on the homepage and every product page. Each entry: { "title": "Repairs & accessories", "description": "Screens, batteries, covers…", "icon": "repair" }. Icon is one of box, repair, payment, message.'
+
+const TESTIMONIALS_HELP =
+  'JSON array, up to 12 entries. Each entry: { "quote": "…", "name": "…", "role": "…" }. Leave empty to show no testimonials section — never invent a quote a real customer did not give.'
+
+const FOOTER_GROUPS_HELP =
+  'JSON array, up to 6 groups. Each entry: { "title": "Shop", "links": [{ "label": "All products", "href": "/products" }] }. Up to 10 links per group.'
+
 /** Reads the globals in the domain shape the write API expects, so what an
  * operator edits round-trips exactly. The storefront's own `fetchHeader`
  * returns a view model with relations already resolved to slugs and urls,
@@ -91,7 +105,9 @@ export default async function AdminGlobalsPage() {
 
       <AdminSection
         title="Footer"
-        description={`${resolvedFooter?.navItems?.length ?? 0} nav item(s) currently rendered on the storefront.`}
+        description={`${resolvedFooter?.navItems?.length ?? 0} social/nav item(s) and ${
+          resolvedFooter?.linkGroups?.length ?? 0
+        } link column(s) currently rendered on the storefront.`}
       >
         <AdminForm
           action="/api/admin/globals/footer"
@@ -107,11 +123,19 @@ export default async function AdminGlobalsPage() {
             },
             {
               kind: 'json',
+              name: 'linkGroups',
+              label: 'Footer link columns',
+              defaultValue: footer?.linkGroups ?? [],
+              help: FOOTER_GROUPS_HELP,
+              rows: 12,
+            },
+            {
+              kind: 'json',
               name: 'navItems',
-              label: 'Nav items',
+              label: 'Social links (icon row)',
               defaultValue: navItemsFor(footer?.navItems),
-              help: NAV_HELP,
-              rows: 10,
+              help: `${NAV_HELP} Used for the small social-icon row at the very bottom of the footer — for the labelled social links shown elsewhere, use Settings below.`,
+              rows: 6,
             },
           ]}
         />
@@ -125,12 +149,120 @@ export default async function AdminGlobalsPage() {
             : 'No products page set — "continue shopping" links are hidden until one is.'
         }
       >
+        <p style={{ color: '#666', marginTop: 0 }}>
+          Everything below used to be hardcoded in the app&apos;s source (the site name, contact
+          details, social links, trust badges and the decorative background image). Every field
+          falls back to a sensible built-in default when left empty, so you can fill these in
+          gradually — see the admin guide for a field-by-field walkthrough.
+        </p>
+
         <AdminForm
           action="/api/admin/globals/settings"
           method="PUT"
           submitLabel="Save settings"
           successMessage="Settings saved."
           fields={[
+            {
+              kind: 'text',
+              name: 'siteName',
+              label: 'Site name',
+              defaultValue: settings?.siteName ?? '',
+              help: 'Shown in the header, footer, browser tab and every shared link.',
+            },
+            {
+              kind: 'text',
+              name: 'siteTagline',
+              label: 'Tagline',
+              defaultValue: settings?.siteTagline ?? '',
+              help: 'A short line under the site name, e.g. "Sorted properly."',
+            },
+            {
+              kind: 'textarea',
+              name: 'siteDescription',
+              label: 'Site description',
+              defaultValue: settings?.siteDescription ?? '',
+              help: 'One or two sentences. Used for search engines and social share previews.',
+            },
+            {
+              kind: 'select',
+              name: 'brandBackgroundImageId',
+              label: 'Brand background image',
+              options: withNoneOption(imageOptions),
+              defaultValue: settings?.brandBackgroundImageId ?? '',
+              help: 'The decorative electric-blue circuit backdrop. Used on the homepage hero, the footer band, and as the fallback social-share image — replace it here once and every placement updates. Upload it on the Media screen first.',
+            },
+            {
+              kind: 'text',
+              name: 'contactEmail',
+              label: 'Contact email',
+              defaultValue: settings?.contactEmail ?? '',
+            },
+            {
+              kind: 'text',
+              name: 'contactPhone',
+              label: 'Contact phone (primary)',
+              defaultValue: settings?.contactPhone ?? '',
+            },
+            {
+              kind: 'text',
+              name: 'contactPhoneSecondary',
+              label: 'Contact phone (secondary)',
+              defaultValue: settings?.contactPhoneSecondary ?? '',
+              help: 'Shown on the Contact page. Leave empty if there is only one line.',
+            },
+            {
+              kind: 'text',
+              name: 'contactWhatsapp',
+              label: 'WhatsApp number',
+              defaultValue: settings?.contactWhatsapp ?? '',
+              help: 'Digits only, with country code, no "+" or spaces, e.g. 263773818274. Used to build wa.me links.',
+            },
+            {
+              kind: 'json',
+              name: 'addressLines',
+              label: 'Address (primary counter)',
+              defaultValue: settings?.addressLines ?? [],
+              help: ADDRESS_HELP,
+              rows: 4,
+            },
+            {
+              kind: 'json',
+              name: 'secondAddressLines',
+              label: 'Address (second counter)',
+              defaultValue: settings?.secondAddressLines ?? [],
+              help: `${ADDRESS_HELP} Leave as an empty array [] if there is only one location.`,
+              rows: 4,
+            },
+            {
+              kind: 'text',
+              name: 'hours',
+              label: 'Opening hours line',
+              defaultValue: settings?.hours ?? '',
+            },
+            {
+              kind: 'json',
+              name: 'socialLinks',
+              label: 'Social links',
+              defaultValue: settings?.socialLinks ?? [],
+              help: SOCIAL_HELP,
+              rows: 6,
+            },
+            {
+              kind: 'json',
+              name: 'inclusions',
+              label: 'Trust badges',
+              defaultValue: settings?.inclusions ?? [],
+              help: INCLUSIONS_HELP,
+              rows: 8,
+            },
+            {
+              kind: 'json',
+              name: 'testimonials',
+              label: 'Testimonials',
+              defaultValue: settings?.testimonials ?? [],
+              help: TESTIMONIALS_HELP,
+              rows: 8,
+            },
             {
               kind: 'select',
               name: 'productsPageId',

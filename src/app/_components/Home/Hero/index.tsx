@@ -11,28 +11,32 @@
 // own pixel density starts to look soft — so the crisp photograph itself is
 // NOT blown up to fill 60–70% of the hero. What changed instead is the
 // STAGE around it: a blurred, larger "echo" of the same photograph sits
-// behind the sharp one (depth, not a second real asset), a bespoke
-// technology-panel SVG (see index.module.scss and public/brand/tech-panel-
-// hero-*.svg) frames it with diagonal circuitry and glow, and the grid
-// itself now gives the art column roughly two-thirds of the row on desktop.
-// The result is a large, confident visual moment built from composition —
-// scale, glow, layered depth, negative space — rather than from upscaling a
-// 460px source past what it can carry.
+// behind the sharp one (depth, not a second real asset), the admin's own
+// brand background image (Settings -> Brand background image, see
+// `/admin/globals`) frames it with diagonal circuitry and glow via the
+// `.circuit`/`.stagePanel` layers below, and the grid itself gives the art
+// column roughly two-thirds of the row on desktop. The result is a large,
+// confident visual moment built from composition — scale, glow, layered
+// depth, negative space — rather than from upscaling a 460px source past
+// what it can carry.
 //
 // ADMIN-MANAGED CONTENT. Every piece of copy, both CTAs and the product
 // photo are optionally driven by the `home` Home-global record (see
 // `src/lib/domain/types.ts`'s `Home` interface and `/admin/globals`) —
-// `page.tsx` fetches it and passes it down as `home`. Each field falls back
-// to the values below independently, so an operator who has only set the
-// heading does not lose the default photo, and a fresh install with no
-// `home` document renders exactly the hardcoded design this file shipped
-// with. When an operator supplies a higher-resolution or differently
-// shaped photograph, `.artImage`'s `width: min(100%, 30rem); height: auto`
-// (see the stylesheet) means the STAGE stays the same size and the new
-// photo's own aspect ratio is respected — nothing here needs to change for
-// that to work, which is exactly what lets section 23 of a design brief
-// ("let the admin replace the hero media with a higher-quality asset")
-// hold in practice, not just in principle.
+// `page.tsx` fetches it and passes it down as `home`. The circuitry backdrop
+// is driven independently by `settings.brandBackgroundImage` (also passed
+// down from `page.tsx`) — no image configured falls back to the CSS
+// gradients in index.module.scss, never to a bundled asset. Each field
+// falls back independently, so an operator who has only set the heading
+// does not lose the default photo, and a fresh install with nothing
+// configured still renders a complete, coherent hero. When an operator
+// supplies a higher-resolution or differently shaped photograph,
+// `.artImage`'s `width: min(100%, 30rem); height: auto` (see the
+// stylesheet) means the STAGE stays the same size and the new photo's own
+// aspect ratio is respected — nothing here needs to change for that to
+// work, which is exactly what lets section 23 of a design brief ("let the
+// admin replace the hero media with a higher-quality asset") hold in
+// practice, not just in principle.
 //
 // Server component: no state, no interactivity. The homepage is the page
 // most likely to be a visitor's first, and it should not wait on a bundle
@@ -42,7 +46,7 @@ import React from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 
-import type { StorefrontHome } from '../../../_types/storefront'
+import type { StorefrontHome, StorefrontSettingsLike } from '../../../_types/storefront'
 import { Gutter } from '../../Gutter'
 
 import classes from './index.module.scss'
@@ -63,9 +67,20 @@ const DEFAULT_HERO_IMAGE = {
 
 export interface HomeHeroProps {
   home?: StorefrontHome | null
+  settings?: StorefrontSettingsLike | null
 }
 
-export const HomeHero: React.FC<HomeHeroProps> = ({ home }) => {
+export const HomeHero: React.FC<HomeHeroProps> = ({ home, settings }) => {
+  // The one admin-uploaded background image (Settings -> Brand background
+  // image, see `/admin/globals`), reused here as the hero's circuitry
+  // backdrop. Undefined -> the inline style is omitted entirely and the
+  // CSS gradient fallback in index.module.scss paints instead, so a fresh
+  // install with no image configured still renders a complete hero.
+  const backgroundImageUrl = settings?.brandBackgroundImage?.url
+  const backgroundImageStyle = backgroundImageUrl
+    ? { backgroundImage: `url(${backgroundImageUrl})` }
+    : undefined
+
   const eyebrow = home?.heroEyebrow || 'Smartphones & consumer tech, in Harare'
   const heading = home?.heroHeading || 'Smartphones and tech,'
   const headingAccent = home?.heroHeadingAccent || 'sorted properly.'
@@ -113,7 +128,7 @@ export const HomeHero: React.FC<HomeHeroProps> = ({ home }) => {
       {/* The client's reference artwork (an actual raster crop, see the
           module's stylesheet) plus the scrim that keeps it off the copy
           column. Both are decorative only. */}
-      <div className={classes.circuit} aria-hidden="true" />
+      <div className={classes.circuit} aria-hidden="true" style={backgroundImageStyle} />
       <div className={classes.circuitScrim} aria-hidden="true" />
 
       <Gutter className={classes.wrap}>
@@ -172,7 +187,7 @@ export const HomeHero: React.FC<HomeHeroProps> = ({ home }) => {
               higher-opacity crop than the full-band `.circuit` layer above,
               so the product visibly sits "in front of" its own energy field
               rather than just having a backdrop somewhere behind the band. */}
-          <div className={classes.stagePanel} aria-hidden="true" />
+          <div className={classes.stagePanel} aria-hidden="true" style={backgroundImageStyle} />
 
           {/* A soft radial pool behind the phones, echoing the glow the
               photo's own light-blue background already carries. */}

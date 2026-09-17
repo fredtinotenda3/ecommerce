@@ -1,11 +1,11 @@
 // A dead `inclusions` export used to live here (Free Shipping "above $150",
 // a 30-day "Money Guarantee", 24/7 support) — leftover scaffold content,
 // unused anywhere in the app, and every claim in it is exactly the kind of
-// invented delivery/guarantee promise the Terro Technology brief rules out.
-// The trust claims actually rendered on the storefront live in
-// `constants/brand.ts` (`INCLUSIONS`), sourced from the client's own
-// supplied material. Removed rather than rebranded, since nothing referenced
-// it.
+// invented delivery/guarantee promise this project rules out. The trust
+// claims actually rendered on the storefront are admin-editable — Settings'
+// `inclusions` field, edited at `/admin/globals` and defaulting to
+// `src/lib/domain/siteDefaults.ts`'s `DEFAULT_INCLUSIONS` on a fresh
+// install. Removed rather than rebranded, since nothing referenced it.
 
 export const profileNavItems = [
   {

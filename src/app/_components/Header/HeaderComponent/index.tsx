@@ -7,8 +7,16 @@
 //
 // It sticks to the top of the viewport, which is what makes the cart
 // reachable from anywhere in a long product grid. The mobile drawer
-// renders the same `PRIMARY_NAV` list as the desktop bar, so the two
-// cannot describe different shops.
+// renders the same nav list as the desktop bar, so the two cannot describe
+// different shops.
+//
+// NAVIGATION IS ADMIN-MANAGED. The Header global's `navItems` (edited at
+// `/admin/globals`) are the shop's actual navigation — there is no more
+// hardcoded `PRIMARY_NAV` list living in source. A brand-new install with
+// no Header global configured yet (or one an operator has emptied out)
+// falls back to `MINIMAL_NAV_FALLBACK` — one generic "Shop" link — so the
+// header is never nav-less, without baking any specific business's
+// categories into the code.
 //
 // `usePathname` is called unconditionally (react-hooks/rules-of-hooks) and
 // this component is rendered inside an `ErrorBoundary` one level up, so a
@@ -18,24 +26,61 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 
+import { DEFAULT_SITE_NAME, MINIMAL_NAV_FALLBACK } from '../../../../lib/domain/siteDefaults'
 import { useAuth } from '../../../_providers/Auth'
 import { noHeaderFooterUrls } from '../../../constants'
-import { PRIMARY_NAV, SITE_NAME } from '../../../constants/brand'
-import { StorefrontHeader } from '../../../_types/storefront'
+import { StorefrontHeader, StorefrontSettingsLike } from '../../../_types/storefront'
+import { resolveCMSLinkHref } from '../../Link/resolveHref'
 import { CartLink } from '../../CartLink'
 import { Gutter } from '../../Gutter'
 import { Logo } from '../../Logo'
 import { SearchField } from '../../SearchField'
 import { ThemeToggle } from '../../ThemeToggle'
-import { HeaderNav } from '../Nav'
 
 import classes from './index.module.scss'
 
-const HeaderComponent = ({ header }: { header: StorefrontHeader | null }) => {
+interface ResolvedNavItem {
+  key: string
+  label: string
+  href: string
+  newTab?: boolean
+}
+
+/** Header global nav items, resolved to a plain `{ label, href }` list the
+ * rest of this component can render and active-match without caring how
+ * each link was configured (a page reference vs. a typed url). Falls back
+ * to `MINIMAL_NAV_FALLBACK` only when every item was unusable (no label, or
+ * no resolvable href) — same "half-configured is not the same as
+ * unconfigured, but both need a safety net" treatment the admin form's own
+ * validation gives a single bad entry. */
+const resolveNavItems = (header: StorefrontHeader | null): ResolvedNavItem[] => {
+  const resolved = (header?.navItems ?? [])
+    .map((item, index): ResolvedNavItem | null => {
+      const href = resolveCMSLinkHref(item.link)
+      const label = item.link.label
+      if (!href || !label) return null
+      return { key: `${href}-${index}`, label, href, newTab: item.link.newTab }
+    })
+    .filter((item): item is ResolvedNavItem => item !== null)
+
+  return resolved.length > 0
+    ? resolved
+    : MINIMAL_NAV_FALLBACK.map(item => ({ key: item.href, label: item.label, href: item.href }))
+}
+
+const HeaderComponent = ({
+  header,
+  settings,
+}: {
+  header: StorefrontHeader | null
+  settings: StorefrontSettingsLike | null
+}) => {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const { user } = useAuth()
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const navItems = resolveNavItems(header)
+  const siteName = settings?.siteName || DEFAULT_SITE_NAME
 
   // Close the drawer on navigation: leaving it open over the new page is
   // the classic mobile-menu bug.
@@ -90,15 +135,17 @@ const HeaderComponent = ({ header }: { header: StorefrontHeader | null }) => {
   return (
     <header className={classes.header}>
       <Gutter className={classes.wrap}>
-        <Link href="/" className={classes.brand} aria-label={`${SITE_NAME} home`}>
+        <Link href="/" className={classes.brand} aria-label={`${siteName} home`}>
           <Logo variant="auto" priority />
         </Link>
 
         <nav className={classes.primaryNav} aria-label="Primary">
-          {PRIMARY_NAV.map(item => (
+          {navItems.map(item => (
             <Link
-              key={item.href}
+              key={item.key}
               href={item.href}
+              target={item.newTab ? '_blank' : undefined}
+              rel={item.newTab ? 'noopener noreferrer' : undefined}
               className={[classes.navLink, isActive(item.href) && classes.navLinkActive]
                 .filter(Boolean)
                 .join(' ')}
@@ -167,10 +214,12 @@ const HeaderComponent = ({ header }: { header: StorefrontHeader | null }) => {
             <SearchField className={classes.drawerSearch} />
 
             <nav aria-label="Mobile">
-              {PRIMARY_NAV.map(item => (
+              {navItems.map(item => (
                 <Link
-                  key={item.href}
+                  key={item.key}
                   href={item.href}
+                  target={item.newTab ? '_blank' : undefined}
+                  rel={item.newTab ? 'noopener noreferrer' : undefined}
                   className={[classes.drawerLink, isActive(item.href) && classes.drawerLinkActive]
                     .filter(Boolean)
                     .join(' ')}
@@ -191,11 +240,6 @@ const HeaderComponent = ({ header }: { header: StorefrontHeader | null }) => {
               <span className={classes.drawerThemeLabel}>Appearance</span>
               <ThemeToggle variant="segmented" />
             </div>
-
-            {/* Any nav items configured in the CMS globals appear beneath
-                the fixed list rather than replacing it, so a half-configured
-                Header global cannot leave the site without navigation. */}
-            <HeaderNav header={header} className={classes.drawerCmsNav} />
           </Gutter>
         </div>
       )}

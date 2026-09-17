@@ -18,7 +18,22 @@
 //     (orderStateMachine.ts). An order cannot jump from PENDING_PAYMENT to
 //     REFUNDED because someone picked it from a dropdown.
 
-import type { Category, Media, Order, Page, Payment, Product, Role, User } from '../domain/types'
+import type {
+  Category,
+  FooterLinkGroup,
+  Inclusion,
+  InclusionIcon,
+  Media,
+  Order,
+  Page,
+  Payment,
+  Product,
+  Role,
+  SocialLink,
+  SocialPlatform,
+  Testimonial,
+  User,
+} from '../domain/types'
 import { ORDER_STATUS_TRANSITIONS, PAYMENT_STATUS_TRANSITIONS } from '../domain/types'
 import type { OrderStatus, PaymentStatus } from '../domain/types'
 import type { CategoryRepository } from '../repositories/CategoryRepository'
@@ -776,18 +791,197 @@ export const saveHeader = async (
   deps: { globalsRepository: GlobalsRepository },
 ) => deps.globalsRepository.saveHeader({ navItems: parseNavItems(input.navItems) })
 
+/** Up to `max` short text strings, e.g. address lines. Distinct from
+ * `stringList` only in that a caller may omit the field entirely (leaving
+ * the stored list untouched is not a thing these globals support — every
+ * save is a full replace — so `undefined` here means "clear the list", not
+ * "leave it alone"). */
+const optionalStringArray = (value: unknown, field: string, max: number, itemMax = 200): string[] =>
+  stringList(value, field, max, itemMax)
+
+const SOCIAL_PLATFORMS: SocialPlatform[] = [
+  'instagram',
+  'facebook',
+  'whatsapp',
+  'tiktok',
+  'x',
+  'youtube',
+  'linkedin',
+  'other',
+]
+
+export interface SocialLinkRequest {
+  platform?: unknown
+  label?: unknown
+  url?: unknown
+}
+
+/** Up to eight social links. `platform` selects the bundled glyph
+ * (`SOCIAL_ICONS` in `FooterComponent`); an unrecognised value is rejected
+ * rather than silently stored as `'other'`, so a typo in a hand-written
+ * request body cannot quietly lose its icon. `label` is required only for
+ * `'other'` — every named platform already implies its own display label. */
+const socialLinksList = (value: unknown, field = 'Social links'): SocialLink[] => {
+  if (value === undefined || value === null) return []
+  if (!Array.isArray(value)) throw new AdminValidationError(`${field} must be a list.`)
+  if (value.length > 8) throw new AdminValidationError(`${field} allows at most 8 items.`)
+
+  return value.map((raw, index) => {
+    const item = (raw ?? {}) as SocialLinkRequest
+    const itemField = `${field}[${index + 1}]`
+    const platform = item.platform
+    if (typeof platform !== 'string' || !SOCIAL_PLATFORMS.includes(platform as SocialPlatform)) {
+      throw new AdminValidationError(
+        `${itemField} platform must be one of: ${SOCIAL_PLATFORMS.join(', ')}.`,
+      )
+    }
+    const url = assertSafeHref(requireText(item.url, `${itemField} url`, 500), `${itemField} url`)
+    const label =
+      platform === 'other'
+        ? requireText(item.label, `${itemField} label`, 60)
+        : optionalText(item.label, `${itemField} label`, 60) ?? null
+
+    return { platform: platform as SocialPlatform, label, url }
+  })
+}
+
+const INCLUSION_ICONS: InclusionIcon[] = ['box', 'repair', 'payment', 'message']
+
+export interface InclusionRequest {
+  title?: unknown
+  description?: unknown
+  icon?: unknown
+}
+
+/** Up to six trust badges (the homepage "why buy here" band and the
+ * product buying panel both render this same list — see
+ * `Home/ValueProps` and `ProductHero`). */
+const inclusionsList = (value: unknown, field = 'Inclusions'): Inclusion[] => {
+  if (value === undefined || value === null) return []
+  if (!Array.isArray(value)) throw new AdminValidationError(`${field} must be a list.`)
+  if (value.length > 6) throw new AdminValidationError(`${field} allows at most 6 items.`)
+
+  return value.map((raw, index) => {
+    const item = (raw ?? {}) as InclusionRequest
+    const itemField = `${field}[${index + 1}]`
+    const icon = item.icon
+    if (typeof icon !== 'string' || !INCLUSION_ICONS.includes(icon as InclusionIcon)) {
+      throw new AdminValidationError(`${itemField} icon must be one of: ${INCLUSION_ICONS.join(', ')}.`)
+    }
+    return {
+      title: requireText(item.title, `${itemField} title`, 60),
+      description: requireText(item.description, `${itemField} description`, 200),
+      icon: icon as InclusionIcon,
+    }
+  })
+}
+
+export interface TestimonialRequest {
+  quote?: unknown
+  name?: unknown
+  role?: unknown
+}
+
+/** Up to twelve customer quotes. Every field is required per entry — a
+ * quote with no attribution, or an attribution with no quote, is not a
+ * testimonial a storefront should ever render (see `Testimonials`' own
+ * comment on why this project does not fabricate reviews: the fix for a
+ * half-filled-in entry is rejecting it, not inventing the missing half). */
+const testimonialsList = (value: unknown, field = 'Testimonials'): Testimonial[] => {
+  if (value === undefined || value === null) return []
+  if (!Array.isArray(value)) throw new AdminValidationError(`${field} must be a list.`)
+  if (value.length > 12) throw new AdminValidationError(`${field} allows at most 12 items.`)
+
+  return value.map((raw, index) => {
+    const item = (raw ?? {}) as TestimonialRequest
+    const itemField = `${field}[${index + 1}]`
+    return {
+      quote: requireText(item.quote, `${itemField} quote`, 500),
+      name: requireText(item.name, `${itemField} name`, 80),
+      role: requireText(item.role, `${itemField} role`, 80),
+    }
+  })
+}
+
+export interface FooterLinkRequest {
+  label?: unknown
+  href?: unknown
+}
+
+export interface FooterLinkGroupRequest {
+  title?: unknown
+  links?: unknown
+}
+
+/** Up to six footer columns, each with up to ten links — generous enough
+ * for "Shop"/"Your account"/"Help" (the shipped default, three groups of
+ * up to five) plus room to add a fourth column without hitting the cap. */
+const footerLinkGroupsList = (value: unknown, field = 'Footer link groups'): FooterLinkGroup[] => {
+  if (value === undefined || value === null) return []
+  if (!Array.isArray(value)) throw new AdminValidationError(`${field} must be a list.`)
+  if (value.length > 6) throw new AdminValidationError(`${field} allows at most 6 groups.`)
+
+  return value.map((raw, index) => {
+    const group = (raw ?? {}) as FooterLinkGroupRequest
+    const groupField = `${field}[${index + 1}]`
+    const title = requireText(group.title, `${groupField} title`, 40)
+    const linksValue = group.links
+
+    if (!Array.isArray(linksValue)) {
+      throw new AdminValidationError(`${groupField} links must be a list.`)
+    }
+    if (linksValue.length > 10) {
+      throw new AdminValidationError(`${groupField} links allows at most 10 items.`)
+    }
+
+    const links = linksValue.map((rawLink, linkIndex) => {
+      const link = (rawLink ?? {}) as FooterLinkRequest
+      const linkField = `${groupField} link ${linkIndex + 1}`
+      return {
+        label: requireText(link.label, `${linkField} label`, 60),
+        href: assertSafeHref(requireText(link.href, `${linkField} href`, 500), `${linkField} href`),
+      }
+    })
+
+    return { title, links }
+  })
+}
+
 export const saveFooter = async (
-  input: { copyright?: unknown; navItems?: unknown },
+  input: { copyright?: unknown; navItems?: unknown; linkGroups?: unknown },
   deps: { globalsRepository: GlobalsRepository },
 ) =>
   deps.globalsRepository.saveFooter({
     copyright: optionalText(input.copyright, 'Copyright', 500) ?? null,
     navItems: parseNavItems(input.navItems),
+    linkGroups: footerLinkGroupsList(input.linkGroups),
   })
 
+export interface SettingsWriteRequest {
+  productsPageId?: unknown
+  siteName?: unknown
+  siteTagline?: unknown
+  siteDescription?: unknown
+  contactEmail?: unknown
+  contactPhone?: unknown
+  contactPhoneSecondary?: unknown
+  contactWhatsapp?: unknown
+  addressLines?: unknown
+  secondAddressLines?: unknown
+  hours?: unknown
+  socialLinks?: unknown
+  inclusions?: unknown
+  testimonials?: unknown
+  brandBackgroundImageId?: unknown
+}
+
 export const saveSettings = async (
-  input: { productsPageId?: unknown },
-  deps: { globalsRepository: GlobalsRepository; pageRepository: PageRepository },
+  input: SettingsWriteRequest,
+  deps: {
+    globalsRepository: GlobalsRepository
+    pageRepository: PageRepository
+    mediaRepository: MediaRepository
+  },
 ) => {
   const productsPageId = optionalId(input.productsPageId, 'Products page') ?? null
 
@@ -796,7 +990,26 @@ export const saveSettings = async (
     if (!page) throw new AdminValidationError('That page does not exist.')
   }
 
-  return deps.globalsRepository.saveSettings({ productsPageId })
+  const brandBackgroundImageId = optionalId(input.brandBackgroundImageId, 'Brand background image') ?? null
+  await assertMediaMatches(brandBackgroundImageId, 'Brand background image', 'image', deps)
+
+  return deps.globalsRepository.saveSettings({
+    productsPageId,
+    siteName: optionalText(input.siteName, 'Site name', 80) ?? null,
+    siteTagline: optionalText(input.siteTagline, 'Site tagline', 160) ?? null,
+    siteDescription: optionalText(input.siteDescription, 'Site description', 500) ?? null,
+    contactEmail: optionalText(input.contactEmail, 'Contact email', 200) ?? null,
+    contactPhone: optionalText(input.contactPhone, 'Contact phone', 40) ?? null,
+    contactPhoneSecondary: optionalText(input.contactPhoneSecondary, 'Contact phone (secondary)', 40) ?? null,
+    contactWhatsapp: optionalText(input.contactWhatsapp, 'WhatsApp number', 40) ?? null,
+    addressLines: optionalStringArray(input.addressLines, 'Address lines', 6, 200),
+    secondAddressLines: optionalStringArray(input.secondAddressLines, 'Second address lines', 6, 200),
+    hours: optionalText(input.hours, 'Opening hours', 200) ?? null,
+    socialLinks: socialLinksList(input.socialLinks),
+    inclusions: inclusionsList(input.inclusions),
+    testimonials: testimonialsList(input.testimonials),
+    brandBackgroundImageId,
+  })
 }
 
 export interface HomeWriteRequest {

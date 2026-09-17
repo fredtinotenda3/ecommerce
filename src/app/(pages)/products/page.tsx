@@ -15,13 +15,15 @@ import { Metadata } from 'next'
 import { draftMode } from 'next/headers'
 
 import { fetchCategories } from '../../_api/fetchCategories'
+import { fetchSettings } from '../../_api/fetchGlobals'
 import { fetchPage } from '../../_api/fetchPage'
 import { Blocks } from '../../_components/Blocks'
 import { CollectionArchive } from '../../_components/CollectionArchive'
 import { Gutter } from '../../_components/Gutter'
 import { HR } from '../../_components/HR'
-import type { StorefrontCategory, StorefrontPage } from '../../_types/storefront'
+import type { StorefrontCategory, StorefrontPage, StorefrontSettingsLike } from '../../_types/storefront'
 import { generateMeta } from '../../_utilities/generateMeta'
+import { siteInfoFromSettings } from '../../_utilities/mergeOpenGraph'
 import Filters from './Filters'
 import FilterSync from './FilterSync'
 
@@ -82,6 +84,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const { isEnabled: isDraftMode } = draftMode()
 
   let page: StorefrontPage | null = null
+  let settings: StorefrontSettingsLike | null = null
 
   try {
     page = await fetchPage('products', isDraftMode ? undefined : 'published')
@@ -89,7 +92,16 @@ export async function generateMetadata(): Promise<Metadata> {
     // Fall through to the defaults in `generateMeta`.
   }
 
-  return generateMeta({ doc: page })
+  try {
+    settings = await fetchSettings()
+  } catch (error) {
+    // Fall through to the defaults in `generateMeta`.
+  }
+
+  return generateMeta({
+    doc: page,
+    siteInfo: siteInfoFromSettings(settings, settings?.brandBackgroundImage?.url ?? null),
+  })
 }
 
 export default Products

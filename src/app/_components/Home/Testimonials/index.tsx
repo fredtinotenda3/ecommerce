@@ -2,6 +2,12 @@
 //
 // Customer quotes.
 //
+// ADMIN-MANAGED CONTENT. Testimonials come from Settings' `testimonials`
+// (see `/admin/globals`) — there are none by default (see
+// `siteDefaults.ts`'s own comment on why: inventing customer quotes for a
+// real, named business is not something this project does). This section
+// renders nothing at all until an operator adds real ones.
+//
 // Marked up as `<figure>`/`<blockquote>`/`<figcaption>` rather than divs, so
 // the attribution is programmatically tied to the quote it belongs to.
 //
@@ -11,13 +17,19 @@
 
 import React from 'react'
 
-import { TESTIMONIALS } from '../../../constants/brand'
+import { StorefrontSettingsLike } from '../../../_types/storefront'
 import { Gutter } from '../../Gutter'
 
 import classes from './index.module.scss'
 
-export const Testimonials: React.FC = () => {
-  if (TESTIMONIALS.length === 0) return null
+export interface TestimonialsProps {
+  settings?: StorefrontSettingsLike | null
+}
+
+export const Testimonials: React.FC<TestimonialsProps> = ({ settings }) => {
+  const testimonials = settings?.testimonials ?? []
+
+  if (testimonials.length === 0) return null
 
   return (
     <section className={classes.section} aria-labelledby="testimonials-heading">
@@ -28,7 +40,7 @@ export const Testimonials: React.FC = () => {
         </h2>
 
         <div className={classes.grid}>
-          {TESTIMONIALS.map(testimonial => (
+          {testimonials.map(testimonial => (
             <figure key={testimonial.name} className={classes.card}>
               <svg
                 className={classes.quoteMark}

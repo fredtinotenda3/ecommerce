@@ -24,21 +24,28 @@ import React from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 
-import { CONTACT } from '../../../constants/brand'
+import { DEFAULT_CONTACT } from '../../../../lib/domain/siteDefaults'
+import { StorefrontSettingsLike } from '../../../_types/storefront'
 import { Gutter } from '../../Gutter'
 
 import classes from './index.module.scss'
-
-const WHATSAPP_QUOTE_HREF = `https://wa.me/${CONTACT.whatsapp}?text=${encodeURIComponent(
-  'Hi Terro, I would like a quote for a custom gaming PC.',
-)}`
 
 /** Three checkable facts about the build service, styled where the
  * countdown digits used to sit. No invented turnaround time or warranty
  * term — see body copy in catalogue.ts for what is and isn't promised. */
 const SPECS = ['Ryzen 5 or Ryzen 7', 'RTX-class GPU options', 'Assembled & tested in-store']
 
-export const Deals: React.FC = () => (
+export interface DealsProps {
+  settings?: StorefrontSettingsLike | null
+}
+
+export const Deals: React.FC<DealsProps> = ({ settings }) => {
+  const whatsapp = settings?.contactWhatsapp || DEFAULT_CONTACT.whatsapp
+  const whatsappQuoteHref = `https://wa.me/${whatsapp}?text=${encodeURIComponent(
+    'Hi, I would like a quote for a custom gaming PC.',
+  )}`
+
+  return (
   <section className={classes.section} aria-labelledby="deals-heading">
     <Gutter>
       <div className={classes.panel}>
@@ -99,11 +106,12 @@ export const Deals: React.FC = () => (
           <Link href="/products/custom-gaming-pc-ryzen-5-rtx" className={classes.cta}>
             See the starting build
           </Link>
-          <Link href={WHATSAPP_QUOTE_HREF} className={classes.ctaGhost}>
+          <Link href={whatsappQuoteHref} className={classes.ctaGhost}>
             WhatsApp us your budget
           </Link>
         </div>
       </div>
     </Gutter>
   </section>
-)
+  )
+}

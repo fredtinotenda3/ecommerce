@@ -13,9 +13,9 @@
 //
 // The id form stays canonical: it is what `Filters` submits and what
 // `/api/products` filters on, so renaming a category can never break the
-// filter UI. Only the hand-written navigation links in `constants/brand.ts`
-// use the derived token, and an unrecognised token resolves to no filter
-// rather than an error.
+// filter UI. Only admin-configured navigation links (Header/Footer globals,
+// see `/admin/globals`) use the derived token, and an unrecognised token
+// resolves to no filter rather than an error.
 //
 // Kept framework-free so both the server component and the route handler
 // can use it.

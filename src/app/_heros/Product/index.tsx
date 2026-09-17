@@ -27,11 +27,12 @@ import { AddToCartButton } from '../../_components/AddToCartButton'
 import { Gutter } from '../../_components/Gutter'
 import { Media } from '../../_components/Media'
 import { Price } from '../../_components/Price'
-import { INCLUSIONS } from '../../constants/brand'
+import { DEFAULT_INCLUSIONS } from '../../../lib/domain/siteDefaults'
 import {
   StorefrontMediaItem,
   StorefrontProductCategoryRef,
   StorefrontProductHeroView,
+  StorefrontSettingsLike,
 } from '../../_types/storefront'
 import { toCategorySlug } from '../../_utilities/categorySlug'
 
@@ -44,21 +45,25 @@ type ProductHeroProduct = Omit<StorefrontProductHeroView, 'meta'> & {
   } | null
 }
 
-/** The promises that matter at the moment of purchase — Terro's own four
- * inclusions (`constants/brand.ts`), not a separate list. The previous
- * (Tech Haven) version hardcoded its own three here — "Free delivery over
- * $150", "Two-year warranty", "30-day returns" — none of which any supplied
- * Terro asset confirms, and having two parallel trust-claim lists is how
- * they drift out of sync with each other in the first place. */
-const ASSURANCES = INCLUSIONS.map(({ title, description }) => ({
-  label: title,
-  detail: description,
-}))
-
 const MAX_QUANTITY = 10
 
-export const ProductHero: React.FC<{ product: ProductHeroProduct }> = ({ product }) => {
+export const ProductHero: React.FC<{
+  product: ProductHeroProduct
+  settings?: StorefrontSettingsLike | null
+}> = ({ product, settings }) => {
   const { title, categories, meta: { image: metaImage, description } = {} } = product
+
+  // The promises that matter at the moment of purchase — the same
+  // admin-editable trust badges as the homepage "why buy here" band
+  // (Settings -> Trust badges, see `/admin/globals`), not a separate list.
+  // A previous version of this page hardcoded its own three here — "Free
+  // delivery over $150", "Two-year warranty", "30-day returns" — none of
+  // which any supplied asset confirmed, and having two parallel
+  // trust-claim lists is how they drift out of sync with each other in the
+  // first place.
+  const inclusions =
+    settings?.inclusions && settings.inclusions.length > 0 ? settings.inclusions : DEFAULT_INCLUSIONS
+  const assurances = inclusions.map(({ title: label, description: detail }) => ({ label, detail }))
 
   const [quantity, setQuantity] = useState(1)
 
@@ -220,7 +225,7 @@ export const ProductHero: React.FC<{ product: ProductHeroProduct }> = ({ product
           )}
 
           <ul className={classes.assurances}>
-            {ASSURANCES.map(assurance => (
+            {assurances.map(assurance => (
               <li key={assurance.label}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path

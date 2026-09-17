@@ -20,32 +20,36 @@
     radial-gradient(46% 62% at 8% 92%, color-mix(in srgb, var(--th-accent-500) 12%, transparent) 0%, transparent 60%);
 }
 
-// The technology-panel artwork — a bespoke vector asset (not a CSS-gradient
-// pile, not a photographic circuit-board crop): deep-navy-to-cyan diagonal
-// gradient, luminous circuit traces, glowing nodes and subtle binary digits,
-// built directly from the four canonical --th-brand-* hex values in
-// public/brand/tech-panel-hero-*.svg. Anchored to the hero's top-right
-// corner so its own diagonal edge reads as a brand accent rather than a
-// filled panel. Painted above `.wash` but still behind the content, in the
-// same negative-z-index layer.
+// The technology-panel artwork: the admin-configured "electric-blue
+// circuit" background image (Settings -> Brand background image, see
+// `/admin/globals`), set inline by `Home/Hero` from the resolved media url
+// — deep-navy-to-cyan diagonal composition, luminous circuit traces,
+// glowing nodes and binary digits. Anchored to the hero's top-right corner
+// so its own diagonal edge reads as a brand accent rather than a filled
+// panel. Painted above `.wash` but still behind the content, in the same
+// negative-z-index layer.
 //
-// A dedicated, shorter crop (a different generated composition, not the
-// same artwork resized — see the SVG's own header comment) swaps in below
-// `mid-break`: the desktop crop's tall aspect ratio would otherwise push
-// deep down into the stacked copy on a phone, which is exactly what the
-// brief rules out.
+// `background-image` here is only the FALLBACK for when no image has been
+// configured yet (a fresh install) — a plain diagonal wash built from the
+// same `--th-brand-*` tokens the rest of the theme uses, so the hero still
+// looks designed rather than blank. An inline style always wins over this
+// rule once an image is set, so there is no `!important` fight here.
 .circuit {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background-image: url('/brand/tech-panel-hero-desktop.svg');
+  background-image: linear-gradient(
+    128deg,
+    var(--th-brand-700) 0%,
+    var(--th-brand-500) 45%,
+    transparent 78%
+  );
   background-repeat: no-repeat;
   background-position: top right;
   background-size: auto 132%;
   opacity: 0.95;
 
   @include mid-break {
-    background-image: url('/brand/tech-panel-hero-mobile.svg');
     // The stacked layout puts the product photo last, so the accent moves
     // to the bottom corner with it rather than sitting behind the heading.
     background-position: bottom right;
@@ -315,11 +319,22 @@
 // rather than merely having the same backdrop repeated at the same size.
 // This is the ONE additional placement inside the hero beyond `.circuit`;
 // nothing else in this component adds another circuit layer.
+//
+// No hardcoded artwork: this rule's `background-image` is the CSS fallback
+// only, shown when no admin background image is configured. Once one is
+// configured (Settings -> Brand background image, see `/admin/globals`),
+// `HomeHero` sets `background-image` inline on this element and the
+// gradient below never paints.
 .stagePanel {
   position: absolute;
   inset: -14% -10%;
   z-index: -1;
-  background-image: url('/brand/tech-panel-hero-desktop.svg');
+  background-image: radial-gradient(
+    68% 68% at 62% 38%,
+    var(--th-brand-500) 0%,
+    var(--th-brand-700) 55%,
+    transparent 80%
+  );
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
@@ -334,7 +349,6 @@
   @include mid-break {
     inset: -8% -6%;
     opacity: 0.4;
-    background-image: url('/brand/tech-panel-hero-mobile.svg');
   }
 }
 

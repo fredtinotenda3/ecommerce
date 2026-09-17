@@ -120,13 +120,17 @@ describe('buildStorefrontSettings', () => {
     pageRepo.seed(buildTestPage({ id: 'page1', slug: 'products' }))
     globalsRepo.seedSettings(buildTestSettings({ id: 'settings1', productsPageId: 'page1' }))
 
-    const result = await buildStorefrontSettings(globalsRepo, pageRepo)
+    const result = await buildStorefrontSettings(globalsRepo, pageRepo, new FakeMediaRepository())
 
     expect(result).toMatchObject({ productsPage: { slug: 'products' } })
   })
 
   it('returns null when no Settings global exists yet, rather than throwing', async () => {
-    const result = await buildStorefrontSettings(new FakeGlobalsRepository(), new FakePageRepository())
+    const result = await buildStorefrontSettings(
+      new FakeGlobalsRepository(),
+      new FakePageRepository(),
+      new FakeMediaRepository(),
+    )
     expect(result).toBeNull()
   })
 
@@ -134,9 +138,29 @@ describe('buildStorefrontSettings', () => {
     const globalsRepo = new FakeGlobalsRepository()
     globalsRepo.seedSettings(buildTestSettings({ productsPageId: 'missing-page' }))
 
-    const result = await buildStorefrontSettings(globalsRepo, new FakePageRepository())
+    const result = await buildStorefrontSettings(globalsRepo, new FakePageRepository(), new FakeMediaRepository())
 
     expect(result?.productsPage).toBeUndefined()
+  })
+
+  it('resolves brandBackgroundImageId to a storefront media item', async () => {
+    const globalsRepo = new FakeGlobalsRepository()
+    const mediaRepo = new FakeMediaRepository()
+    mediaRepo.seed(buildTestMedia({ id: 'bg1', url: '/media/brand-bg.webp', width: 2560, height: 1440 }))
+    globalsRepo.seedSettings(buildTestSettings({ brandBackgroundImageId: 'bg1' }))
+
+    const result = await buildStorefrontSettings(globalsRepo, new FakePageRepository(), mediaRepo)
+
+    expect(result?.brandBackgroundImage).toMatchObject({ url: '/media/brand-bg.webp' })
+  })
+
+  it('leaves brandBackgroundImage null when the referenced media no longer resolves', async () => {
+    const globalsRepo = new FakeGlobalsRepository()
+    globalsRepo.seedSettings(buildTestSettings({ brandBackgroundImageId: 'missing' }))
+
+    const result = await buildStorefrontSettings(globalsRepo, new FakePageRepository(), new FakeMediaRepository())
+
+    expect(result?.brandBackgroundImage).toBeNull()
   })
 })
 

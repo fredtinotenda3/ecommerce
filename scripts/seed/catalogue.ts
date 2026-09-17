@@ -70,6 +70,11 @@ export interface SeedProduct {
 
 export const SEED_CURRENCY = 'USD'
 
+/** Filename of the seeded brand background image (see the `SEED_MEDIA` entry
+ * below) — exported so `seedStore.ts` can look up its media id without
+ * duplicating the literal filename in two files. */
+export const BRAND_BACKGROUND_IMAGE_FILENAME = 'brand-tech-circuit-background-a97f4fe0f6b6.webp'
+
 export const SEED_MEDIA: SeedMedia[] = [
   // --- Category imagery -------------------------------------------------
   // Cropped from the client's own promotional flyers with every price,
@@ -172,6 +177,21 @@ export const SEED_MEDIA: SeedMedia[] = [
     width: 1080,
     height: 1080,
   },
+
+  // --- Brand background image --------------------------------------------
+  // The site-wide decorative artwork referenced by `Settings.brandBackgroundImageId`
+  // (see `/admin/globals` -> Site settings -> Brand background image). Seeded as an
+  // ordinary Media document like everything else here — an operator can replace it
+  // at any time by uploading a new image and repointing that field, same as any
+  // other admin-managed media. Not a hardcoded asset path anywhere in the render
+  // path; see `src/app/_components/BrandBackdrop` and the `.circuit`/`.stagePanel`
+  // hero styling for how a null value here degrades to a plain CSS gradient.
+  {
+    filename: BRAND_BACKGROUND_IMAGE_FILENAME,
+    alt: 'An abstract high-tech background of glowing blue circuit traces, binary digits and a luminous diagonal band',
+    width: 2560,
+    height: 1440,
+  },
 ]
 
 export const SEED_CATEGORIES: SeedCategory[] = [
@@ -186,7 +206,9 @@ export const SEED_CATEGORIES: SeedCategory[] = [
     title: 'Laptops & Computers',
     // toCategorySlug('Laptops & Computers') === 'laptops-computers' —
     // validateCatalogue() checks this derivation exactly, so the slug here
-    // and the `?category=` links in constants/brand.ts must both match it.
+    // and the `?category=` links in `DEFAULT_PRIMARY_NAV`/
+    // `DEFAULT_FOOTER_LINK_GROUPS` (src/lib/domain/siteDefaults.ts) must
+    // both match it.
     slug: 'laptops-computers',
     description:
       'Laptop sales, upgrades and repair. Photographed listings are on their way — see the note on this page.',

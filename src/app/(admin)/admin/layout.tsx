@@ -16,7 +16,8 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { getAdminAccess } from '../../_api/adminAccess'
-import { SITE_NAME } from '../../constants/brand'
+import { fetchSettings } from '../../_api/fetchGlobals'
+import { DEFAULT_SITE_NAME } from '../../../lib/domain/siteDefaults'
 import { AdminNav } from './_components/AdminNav'
 
 import classes from './_components/admin.module.scss'
@@ -30,12 +31,20 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     notFound()
   }
 
+  let siteName: string = DEFAULT_SITE_NAME
+  try {
+    const settings = await fetchSettings()
+    siteName = settings?.siteName || DEFAULT_SITE_NAME
+  } catch (error) {
+    console.error('settings read failed:', error) // eslint-disable-line no-console
+  }
+
   return (
     <div className={classes.shell}>
       <div className={classes.topBar}>
         <div className={classes.topBarInner}>
           <Link href="/admin" className={classes.brand}>
-            {SITE_NAME}
+            {siteName}
             <span className={classes.brandBadge}>Admin</span>
           </Link>
 

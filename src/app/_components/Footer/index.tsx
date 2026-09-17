@@ -1,17 +1,18 @@
 import React from 'react'
 
-import { fetchFooter } from '../../_api/fetchGlobals'
-import { StorefrontFooter } from '../../_types/storefront'
+import { fetchFooter, fetchSettings } from '../../_api/fetchGlobals'
+import { StorefrontFooter, StorefrontSettingsLike } from '../../_types/storefront'
 import { ErrorBoundary } from '../ErrorBoundary'
 import FooterComponent from './FooterComponent'
 
 export async function Footer() {
-  // `footer` is narrowed to `StorefrontFooter` — see the
+  // `footer`/`settings` are narrowed to their storefront types — see the
   // matching comment in ../Header/index.tsx for why this is safe.
   let footer: StorefrontFooter | null = null
+  let settings: StorefrontSettingsLike | null = null
 
   try {
-    footer = await fetchFooter()
+    ;[footer, settings] = await Promise.all([fetchFooter(), fetchSettings()])
   } catch (error) {
     console.error('footer read failed:', error)
   }
@@ -22,7 +23,7 @@ export async function Footer() {
           FooterComponent (see the crash documented in PHASE13C_REPORT.md)
           — see src/app/_components/ErrorBoundary/index.tsx. */}
       <ErrorBoundary>
-        <FooterComponent footer={footer} />
+        <FooterComponent footer={footer} settings={settings} />
       </ErrorBoundary>
     </>
   )

@@ -13,9 +13,23 @@ import { type Connection, Types } from 'mongoose'
 import {
   getGlobalModel,
   type GlobalDocument,
+  type GlobalFooterLinkGroupDocument,
+  type GlobalInclusionDocument,
   type GlobalNavItemDocument,
+  type GlobalSocialLinkDocument,
+  type GlobalTestimonialDocument,
 } from '../db/models/Global'
-import type { Footer, Header, Home, NavItem, Settings } from '../domain/types'
+import type {
+  Footer,
+  FooterLinkGroup,
+  Header,
+  Home,
+  Inclusion,
+  NavItem,
+  Settings,
+  SocialLink,
+  Testimonial,
+} from '../domain/types'
 
 export interface HomeWriteInput {
   heroEyebrow: string | null
@@ -37,14 +51,38 @@ export interface HomeWriteInput {
   videoPosterId: string | null
 }
 
+export interface FooterWriteInput {
+  copyright: string | null
+  navItems: NavItem[]
+  linkGroups: FooterLinkGroup[]
+}
+
+export interface SettingsWriteInput {
+  productsPageId: string | null
+  siteName: string | null
+  siteTagline: string | null
+  siteDescription: string | null
+  contactEmail: string | null
+  contactPhone: string | null
+  contactPhoneSecondary: string | null
+  contactWhatsapp: string | null
+  addressLines: string[]
+  secondAddressLines: string[]
+  hours: string | null
+  socialLinks: SocialLink[]
+  inclusions: Inclusion[]
+  testimonials: Testimonial[]
+  brandBackgroundImageId: string | null
+}
+
 export interface GlobalsRepository {
   getHeader(): Promise<Header | null>
   getFooter(): Promise<Footer | null>
   getSettings(): Promise<Settings | null>
   getHome(): Promise<Home | null>
   saveHeader(input: { navItems: NavItem[] }): Promise<Header>
-  saveFooter(input: { copyright: string | null; navItems: NavItem[] }): Promise<Footer>
-  saveSettings(input: { productsPageId: string | null }): Promise<Settings>
+  saveFooter(input: FooterWriteInput): Promise<Footer>
+  saveSettings(input: SettingsWriteInput): Promise<Settings>
   saveHome(input: HomeWriteInput): Promise<Home>
 }
 
@@ -90,6 +128,50 @@ const toNavItems = (navItems: GlobalNavItemDocument[] | undefined): NavItem[] =>
       iconMediaId: item.link?.icon ? item.link.icon.toString() : null,
     },
   }))
+
+const toFooterLinkGroups = (groups: GlobalFooterLinkGroupDocument[] | undefined): FooterLinkGroup[] =>
+  (groups ?? []).map(group => ({
+    title: group.title ?? '',
+    links: (group.links ?? []).map(link => ({ label: link.label ?? '', href: link.href ?? '' })),
+  }))
+
+const toFooterLinkGroupDocuments = (groups: FooterLinkGroup[]): GlobalFooterLinkGroupDocument[] =>
+  groups.map(group => ({
+    title: group.title,
+    links: group.links.map(link => ({ label: link.label, href: link.href })),
+  }))
+
+const toSocialLinks = (links: GlobalSocialLinkDocument[] | undefined): SocialLink[] =>
+  (links ?? [])
+    .filter((link): link is GlobalSocialLinkDocument & { url: string } => Boolean(link.url))
+    .map(link => ({
+      platform: link.platform ?? 'other',
+      label: link.label ?? null,
+      url: link.url,
+    }))
+
+const toSocialLinkDocuments = (links: SocialLink[]): GlobalSocialLinkDocument[] =>
+  links.map(link => ({ platform: link.platform, label: link.label ?? undefined, url: link.url }))
+
+const toInclusions = (items: GlobalInclusionDocument[] | undefined): Inclusion[] =>
+  (items ?? []).map(item => ({
+    title: item.title ?? '',
+    description: item.description ?? '',
+    icon: item.icon ?? 'box',
+  }))
+
+const toInclusionDocuments = (items: Inclusion[]): GlobalInclusionDocument[] =>
+  items.map(item => ({ title: item.title, description: item.description, icon: item.icon }))
+
+const toTestimonials = (items: GlobalTestimonialDocument[] | undefined): Testimonial[] =>
+  (items ?? []).map(item => ({
+    quote: item.quote ?? '',
+    name: item.name ?? '',
+    role: item.role ?? '',
+  }))
+
+const toTestimonialDocuments = (items: Testimonial[]): GlobalTestimonialDocument[] =>
+  items.map(item => ({ quote: item.quote, name: item.name, role: item.role }))
 
 const toHome = (global: GlobalDocument): Home => ({
   id: global._id.toString(),
@@ -143,6 +225,7 @@ export class MongoGlobalsRepository implements GlobalsRepository {
       id: global._id.toString(),
       copyright: global.copyright ?? null,
       navItems: toNavItems(global.navItems),
+      linkGroups: toFooterLinkGroups(global.linkGroups),
       createdAt: global.createdAt,
       updatedAt: global.updatedAt,
     }
@@ -156,6 +239,20 @@ export class MongoGlobalsRepository implements GlobalsRepository {
     return {
       id: global._id.toString(),
       productsPageId: global.productsPage ? global.productsPage.toString() : null,
+      siteName: global.siteName ?? null,
+      siteTagline: global.siteTagline ?? null,
+      siteDescription: global.siteDescription ?? null,
+      contactEmail: global.contactEmail ?? null,
+      contactPhone: global.contactPhone ?? null,
+      contactPhoneSecondary: global.contactPhoneSecondary ?? null,
+      contactWhatsapp: global.contactWhatsapp ?? null,
+      addressLines: Array.isArray(global.addressLines) ? global.addressLines : [],
+      secondAddressLines: Array.isArray(global.secondAddressLines) ? global.secondAddressLines : [],
+      hours: global.hours ?? null,
+      socialLinks: toSocialLinks(global.socialLinks),
+      inclusions: toInclusions(global.inclusions),
+      testimonials: toTestimonials(global.testimonials),
+      brandBackgroundImageId: global.brandBackgroundImage ? global.brandBackgroundImage.toString() : null,
       createdAt: global.createdAt,
       updatedAt: global.updatedAt,
     }
@@ -180,7 +277,7 @@ export class MongoGlobalsRepository implements GlobalsRepository {
     }
   }
 
-  async saveFooter(input: { copyright: string | null; navItems: NavItem[] }): Promise<Footer> {
+  async saveFooter(input: FooterWriteInput): Promise<Footer> {
     const Model = getGlobalModel(this.connection)
     const doc = await Model.findOneAndUpdate(
       { globalType: 'footer' },
@@ -188,6 +285,7 @@ export class MongoGlobalsRepository implements GlobalsRepository {
         $set: {
           copyright: input.copyright ?? '',
           navItems: toNavItemDocuments(input.navItems),
+          linkGroups: toFooterLinkGroupDocuments(input.linkGroups),
         },
         $setOnInsert: { globalType: 'footer' },
       },
@@ -201,18 +299,36 @@ export class MongoGlobalsRepository implements GlobalsRepository {
       id: global._id.toString(),
       copyright: global.copyright ?? null,
       navItems: toNavItems(global.navItems),
+      linkGroups: toFooterLinkGroups(global.linkGroups),
       createdAt: global.createdAt,
       updatedAt: global.updatedAt,
     }
   }
 
-  async saveSettings(input: { productsPageId: string | null }): Promise<Settings> {
+  async saveSettings(input: SettingsWriteInput): Promise<Settings> {
     const Model = getGlobalModel(this.connection)
+    const asId = (value: string | null): Types.ObjectId | null =>
+      value ? new Types.ObjectId(value) : null
+
     const doc = await Model.findOneAndUpdate(
       { globalType: 'settings' },
       {
         $set: {
-          productsPage: input.productsPageId ? new Types.ObjectId(input.productsPageId) : null,
+          productsPage: asId(input.productsPageId),
+          siteName: input.siteName,
+          siteTagline: input.siteTagline,
+          siteDescription: input.siteDescription,
+          contactEmail: input.contactEmail,
+          contactPhone: input.contactPhone,
+          contactPhoneSecondary: input.contactPhoneSecondary,
+          contactWhatsapp: input.contactWhatsapp,
+          addressLines: input.addressLines,
+          secondAddressLines: input.secondAddressLines,
+          hours: input.hours,
+          socialLinks: toSocialLinkDocuments(input.socialLinks),
+          inclusions: toInclusionDocuments(input.inclusions),
+          testimonials: toTestimonialDocuments(input.testimonials),
+          brandBackgroundImage: asId(input.brandBackgroundImageId),
         },
         $setOnInsert: { globalType: 'settings' },
       },
@@ -225,6 +341,20 @@ export class MongoGlobalsRepository implements GlobalsRepository {
     return {
       id: global._id.toString(),
       productsPageId: global.productsPage ? global.productsPage.toString() : null,
+      siteName: global.siteName ?? null,
+      siteTagline: global.siteTagline ?? null,
+      siteDescription: global.siteDescription ?? null,
+      contactEmail: global.contactEmail ?? null,
+      contactPhone: global.contactPhone ?? null,
+      contactPhoneSecondary: global.contactPhoneSecondary ?? null,
+      contactWhatsapp: global.contactWhatsapp ?? null,
+      addressLines: Array.isArray(global.addressLines) ? global.addressLines : [],
+      secondAddressLines: Array.isArray(global.secondAddressLines) ? global.secondAddressLines : [],
+      hours: global.hours ?? null,
+      socialLinks: toSocialLinks(global.socialLinks),
+      inclusions: toInclusions(global.inclusions),
+      testimonials: toTestimonials(global.testimonials),
+      brandBackgroundImageId: global.brandBackgroundImage ? global.brandBackgroundImage.toString() : null,
       createdAt: global.createdAt,
       updatedAt: global.updatedAt,
     }

@@ -248,10 +248,12 @@ describe('category writes', () => {
 describe('page writes', () => {
   let pageRepository: FakePageRepository
   let globalsRepository: FakeGlobalsRepository
+  let mediaRepository: FakeMediaRepository
 
   beforeEach(() => {
     pageRepository = new FakePageRepository()
     globalsRepository = new FakeGlobalsRepository()
+    mediaRepository = new FakeMediaRepository()
   })
 
   it('rejects a duplicate slug', async () => {
@@ -264,7 +266,26 @@ describe('page writes', () => {
 
   it('refuses to delete the page Settings points at', async () => {
     pageRepository.seed(buildTestPage({ id: 'page1', slug: 'products' }))
-    await globalsRepository.saveSettings({ productsPageId: 'page1' })
+    // A direct repository call (bypassing the service's validation layer),
+    // so it needs the full `SettingsWriteInput` shape rather than the
+    // partial `SettingsWriteRequest` the service accepts.
+    await globalsRepository.saveSettings({
+      productsPageId: 'page1',
+      siteName: null,
+      siteTagline: null,
+      siteDescription: null,
+      contactEmail: null,
+      contactPhone: null,
+      contactPhoneSecondary: null,
+      contactWhatsapp: null,
+      addressLines: [],
+      secondAddressLines: [],
+      hours: null,
+      socialLinks: [],
+      inclusions: [],
+      testimonials: [],
+      brandBackgroundImageId: null,
+    })
 
     await expect(deletePage('page1', { pageRepository, globalsRepository })).rejects.toThrow(
       /products page in Settings/,
@@ -283,7 +304,7 @@ describe('page writes', () => {
     await expect(
       saveSettings(
         { productsPageId: '507f1f77bcf86cd799439011' },
-        { globalsRepository, pageRepository },
+        { globalsRepository, pageRepository, mediaRepository },
       ),
     ).rejects.toThrow(/does not exist/)
   })

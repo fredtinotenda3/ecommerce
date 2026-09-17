@@ -43,12 +43,73 @@ export interface GlobalNavItemDocument {
   id?: string
 }
 
+/** One entry in Settings' `socialLinks`. `platform` selects which bundled
+ * glyph renders (see `SOCIAL_ICONS` in FooterComponent) — an operator picks
+ * a platform and pastes a url, rather than uploading an icon file for a
+ * network the app already knows how to draw. */
+export interface GlobalSocialLinkDocument {
+  platform?: 'instagram' | 'facebook' | 'whatsapp' | 'tiktok' | 'x' | 'youtube' | 'linkedin' | 'other'
+  label?: string
+  url?: string
+}
+
+/** One of the trust badges shown on the homepage "why buy here" band and
+ * the product buying panel. `icon` selects a bundled glyph the same way
+ * `GlobalSocialLinkDocument.platform` does. */
+export interface GlobalInclusionDocument {
+  title?: string
+  description?: string
+  icon?: 'box' | 'repair' | 'payment' | 'message'
+}
+
+export interface GlobalTestimonialDocument {
+  quote?: string
+  name?: string
+  role?: string
+}
+
+export interface GlobalFooterLinkDocument {
+  label?: string
+  href?: string
+}
+
+export interface GlobalFooterLinkGroupDocument {
+  title?: string
+  links?: GlobalFooterLinkDocument[]
+}
+
 export interface GlobalDocument extends Document {
   _id: Types.ObjectId
   globalType: 'header' | 'footer' | 'settings' | 'home' | string
   copyright?: string
   navItems?: GlobalNavItemDocument[]
   productsPage?: Types.ObjectId | null
+
+  // `footer` global fields beyond `copyright`/`navItems` above.
+  linkGroups?: GlobalFooterLinkGroupDocument[]
+
+  // `settings` global fields beyond `productsPage` above — the site
+  // identity and business facts that used to be hardcoded in
+  // `src/app/constants/brand.ts`. See `src/lib/domain/siteDefaults.ts` for
+  // the one-time defaults the seed script writes here.
+  siteName?: string | null
+  siteTagline?: string | null
+  siteDescription?: string | null
+  contactEmail?: string | null
+  contactPhone?: string | null
+  contactPhoneSecondary?: string | null
+  contactWhatsapp?: string | null
+  addressLines?: string[]
+  secondAddressLines?: string[]
+  hours?: string | null
+  socialLinks?: GlobalSocialLinkDocument[]
+  inclusions?: GlobalInclusionDocument[]
+  testimonials?: GlobalTestimonialDocument[]
+  /** The site-wide decorative "electric-blue circuit" backdrop: reused as
+   * the homepage hero panel, the footer band, and the fallback social-share
+   * image — one admin upload, several render sites (see
+   * `globalsStorefrontAdapter.ts`). */
+  brandBackgroundImage?: Types.ObjectId | null
 
   // `home` global fields. Flat rather than nested (`heroImage` not
   // `hero.image`) so the `strict: false` schema stores them exactly as

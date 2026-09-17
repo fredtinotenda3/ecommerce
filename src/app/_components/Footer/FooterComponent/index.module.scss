@@ -17,11 +17,18 @@
   }
 }
 
-// The client's reference artwork — the footer's "top edge" placement. A
-// shallow, quiet slice of the actual raster (see Home/Hero's stylesheet
-// for the crop rationale) laid along the top of the panel and faded
-// straight back into it, so it reads as a hairline brand accent rather
-// than a banner sitting on top of the link columns.
+// The admin-configured "electric-blue circuit" backdrop (Settings -> Brand
+// background image) — the footer's "top edge" placement. A shallow, quiet
+// slice of the image laid along the top of the panel and faded straight
+// back into it, so it reads as a hairline brand accent rather than a
+// banner sitting on top of the link columns.
+//
+// `background-image` is set inline by `FooterComponent` from the
+// admin-configured media url; this rule only supplies the fallback plain
+// gradient wash for when no image has been configured yet (a fresh
+// install, or a site that simply doesn't want a background photo here) —
+// there is deliberately no hardcoded image path in this stylesheet any
+// more.
 .circuit {
   position: absolute;
   top: 0;
@@ -29,7 +36,7 @@
   right: 0;
   height: 130px;
   z-index: -2;
-  background-image: url('/brand/circuit-footer.webp');
+  background: linear-gradient(120deg, var(--th-brand-500) 0%, var(--th-inverse) 70%);
   background-repeat: no-repeat;
   background-position: top center;
   background-size: cover;

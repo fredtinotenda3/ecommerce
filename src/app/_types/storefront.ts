@@ -96,17 +96,77 @@ export interface StorefrontHeader {
   navItems?: StorefrontNavItem[]
 }
 
-/** What `FooterComponent` reads off the Footer global: the copyright line
- * plus the social-icon nav items. */
+/** One link inside a footer link group/column. */
+export interface StorefrontFooterLink {
+  label: string
+  href: string
+}
+
+export interface StorefrontFooterLinkGroup {
+  title: string
+  links: StorefrontFooterLink[]
+}
+
+/** What `FooterComponent` reads off the Footer global: the copyright line,
+ * the social-icon nav items, and the grouped link columns. */
 export interface StorefrontFooter {
   copyright?: string | null
   navItems?: StorefrontNavItem[]
+  linkGroups?: StorefrontFooterLinkGroup[]
 }
 
-/** What `CartPage`/`CheckoutPage`/`LogoutPage` read off the Settings
- * global: the products page relation, and only for its slug. */
+export type StorefrontSocialPlatform =
+  | 'instagram'
+  | 'facebook'
+  | 'whatsapp'
+  | 'tiktok'
+  | 'x'
+  | 'youtube'
+  | 'linkedin'
+  | 'other'
+
+export interface StorefrontSocialLink {
+  platform: StorefrontSocialPlatform
+  label: string | null
+  url: string
+}
+
+export type StorefrontInclusionIcon = 'box' | 'repair' | 'payment' | 'message'
+
+export interface StorefrontInclusion {
+  title: string
+  description: string
+  icon: StorefrontInclusionIcon
+}
+
+export interface StorefrontTestimonial {
+  quote: string
+  name: string
+  role: string
+}
+
+/** What every storefront component reads off the Settings global: the
+ * products page relation, the site's identity/contact/social facts, and
+ * the shared decorative background image — everything that used to be
+ * hardcoded in `constants/brand.ts`. Every field is optional; a consumer
+ * falls back to `src/lib/domain/siteDefaults.ts` when unset, same "null is
+ * not an error" treatment as `StorefrontHome` below. */
 export interface StorefrontSettingsLike {
   productsPage?: string | StorefrontLinkablePage | null
+  siteName?: string | null
+  siteTagline?: string | null
+  siteDescription?: string | null
+  contactEmail?: string | null
+  contactPhone?: string | null
+  contactPhoneSecondary?: string | null
+  contactWhatsapp?: string | null
+  addressLines?: string[]
+  secondAddressLines?: string[]
+  hours?: string | null
+  socialLinks?: StorefrontSocialLink[]
+  inclusions?: StorefrontInclusion[]
+  testimonials?: StorefrontTestimonial[]
+  brandBackgroundImage?: StorefrontMediaItem | null
 }
 
 /** What `Home/Hero` and `Home/BrandStory` read off the Home global, with

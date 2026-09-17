@@ -504,12 +504,67 @@ export interface Header {
   updatedAt: Date
 }
 
+/** A single link inside one of the footer's grouped columns (e.g. "Shop" ->
+ * "All products", "Smartphones", …). Distinct from `NavItem`/`NavLink`
+ * above: a footer link group is always a plain label+href pair, never a
+ * page reference or an icon, so it does not need that shape's full
+ * generality. */
+export interface FooterLink {
+  label: string
+  href: string
+}
+
+export interface FooterLinkGroup {
+  title: string
+  links: FooterLink[]
+}
+
 export interface Footer {
   id: string
   copyright: string | null
   navItems: NavItem[]
+  /** The footer's grouped link columns ("Shop", "Your account", "Help", …).
+   * Editable as a whole from `/admin/globals` — same "edited and saved
+   * whole" treatment as `navItems`. */
+  linkGroups: FooterLinkGroup[]
   createdAt: Date
   updatedAt: Date
+}
+
+export type SocialPlatform =
+  | 'instagram'
+  | 'facebook'
+  | 'whatsapp'
+  | 'tiktok'
+  | 'x'
+  | 'youtube'
+  | 'linkedin'
+  | 'other'
+
+export interface SocialLink {
+  platform: SocialPlatform
+  /** Only meaningful (and required) when `platform === 'other'` — every
+   * named platform already has a fixed display label paired with its
+   * glyph. */
+  label: string | null
+  url: string
+}
+
+export type InclusionIcon = 'box' | 'repair' | 'payment' | 'message'
+
+/** A single trust badge — "Boxed & preloved stock", "Repairs &
+ * accessories", etc. Rendered on the homepage "why buy here" band and the
+ * product buying panel. */
+export interface Inclusion {
+  title: string
+  description: string
+  icon: InclusionIcon
+}
+
+export interface Testimonial {
+  quote: string
+  name: string
+  role: string
 }
 
 export interface Settings {
@@ -517,6 +572,39 @@ export interface Settings {
   /** Id of the linked "products" Page. Resolution to a slug happens in the
    * storefront-read orchestrator (see fetchGlobalsNative.ts). */
   productsPageId: string | null
+
+  /** Site identity and business facts — formerly hardcoded in
+   * `src/app/constants/brand.ts`. Every field here is optional and every
+   * consumer falls back to `src/lib/domain/siteDefaults.ts` when unset, so
+   * a fresh install with no `settings` document still renders a coherent
+   * (if generic) site — same "null is not an error" treatment as the rest
+   * of this file. */
+  siteName: string | null
+  siteTagline: string | null
+  siteDescription: string | null
+
+  contactEmail: string | null
+  contactPhone: string | null
+  contactPhoneSecondary: string | null
+  contactWhatsapp: string | null
+  addressLines: string[]
+  secondAddressLines: string[]
+  hours: string | null
+
+  socialLinks: SocialLink[]
+  inclusions: Inclusion[]
+  /** No testimonials ship by default — inventing customer quotes for a
+   * real, named business is not something this project does. Empty means
+   * "render nothing", not "not configured yet". */
+  testimonials: Testimonial[]
+
+  /** Id of the Media doc used as the site-wide decorative "electric-blue
+   * circuit" backdrop: the homepage hero panel, the footer band, and the
+   * fallback social-share image all resolve this same id (see
+   * `globalsStorefrontAdapter.ts`), so an operator replaces it once and
+   * every placement picks up the new asset. */
+  brandBackgroundImageId: string | null
+
   createdAt: Date
   updatedAt: Date
 }

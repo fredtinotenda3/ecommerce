@@ -31,7 +31,7 @@ import { draftMode } from 'next/headers'
 import { notFound } from 'next/navigation'
 
 import { fetchCategories } from '../../_api/fetchCategories'
-import { fetchHome } from '../../_api/fetchGlobals'
+import { fetchHome, fetchSettings } from '../../_api/fetchGlobals'
 import { fetchPage, fetchPageSlugs } from '../../_api/fetchPage'
 import { fetchProducts } from '../../_api/fetchProduct'
 import { Blocks } from '../../_components/Blocks'
@@ -51,8 +51,10 @@ import type {
   StorefrontHome,
   StorefrontPage,
   StorefrontProductCard,
+  StorefrontSettingsLike,
 } from '../../_types/storefront'
 import { generateMeta } from '../../_utilities/generateMeta'
+import { siteInfoFromSettings } from '../../_utilities/mergeOpenGraph'
 
 export const dynamic = 'force-dynamic'
 
@@ -69,22 +71,25 @@ export default async function Page({ params: { slug = 'home' } }) {
   let categories: StorefrontCategory[] = []
   let newest: StorefrontProductCard[] = []
   let home: StorefrontHome | null = null
+  let settings: StorefrontSettingsLike | null = null
 
   try {
     page = await fetchPage(slug, statusFor(isDraftMode))
 
-    // Only the homepage needs the catalogue reads (and the Home global);
-    // every other page pays nothing for them.
+    // Only the homepage needs the catalogue reads (and the Home/Settings
+    // globals); every other page pays nothing for them.
     if (isHome) {
-      const [categoryList, newestPage, homeContent] = await Promise.all([
+      const [categoryList, newestPage, homeContent, settingsContent] = await Promise.all([
         fetchCategories(),
         fetchProducts({ limit: 4, sort: 'newest' }),
         fetchHome(),
+        fetchSettings(),
       ])
 
       categories = categoryList
       newest = newestPage.docs
       home = homeContent
+      settings = settingsContent
     }
   } catch (error) {
     // Render whatever is available rather than failing the request: a
@@ -104,7 +109,7 @@ export default async function Page({ params: { slug = 'home' } }) {
   if (isHome) {
     return (
       <React.Fragment>
-        <HomeHero home={home} />
+        <HomeHero home={home} settings={settings} />
         <FeaturedCategories categories={categories} />
         <FeaturedProducts
           id="new-arrivals"
@@ -117,10 +122,10 @@ export default async function Page({ params: { slug = 'home' } }) {
           href="/products?sort=newest"
           products={newest}
         />
-        <Deals />
-        <ValueProps />
+        <Deals settings={settings} />
+        <ValueProps settings={settings} />
         <BrandStory home={home} />
-        <Testimonials />
+        <Testimonials settings={settings} />
         <NewsletterBand />
 
         {/* Anything an editor has added to the `home` page renders last, so
@@ -171,9 +176,10 @@ export async function generateMetadata({ params: { slug = 'home' } }): Promise<M
   const { isEnabled: isDraftMode } = draftMode()
 
   let page: StorefrontPage | null = null
+  let settings: StorefrontSettingsLike | null = null
 
   try {
-    page = await fetchPage(slug, statusFor(isDraftMode))
+    ;[page, settings] = await Promise.all([fetchPage(slug, statusFor(isDraftMode)), fetchSettings()])
   } catch (error) {
     // Fall through to the fallback below.
   }
@@ -182,5 +188,8 @@ export async function generateMetadata({ params: { slug = 'home' } }): Promise<M
     page = fallbackHome
   }
 
-  return generateMeta({ doc: page })
+  return generateMeta({
+    doc: page,
+    siteInfo: siteInfoFromSettings(settings, settings?.brandBackgroundImage?.url ?? null),
+  })
 }

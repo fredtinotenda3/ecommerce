@@ -1,0 +1,27 @@
+// Fixed, full-viewport, faded to nothing well before the centre of the
+// screen — a corner accent, not a hero image. `mask-image` (plus the
+// `-webkit-` prefix Safari still needs) fades the raster itself rather
+// than layering a scrim on top, which is what keeps this from ever
+// competing with foreground text no matter what a shopper scrolls to.
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+
+  background-repeat: no-repeat;
+  background-position: top right;
+  background-size: min(1400px, 90vw) auto;
+
+  opacity: 0.05;
+
+  mask-image: radial-gradient(ellipse 70% 60% at top right, black 0%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at top right, black 0%, transparent 70%);
+
+  // The source image is a dark-navy graphic: it reads as a smudge on a
+  // light surface at any opacity worth using, so it stays essentially off
+  // in light mode and only shows itself once the page is already dark.
+  :root[data-theme='dark'] & {
+    opacity: 0.16;
+  }
+}
